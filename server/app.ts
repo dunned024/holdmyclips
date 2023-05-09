@@ -5,6 +5,7 @@ import thumbsupply from 'thumbsupply';
 
 const app = express();
 const port = 4000;
+const client = 'http://localhost:3001'
 
 const videos = [
   {
@@ -28,29 +29,30 @@ const videos = [
 ];
 
 app.get('/', (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3001');
-  res.send('Hello World!');
+  res.set('Access-Control-Allow-Origin', client);
+  res.send('Hello Borld!');
 });
 
 app.get('/videos', (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3001');
+  res.set('Access-Control-Allow-Origin', client);
   res.json(videos)
 });
 
 app.get('/video/:id/poster', (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3001');
+  res.set('Access-Control-Allow-Origin', client);
   thumbsupply.generateThumbnail(path.resolve(__dirname, `../assets/${req.params.id}.mp4`))
+  // thumbsupply.generateThumbnail(`s3://hold-my-clips/${req.params.id}.mp4`)
   .then(thumb => res.sendFile(thumb));
 });
 
 app.get('/video/:id/data', (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3001');
+  res.set('Access-Control-Allow-Origin', client);
   const id = parseInt(req.params.id, 10);
   res.json(videos[id]);
 });
 
 app.get('/video/:id', (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3001');
+  res.set('Access-Control-Allow-Origin', client);
   const resolvedPath = path.resolve(__dirname, `../assets/${req.params.id}.mp4`);
   const stat = fs.statSync(resolvedPath);
   const fileSize = stat.size;

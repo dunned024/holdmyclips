@@ -8,6 +8,8 @@ services:
       - 4000:4000
     environment:
       - ASSETS_LOCATION=postgres
+    volumes:
+      - ./server:/home/node/server
     command: npm run dev
   hmc_client:
     container_name: hmc_client

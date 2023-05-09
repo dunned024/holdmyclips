@@ -5,8 +5,9 @@
   "main": "app.ts",
   "scripts": {
     "build": "tsc -p .",
-    "dev": "npx tsc ; nodemon dist/app.js",
-    "lint": "npx eslint --init"
+    "dev": "npx tsc ; nodemon app.ts",
+    "lint": "npx eslint --init",
+    "start": "NODE_PATH=./build node build/app.js"
   },
   "author": "",
   "license": "ISC",
@@ -16,12 +17,13 @@
     "@typescript-eslint/eslint-plugin": "^5.59.2",
     "@typescript-eslint/parser": "^5.59.2",
     "eslint": "^8.40.0",
+    "nodemon": "^2.0.22",
+    "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
-    "nodemon": "^2.0.22",
     "thumbsupply": "^0.4.0"
   }
 }
