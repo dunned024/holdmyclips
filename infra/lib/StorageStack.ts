@@ -2,6 +2,13 @@ import { Duration, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
 import { Bucket, BlockPublicAccess, BucketEncryption } from 'aws-cdk-lib/aws-s3';
 import { CachePolicy, Distribution, OriginAccessIdentity, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
+import {
+  ARecord,
+  PublicHostedZone,
+  RecordTarget
+} from 'aws-cdk-lib/aws-route53';
+import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
 
 export class StorageStack extends Stack {
@@ -21,12 +28,39 @@ export class StorageStack extends Stack {
       minTtl: Duration.days(1),
     })
     
-    new Distribution(this, 'HoldMyClipsDistribution', {
+    // Cert created manually because there is a wait time for approval
+    const domainCert = Certificate.fromCertificateArn(
+      this,
+      'HoldMyClipsDomainCert',
+      'arn:aws:acm:us-east-1:879223189443:certificate/7af9de79-58db-41b7-a4ae-d93334ff4f9e'
+    );
+
+    const domainName = 'clips.dunned024.com'
+
+    const distribution = new Distribution(this, 'HoldMyClipsDistribution', {
+      certificate: domainCert,
       defaultBehavior: {
         origin: new S3Origin(bucket, {originAccessIdentity}),
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
         cachePolicy
       },
+      domainNames: [domainName]
+    });
+    
+    // Domain & hosted zone also created manually
+    const hostedZone = PublicHostedZone.fromPublicHostedZoneAttributes(
+      this,
+      'HoldMyClipsPublicHostedZone',
+      {
+        zoneName: 'dunned024.com',
+        hostedZoneId: 'Z03422011GHHEJEF39FO6'
+      }
+    );
+
+    new ARecord(this, 'HoldMyClipsDnsRecord', {
+      recordName: domainName,
+      target: RecordTarget.fromAlias(new CloudFrontTarget(distribution)),
+      zone: hostedZone
     });
   }
 }
