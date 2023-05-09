@@ -28,29 +28,29 @@ const videos = [
 ];
 
 app.get('/', (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3001');
   res.send('Hello World!');
 });
 
 app.get('/videos', (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3001');
   res.json(videos)
 });
 
 app.get('/video/:id/poster', (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3001');
   thumbsupply.generateThumbnail(path.resolve(__dirname, `../assets/${req.params.id}.mp4`))
   .then(thumb => res.sendFile(thumb));
 });
 
 app.get('/video/:id/data', (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3001');
   const id = parseInt(req.params.id, 10);
   res.json(videos[id]);
 });
 
 app.get('/video/:id', (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+  res.set('Access-Control-Allow-Origin', 'http://localhost:3001');
   const resolvedPath = path.resolve(__dirname, `../assets/${req.params.id}.mp4`);
   const stat = fs.statSync(resolvedPath);
   const fileSize = stat.size;

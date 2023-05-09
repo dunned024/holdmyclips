@@ -1,0 +1,20 @@
+version: '3.7'
+services:
+  hmc_server:
+    container_name: hmc_server
+    build: server
+    restart: unless-stopped
+    ports:
+      - 4000:4000
+    environment:
+      - ASSETS_LOCATION=postgres
+    command: npm run dev
+  hmc_client:
+    container_name: hmc_client
+    build: 
+      context: client
+      args:
+        REACT_APP_SERVER_API_ENDPOINT: "http://localhost:4000"
+    restart: unless-stopped
+    ports:
+      - 3001:3000

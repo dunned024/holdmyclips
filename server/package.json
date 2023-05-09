@@ -4,6 +4,7 @@
   "description": "",
   "main": "app.ts",
   "scripts": {
+    "build": "tsc -p .",
     "dev": "npx tsc ; nodemon dist/app.js",
     "lint": "npx eslint --init"
   },
