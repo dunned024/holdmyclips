@@ -1,6 +1,6 @@
-import { Duration, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
-import { Bucket, BlockPublicAccess, BucketEncryption } from 'aws-cdk-lib/aws-s3';
-import { CachePolicy, Distribution, OriginAccessIdentity, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
+import { Duration, Stack, StackProps } from 'aws-cdk-lib';
+import { Bucket, BlockPublicAccess, CorsRule, HttpMethods } from 'aws-cdk-lib/aws-s3';
+import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, OriginAccessIdentity, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import {
@@ -14,20 +14,21 @@ import { Construct } from 'constructs';
 export class StorageStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+    const corsRule: CorsRule = {
+      allowedMethods: [HttpMethods.GET],
+      allowedOrigins: ['*'],
+      allowedHeaders: ['*'],
+    };
 
     const bucket = new Bucket(this, 'HoldMyClipsS3Bucket', {
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       bucketName: 'hold-my-clips',
+      cors: [corsRule],
+      versioned: true,
     });
     
     const originAccessIdentity = new OriginAccessIdentity(this, 'HoldMyClipsOAI');
 
-    const cachePolicy = new CachePolicy(this, 'HoldMyClipsDistributionCachePolicy', {
-      defaultTtl: Duration.days(7),
-      maxTtl: Duration.days(30),
-      minTtl: Duration.days(1),
-    })
-    
     // Cert created manually because there is a wait time for approval
     const domainCert = Certificate.fromCertificateArn(
       this,
@@ -37,13 +38,23 @@ export class StorageStack extends Stack {
 
     const domainName = 'clips.dunned024.com'
 
+    const cachePolicy = new CachePolicy(this, 'HoldMyClipsDistributionCachePolicy', {
+      defaultTtl: Duration.days(7),
+      headerBehavior: CacheHeaderBehavior.allowList('Origin'),
+      maxTtl: Duration.days(30),
+      minTtl: Duration.days(1),
+    })
+
     const distribution = new Distribution(this, 'HoldMyClipsDistribution', {
       certificate: domainCert,
       defaultBehavior: {
+        allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+        cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
+        cachePolicy,
         origin: new S3Origin(bucket, {originAccessIdentity}),
-        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        cachePolicy
+        viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
       },
+      defaultRootObject: 'index.html',
       domainNames: [domainName]
     });
     
