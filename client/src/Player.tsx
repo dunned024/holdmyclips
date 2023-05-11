@@ -1,36 +1,36 @@
 import React, { useEffect, useState } from 'react';
-import { VideoData } from './types';
+import { Clip } from './types';
 import { useParams } from 'react-router-dom';
 
 
 export function Player(){
-  let { videoId } = useParams();
+  let { clipId } = useParams();
 
-  const [videoData, setVideoData] = useState<VideoData>();
+  const [clip, setClip] = useState<Clip>();
 
   useEffect(() => {
-    async function getVideoData(id: string) {
+    async function getClip(id: string) {
       try {
-        const res = await fetch(`http://localhost:4000/video/${id}/data`);
+        const res = await fetch(`https://clips.dunned024.com/clips/${id}/${id}.json`);
         const data = await res.json();
-        setVideoData(data);
+        setClip(data);
       } catch (error) {
         console.log(error);
       }
     }
-
-    if (!videoData && videoId) {
-      getVideoData(videoId);
+    
+    if (!clip && clipId) {
+      getClip(clipId);
     }
-  }, [videoId, videoData])
+  }, [clipId, clip])
 
   return (
     <div className="App">
       <header className="App-header">
         <video controls muted autoPlay>
-          <source src={`http://localhost:4000/video/${videoId}`} type="video/mp4" />
+          <source src={`https://clips.dunned024.com/clips/${clipId}/${clipId}.mp4`} type="video/mp4" />
         </video>
-        <h1>{ videoData?.name }</h1>
+        <h1>{ clip?.title }</h1>
       </header>
     </div>
   )

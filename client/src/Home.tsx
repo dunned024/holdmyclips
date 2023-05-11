@@ -1,37 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
 import { Link } from 'react-router-dom';
-import { VideoData } from './types';
+import { Clip } from './types';
 
 export function Home() {
-  const [videos, setVideos] = useState<VideoData[]>([]);
+  const [clips, setClips] = useState<Clip[]>([]);
 
   useEffect(() => {
-    async function getVideos() {
-      const response = await fetch('http://localhost:4000/videos');
+    async function getClips() {
+      const response = await fetch('https://clips.dunned024.com/clips/clips.json');
       const data = await response.json();
-      setVideos(data);
+      setClips(data);
     }
 
-    if (!videos.length) {
-      getVideos();
+    if (!clips.length) {
+      getClips();
     }
-  }, [videos]);
+  }, [clips]);
 
   return (
     <div className="App App-header">
       Clips!
       <div className="container">
         <div className="row">
-          {videos.map((video) => {
+          {clips.map((clip) => {
             return (
-              <div className="col-md-4" key={video.id}>
-                <Link to={`/player/${video.id}`}>
+              <div className="col-md-4" key={clip.id}>
+                <Link to={`/player/${clip.id}`}>
                   <div className="card border-0">
-                    <img src={`http://localhost:4000${video.poster}`} alt={video.name} />
+                    <img src={`https://clips.dunned024.com/clips/${clip.id}/${clip.id}.png`} alt={clip.title} />
                     <div className="card-body">
-                      <p>{video.name}</p>
-                      <p>{video.duration}</p>
+                      <p>{clip.title}</p>
+                      <p>{clip.duration}</p>
                     </div>
                   </div>
                 </Link>
