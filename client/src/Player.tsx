@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Clip } from './types';
+import './Player.css';
 import { useParams } from 'react-router-dom';
 
 
