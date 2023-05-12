@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { AiFillGithub } from 'react-icons/ai';
 import './Home.css';
 import { Link } from 'react-router-dom';
 import { Clip } from './types';
@@ -28,21 +27,10 @@ export function Home() {
   }, [clips]);
 
   return (
-    <div className="app">
-      <div className="app-header">
-        <a className="github-link" href="https://github.com/dunned024" rel="noreferrer">
-          <AiFillGithub />
-          dunned024
-        </a>
-        <div>
-          hold my clips
-        </div>
-      </div>
-      <div className="container">
-        <div className="row">
+    <div className="home">
+        <div className="clip-rows">
           {clips.map((clip) => <ClipCard clip={clip} />)}
         </div>
-      </div>
     </div>
   );
 }

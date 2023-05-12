@@ -1,34 +1,18 @@
-.app {
-    height: 100vh;
-    background: linear-gradient(180deg, #374153 0%, #374153 25%, #374153 100%);
-
-    color: white;
-    text-align: center;
-    font-size: calc(10px + 2vmin);
+.home {
+    height: 100%;
 }
 
-.app-header {
-    height: 20px;
-    padding: 2px;
-
+.clip-rows {
     display: flex;
     flex-direction: row;
-    align-items: center;
-    justify-content: space-evenly;
-
-    color: white;
-    text-align: center;
-    font-size: 16px;
-}
-
-.github-link {
-    color: white;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .clip-card-container {
     margin: 10px 10px;
-    height: 25vw;
-    width: 25vw;
+    height: 22vw;
+    width: 22vw;
     
     overflow: hidden;
     border-radius: 4px;

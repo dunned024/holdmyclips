@@ -1,16 +1,29 @@
-header, footer {
-  background-color: #374153;
-  text-align: center;
+.app-header {
+  padding: 10px;
+  height: 3vh;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+
+  background-color: #282c34;
   color: white;
-  padding: 10px 0;
+  text-align: center;
+  font-size: 16px;
 }
 
-header {
-  margin-bottom: 50px;
-  font-size: 28px;
+.github-link {
+  color: white;
+  float: left;
 }
 
-footer {
-  margin-top: 50px;
-  font-size: 14px;
+.app {
+  height: 97vh;
+  padding: 20px;
+  background: linear-gradient(180deg, #374153 0%, #374153 75%, #282c34 100%);
+
+  color: white;
+  text-align: center;
+  font-size: calc(10px + 2vmin);
 }
