@@ -1,6 +1,6 @@
 import { Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { Bucket, BlockPublicAccess, CorsRule, HttpMethods } from 'aws-cdk-lib/aws-s3';
-import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, OriginAccessIdentity, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
+import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import {
@@ -45,6 +45,16 @@ export class StorageStack extends Stack {
       minTtl: Duration.days(1),
     })
 
+
+    const errorResponses: ErrorResponse[] = [403, 404].map((status) => {
+      return {
+        httpStatus: status,
+        responseHttpStatus: 200,
+        responsePagePath: '/index.html',
+        ttl: Duration.minutes(10),
+      }}
+    )
+
     const distribution = new Distribution(this, 'HoldMyClipsDistribution', {
       certificate: domainCert,
       defaultBehavior: {
@@ -55,7 +65,8 @@ export class StorageStack extends Stack {
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
       },
       defaultRootObject: 'index.html',
-      domainNames: [domainName]
+      domainNames: [domainName],
+      errorResponses: errorResponses,
     });
     
     // Domain & hosted zone also created manually

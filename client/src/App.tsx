@@ -1,7 +1,7 @@
 import {
-    Route,
-    BrowserRouter as Router,
-    Routes,
+  Route,
+  BrowserRouter as Router,
+  Routes,
 } from "react-router-dom";
 import { AiFillGithub } from 'react-icons/ai';
 import './App.css';
