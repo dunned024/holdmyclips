@@ -1,8 +1,12 @@
 import { Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { Bucket, BlockPublicAccess, CorsRule, HttpMethods } from 'aws-cdk-lib/aws-s3';
-import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy } from 'aws-cdk-lib/aws-cloudfront';
+import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, LambdaEdgeEventType } from 'aws-cdk-lib/aws-cloudfront';
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
+import { experimental } from 'aws-cdk-lib/aws-cloudfront';
+import { Code, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { Role, ManagedPolicy, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import path from 'path';
 import {
   ARecord,
   PublicHostedZone,
@@ -10,6 +14,7 @@ import {
 } from 'aws-cdk-lib/aws-route53';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
+
 
 export class StorageStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -54,13 +59,30 @@ export class StorageStack extends Stack {
         ttl: Duration.minutes(10),
       }}
     )
+    
+    const authLambda = new AuthLambda(this, 'HoldMyClipsAuth');
 
     const distribution = new Distribution(this, 'HoldMyClipsDistribution', {
+      additionalBehaviors: {
+        'upload': {
+          allowedMethods: AllowedMethods.ALLOW_ALL,
+          origin: new S3Origin(bucket, {originAccessIdentity})
+        },
+        // edgeLambdas: [{
+        //   functionVersion: authLambda.edgeLambda.currentVersion,
+        //   eventType: LambdaEdgeEventType.VIEWER_REQUEST
+        // }],
+
+      },
       certificate: domainCert,
       defaultBehavior: {
         allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
         cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
         cachePolicy,
+        // edgeLambdas: [{
+        //   functionVersion: authLambda.edgeLambda.currentVersion,
+        //   eventType: LambdaEdgeEventType.VIEWER_REQUEST
+        // }],
         origin: new S3Origin(bucket, {originAccessIdentity}),
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS
       },
@@ -85,4 +107,29 @@ export class StorageStack extends Stack {
       zone: hostedZone
     });
   }
+}
+
+
+class AuthLambda extends Construct {
+    public readonly edgeLambda: experimental.EdgeFunction;
+
+    constructor(scope: Construct, id: string) {
+      super(scope, id);
+
+      const authRole = new Role(this, 'HoldMyClipsAuthRole', {
+        roleName: 'hold-my-clips-lambda-auth-role',
+        assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+        managedPolicies: [
+          ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+          ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMReadOnlyAccess'),
+        ]
+      });
+
+      this.edgeLambda = new experimental.EdgeFunction(this, 'HoldMyClipsAuthFunction', {
+        runtime: Runtime.NODEJS_18_X,
+        handler: 'index.handler',
+        code: Code.fromAsset(path.join(__dirname, '../services/auth/')),
+        role: authRole,
+      });
+    }
 }
