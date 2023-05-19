@@ -7,6 +7,7 @@ import { AiFillGithub } from 'react-icons/ai';
 import './App.css';
 import { Home } from './Home';
 import { Player } from './Player';
+import { Uploader } from "./upload/Uploader";
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />}></Route>
             <Route path="/player/:clipId" element={<Player />}></Route>
+            <Route path="/upload" element={<Uploader />}></Route>
           </Routes>
         </Router>
       </div>

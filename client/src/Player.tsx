@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Clip, Comment } from './types';
 import './Player.css';
 import { useParams } from 'react-router-dom';

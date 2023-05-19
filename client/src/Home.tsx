@@ -28,9 +28,14 @@ export function Home() {
 
   return (
     <div className="home">
-        <div className="clip-rows">
-          {clips.map((clip) => <ClipCard clip={clip} />)}
-        </div>
+      <div className="upload-button-row">
+        <Link to={`/upload`} className="upload-link">
+          <button>Upload clip</button>
+        </Link>
+      </div>
+      <div className="clip-rows">
+        {clips.map((clip) => <ClipCard clip={clip} />)}
+      </div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import thumbsupply from 'thumbsupply';
 
 const app = express();
 const port = 4000;
-const client = 'http://localhost:3001'
+const client = 'http://localhost:3000'
 
 const videos = [
   {
