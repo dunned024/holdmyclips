@@ -7,6 +7,35 @@ import './Uploader.css';
  export function Uploader() {
   const [source, setSource] = useState<File>();
 
+  async function uploadClip(formData: FormData) {
+    if (!source) {
+      console.log('how did you get here?')
+      return
+    }
+
+    try {
+      // TODO: create a lambda that uploads the function
+      // https://aws.amazon.com/blogs/compute/patterns-for-building-an-api-to-upload-files-to-amazon-s3/
+      // "The CloudFront event is set Viewer request to meaning the function is invoked in reaction to PUT events from the client"
+      console.log(source)
+      formData.append('file', source)
+      // const videoRes = await fetch(`https://clips.dunned024.com/clips/${id}/${id}.mp4`, {
+      //   method: 'PUT',
+      //   body: source
+      // });
+      // console.log(videoRes)
+
+      // TODO: This doesn't work
+      const res = await fetch(`https://clips.dunned024.com/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      console.log(res)
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   const handleEvent = function(e: DragEvent) {
     // TODO: disallow dropping anywhere outside the drop zone
     e.preventDefault();
@@ -16,7 +45,7 @@ import './Uploader.css';
   return (
     <div className="uploader" onDragEnter={handleEvent} onDragLeave={handleEvent} onDrop={handleEvent}>
       {!source && <FileSelector setSource={setSource}/>}
-      {source && <Previewer source={source} />}
+      {source && <Previewer source={source} uploadClip={uploadClip} />}
     </div>
   );
 }

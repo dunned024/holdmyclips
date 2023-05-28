@@ -1,0 +1,12 @@
+{
+  "name": "upload",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "busboy": "^1.6.0"
+  }
+}
