@@ -1,6 +1,5 @@
 'use strict';
 import { S3 } from '@aws-sdk/client-s3'
-import * as parser from 'lambda-multipart-parser'
 import pkg from 'busboy';
 const busboy = pkg;
 
@@ -21,10 +20,8 @@ export const handler = async (event, context, callback) => {
     const result = await parse(request);
     console.log(request)
 
-    if (request.httpMethod === 'POST') {
+    if (request.httpMethod === 'PUT') {
         console.log(result)
-        const files = result.files;
-        delete result.files;
 
         const id = result['id'];
         console.log(JSON.stringify(result))
@@ -38,13 +35,6 @@ export const handler = async (event, context, callback) => {
               console.log(JSON.stringify(err) + ' ' + JSON.stringify(data));
             }
           );
-        
-        s3.putObject({ 
-            Bucket: uploadBucket, 
-            Key: `clips/${id}/${id}.mp4`,
-            Body: files[0]?.content }
-        );
-
     }
     
     callback(null, request);

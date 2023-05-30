@@ -1,5 +1,5 @@
-import { Duration, Stack, StackProps } from 'aws-cdk-lib';
-import { Bucket, BlockPublicAccess, CorsRule, HttpMethods } from 'aws-cdk-lib/aws-s3';
+import { Duration, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
+import { Bucket, BlockPublicAccess, CorsRule, HttpMethods, CfnBucket } from 'aws-cdk-lib/aws-s3';
 import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions } from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
@@ -17,11 +17,16 @@ import { Construct } from 'constructs';
 import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
 
 
+export interface StorageStackProps extends StackProps {
+  apiGateway: LambdaRestApi
+}
+
+
 export class StorageStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props: StorageStackProps) {
     super(scope, id, props);
     const corsRule: CorsRule = {
-      allowedMethods: [HttpMethods.GET, HttpMethods.PUT],
+      allowedMethods: [HttpMethods.DELETE, HttpMethods.GET, HttpMethods.HEAD, HttpMethods.POST, HttpMethods.PUT],
       allowedOrigins: ['*'],
       allowedHeaders: ['*'],
     };
@@ -32,59 +37,13 @@ export class StorageStack extends Stack {
       cors: [corsRule],
       versioned: true,
     });
-    
 
-    // Cert created manually because there is a wait time for approval
-    const domainCert = Certificate.fromCertificateArn(
-      this,
-      'HoldMyClipsDomainCert',
-      'arn:aws:acm:us-east-1:879223189443:certificate/7af9de79-58db-41b7-a4ae-d93334ff4f9e'
-    );
-
-    const domainName = 'clips.dunned024.com'
-
-
-    // const apiDefaultHandler = new NodejsFunction(
-    //   this,
-    //   "apiDefaultHandler",
-    //   {
-    //     runtime: Runtime.NODEJS_18_X,
-    //     handler: "get",
-    //     entry: path.join(__dirname, "../../api/default/index.ts"),
-    //     memorySize: 1024,
-    //   }
-    // );
-
-    const uploadLambda = new UploadLambda(this, 'HoldMyClipsUpload');
-    const apiGateway = new LambdaRestApi(this, "apiGateway", {
-      handler: uploadLambda.handler,
-      proxy: false,
-    });
-    const upload = apiGateway.root.addResource('upload');
-    upload.addMethod('POST');  // POST /upload
-
-    // /api
-    // const apiRoute = apiGateway.root.addResource("upload")
-    
-    // /api/upload
-    // const apiHelloRoute = apiRoute.addResource("upload");
-    // // POST
-    // apiHelloRoute.addMethod(
-    //   "POST",
-    //   new LambdaIntegration(uploadLambda.handler)
-    // );
-
-    const apiOrigin = new RestApiOrigin(apiGateway)
+    const apiOrigin = new RestApiOrigin(props.apiGateway, {originPath: '/prod'}) // originPath points to the Stage
     const uploadBehavior: BehaviorOptions = {
       allowedMethods: AllowedMethods.ALLOW_ALL,
       origin: apiOrigin,
       originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-      // edgeLambdas: [{
-      //   functionVersion: uploadLambda.handler.currentVersion,
-      //   eventType: LambdaEdgeEventType.VIEWER_REQUEST,
-      //   includeBody: true
-      // }],
     }
 
     const originAccessIdentity = new OriginAccessIdentity(this, 'HoldMyClipsOAI');
@@ -99,7 +58,7 @@ export class StorageStack extends Stack {
     const authLambda = new AuthLambda(this, 'HoldMyClipsAuth');
     const s3Origin = new S3Origin(bucket, {originAccessIdentity})
     const defaultBehavior: BehaviorOptions = {
-      allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+      allowedMethods: AllowedMethods.ALLOW_ALL,
       cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
       cachePolicy,
       origin: s3Origin,
@@ -111,28 +70,6 @@ export class StorageStack extends Stack {
       // }],
     }
 
-    // const newDistribution = new CloudFrontWebDistribution(this, 'h', {
-    //   originConfigs: [
-    //     {
-    //       s3OriginSource: {s3BucketSource: bucket, originAccessIdentity},
-    //       behaviors: [
-    //         { ...defaultBehavior,
-    //           // lambdaFunctionAssociations: [
-    //           //   {
-    //           //     lambdaFunction: staticRewriteLambda,
-    //           //     eventType: cloudfront.LambdaEdgeEventType.VIEWER_REQUEST,
-    //           //   },
-    //           // ],
-    //           isDefaultBehavior: true,
-    //         },
-    //       ],
-    //     },
-    //   ],
-    //   behaviors: [ {
-    //     'upload': uploadBehavior,
-    //   }],
-    // })
-
     const errorResponses: ErrorResponse[] = [403, 404].map((status) => {
       return {
         httpStatus: status,
@@ -142,18 +79,26 @@ export class StorageStack extends Stack {
       }}
     )
 
+    // Cert created manually because there is a wait time for approval
+    const domainCert = Certificate.fromCertificateArn(
+      this,
+      'HoldMyClipsDomainCert',
+      'arn:aws:acm:us-east-1:879223189443:certificate/7af9de79-58db-41b7-a4ae-d93334ff4f9e'
+    );
+
+    const domainName = 'clips.dunned024.com'
+  
     const distribution = new Distribution(this, 'HoldMyClipsDistribution', {
       additionalBehaviors: {
-        'upload': uploadBehavior,
+        'upload': uploadBehavior, // pathPattern matches API endpoint
       },
       certificate: domainCert,
       defaultBehavior: defaultBehavior,
       defaultRootObject: 'index.html',
       domainNames: [domainName],
-      enableLogging: true,
       errorResponses: errorResponses,
     });
-    
+
     // Domain & hosted zone also created manually
     const hostedZone = PublicHostedZone.fromPublicHostedZoneAttributes(
       this,
@@ -169,6 +114,12 @@ export class StorageStack extends Stack {
       target: RecordTarget.fromAlias(new CloudFrontTarget(distribution)),
       zone: hostedZone
     });
+
+    const policyOverride = bucket.node.findChild("Policy").node.defaultChild as CfnBucket;
+    policyOverride.addOverride(
+      "Properties.PolicyDocument.Statement.0.Action",
+      ["s3:GetObject", "s3:PutObject"],
+    );
   }
 }
 
@@ -195,43 +146,4 @@ class AuthLambda extends Construct {
         role: authRole,
       });
     }
-}
-
-class UploadLambda extends Construct {
-  public readonly handler: Function;
-
-  constructor(scope: Construct, id: string) {
-    super(scope, id);
-
-    const uploadPolicy = new PolicyDocument({
-      statements: [new PolicyStatement({
-        actions: [
-          's3:PutObject*',
-          's3:PutObjectAcl*',
-          's3:GetObject*',
-          's3:GetObjectAcl*',
-          's3:DeleteObject',
-        ],
-        resources: ['arn:aws:s3:::hold-my-clips/clips/*'],
-      })]
-    })
-    
-    const uploadRole = new Role(this, 'HoldMyClipsUploadRole', {
-      roleName: 'hold-my-clips-lambda-upload-role',
-      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
-      managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
-      ],
-      inlinePolicies: {
-        'HMC-lambda-s3-access': uploadPolicy
-      }
-    });
-
-    this.handler = new Function(this, 'HoldMyClipsUploadFunction', {
-      runtime: Runtime.NODEJS_18_X,
-      handler: 'index.handler',
-      code: Code.fromAsset(path.join(__dirname, '../services/upload/')),
-      role: uploadRole,
-    });
-  }
 }
