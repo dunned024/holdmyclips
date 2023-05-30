@@ -2,6 +2,18 @@
     height: 100%;
 }
 
+.upload-link button {
+    transition-duration: 0.1s;
+    background-color: #f4faff;
+    border: none;
+    border-radius: 8px;
+}
+
+.upload-link button:hover {
+    transition-duration: 0.1s;
+    background-color: #3fb18e;
+}
+
 .clip-rows {
     display: flex;
     flex-direction: row;
