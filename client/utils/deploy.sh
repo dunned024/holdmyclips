@@ -6,7 +6,7 @@ echo "Uploading new deployment..."
 aws s3 sync build/ s3://hold-my-clips
 
 echo "Creating distribution invalidation..."
-distribution_id=E34558O1IE6MR5
+distribution_id=EAJEQLV6LELMF
 echo "Distribution ID: ${distribution_id}"
 
 invalidation_id=$(aws cloudfront create-invalidation --distribution-id ${distribution_id} --paths "/*" --query "Invalidation.Id" --output text)

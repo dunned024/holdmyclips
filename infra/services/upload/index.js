@@ -57,15 +57,14 @@ const storeIndexRecord = async (id, parsedData) => {
 const getDynamoTableName = () => new Promise((resolve, reject) => {
     const cloudFormation = new CloudFormation();
 
-    cloudFormation.describeStacks({StackName: 'HMCUpload'}, function(err, data) {
+    cloudFormation.describeStacks({StackName: 'HMCClipdex'}, function(err, data) {
         if (err) {
             console.log(err, err.stack);
             reject(err)
         } else {
             const stackOutputs = data.Stacks[0].Outputs
-            const tableName = stackOutputs.find(o => o.OutputKey === 'DynamoDbTableName')['OutputValue'];
+            const tableName = stackOutputs.find(o => o.OutputKey === 'ClipdexTableName')['OutputValue'];
             resolve(tableName)
         }
     })
 })
-  

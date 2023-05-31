@@ -1,11 +1,11 @@
-import { Duration, RemovalPolicy, Stack, StackProps } from 'aws-cdk-lib';
+import { Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { Bucket, BlockPublicAccess, CorsRule, HttpMethods, CfnBucket } from 'aws-cdk-lib/aws-s3';
 import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions } from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { experimental } from 'aws-cdk-lib/aws-cloudfront';
-import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
-import { Role, ManagedPolicy, ServicePrincipal, PolicyDocument, PolicyStatement } from 'aws-cdk-lib/aws-iam';
+import { Code, Runtime } from 'aws-cdk-lib/aws-lambda';
+import { Role, ManagedPolicy, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import path from 'path';
 import {
   ARecord,
@@ -17,13 +17,13 @@ import { Construct } from 'constructs';
 import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
 
 
-export interface StorageStackProps extends StackProps {
+export interface StaticSiteStackProps extends StackProps {
   apiGateway: LambdaRestApi
 }
 
 
-export class StorageStack extends Stack {
-  constructor(scope: Construct, id: string, props: StorageStackProps) {
+export class StaticSiteStack extends Stack {
+  constructor(scope: Construct, id: string, props: StaticSiteStackProps) {
     super(scope, id, props);
     const corsRule: CorsRule = {
       allowedMethods: [HttpMethods.DELETE, HttpMethods.GET, HttpMethods.HEAD, HttpMethods.POST, HttpMethods.PUT],
@@ -31,7 +31,7 @@ export class StorageStack extends Stack {
       allowedHeaders: ['*'],
     };
 
-    const bucket = new Bucket(this, 'HoldMyClipsS3Bucket', {
+    const bucket = new Bucket(this, 'Bucket', {
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       bucketName: 'hold-my-clips',
       cors: [corsRule],
@@ -46,16 +46,16 @@ export class StorageStack extends Stack {
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     }
 
-    const originAccessIdentity = new OriginAccessIdentity(this, 'HoldMyClipsOAI');
+    const originAccessIdentity = new OriginAccessIdentity(this, 'OAI');
 
-    const cachePolicy = new CachePolicy(this, 'HoldMyClipsDistributionCachePolicy', {
+    const cachePolicy = new CachePolicy(this, 'DistributionCachePolicy', {
       defaultTtl: Duration.days(7),
       headerBehavior: CacheHeaderBehavior.allowList('Origin'),
       maxTtl: Duration.days(30),
       minTtl: Duration.days(1),
     })
 
-    const authLambda = new AuthLambda(this, 'HoldMyClipsAuth');
+    const authLambda = new AuthLambda(this, 'AuthLambda');
     const s3Origin = new S3Origin(bucket, {originAccessIdentity})
     const defaultBehavior: BehaviorOptions = {
       allowedMethods: AllowedMethods.ALLOW_ALL,
@@ -82,13 +82,13 @@ export class StorageStack extends Stack {
     // Cert created manually because there is a wait time for approval
     const domainCert = Certificate.fromCertificateArn(
       this,
-      'HoldMyClipsDomainCert',
+      'DomainCert',
       'arn:aws:acm:us-east-1:879223189443:certificate/7af9de79-58db-41b7-a4ae-d93334ff4f9e'
     );
 
     const domainName = 'clips.dunned024.com'
   
-    const distribution = new Distribution(this, 'HoldMyClipsDistribution', {
+    const distribution = new Distribution(this, 'Distribution', {
       additionalBehaviors: {
         'upload': uploadBehavior, // pathPattern matches API endpoint
       },
@@ -102,14 +102,14 @@ export class StorageStack extends Stack {
     // Domain & hosted zone also created manually
     const hostedZone = PublicHostedZone.fromPublicHostedZoneAttributes(
       this,
-      'HoldMyClipsPublicHostedZone',
+      'PublicHostedZone',
       {
         zoneName: 'dunned024.com',
         hostedZoneId: 'Z03422011GHHEJEF39FO6'
       }
     );
 
-    new ARecord(this, 'HoldMyClipsDnsRecord', {
+    new ARecord(this, 'DnsRecord', {
       recordName: domainName,
       target: RecordTarget.fromAlias(new CloudFrontTarget(distribution)),
       zone: hostedZone
@@ -130,7 +130,7 @@ class AuthLambda extends Construct {
     constructor(scope: Construct, id: string) {
       super(scope, id);
 
-      const authRole = new Role(this, 'HoldMyClipsAuthRole', {
+      const authRole = new Role(this, 'Role', {
         roleName: 'hold-my-clips-lambda-auth-role',
         assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
         managedPolicies: [
@@ -139,7 +139,7 @@ class AuthLambda extends Construct {
         ]
       });
 
-      this.edgeLambda = new experimental.EdgeFunction(this, 'HoldMyClipsAuthFunction', {
+      this.edgeLambda = new experimental.EdgeFunction(this, 'Function', {
         runtime: Runtime.NODEJS_18_X,
         handler: 'index.handler',
         code: Code.fromAsset(path.join(__dirname, '../services/auth/')),
