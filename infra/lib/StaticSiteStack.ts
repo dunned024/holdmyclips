@@ -39,7 +39,7 @@ export class StaticSiteStack extends Stack {
     });
 
     const apiOrigin = new RestApiOrigin(props.apiGateway, {originPath: '/prod'}) // originPath points to the Stage
-    const uploadBehavior: BehaviorOptions = {
+    const clipdexBehavior: BehaviorOptions = {
       allowedMethods: AllowedMethods.ALLOW_ALL,
       origin: apiOrigin,
       originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
@@ -90,7 +90,7 @@ export class StaticSiteStack extends Stack {
   
     const distribution = new Distribution(this, 'Distribution', {
       additionalBehaviors: {
-        'upload': uploadBehavior, // pathPattern matches API endpoint
+        'clips': clipdexBehavior, // pathPattern matches API endpoint
       },
       certificate: domainCert,
       defaultBehavior: defaultBehavior,

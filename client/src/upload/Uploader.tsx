@@ -19,7 +19,7 @@ import './Uploader.css';
       // "The CloudFront event is set Viewer request to meaning the function is invoked in reaction to PUT events from the client"
       
       const id = formData.get('id')
-      const res = await fetch(`/upload`, {
+      const res = await fetch(`/clips`, {
         method: 'PUT',
         body: formData,
       });

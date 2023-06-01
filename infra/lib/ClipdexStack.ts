@@ -30,20 +30,13 @@ export class ClipdexStack extends Stack {
     // GET Integration with DynamoDb
     const dynamoQueryIntegration = new AwsIntegration({
       service: 'dynamodb',
-      action: 'Query',
+      action: 'Scan',
       options: {
         passthroughBehavior: PassthroughBehavior.WHEN_NO_TEMPLATES,
         credentialsRole: integrationRole,
-        requestParameters: {
-          'integration.request.path.id': 'method.request.path.id'
-        },
         requestTemplates: {
           'application/json': JSON.stringify({
               'TableName': clipdexTable.tableName,
-              'KeyConditionExpression': 'pk = :v1',
-              'ExpressionAttributeValues': {
-                  ':v1': {'S': "$input.params('id')"}
-              }
           }),
         },
         integrationResponses: [{ statusCode: '200' }],
@@ -52,10 +45,9 @@ export class ClipdexStack extends Stack {
 
     clipsResource.addMethod('GET', dynamoQueryIntegration, {
       methodResponses: [{ statusCode: '200' }],
-      requestParameters: {
-        'method.request.path.id': true
-      }
     })
+
+    clipdexTable.grantReadData(integrationRole);
 
     // Add Lambda integration for uploading clips
     const uploadLambda = new UploadLambda(this, 'Lambda');
@@ -88,7 +80,7 @@ class UploadLambda extends Construct {
       actions: [
         'cloudformation:DescribeStacks',
       ],
-      resources: ['arn:aws:cloudformation:us-east-1:*:stack/HMCUpload*'],
+      resources: ['arn:aws:cloudformation:us-east-1:*:stack/HMCClipdex*'],
     })
 
     const uploadPolicy = new PolicyDocument({
