@@ -10,16 +10,13 @@ export function Home() {
     async function getClips() {
       const res = await fetch('/clips');
       const data = await res.json();
-      console.log(data)
+      setClips(JSON.parse(data).clips)
 
-      // const promises = data.map(async (id: string) => {
+      // const promises = data.Items.map(async (id: string) => {
       //   const res = await fetch(`https://clips.dunned024.com/clips/${id}/${id}.json`);
       //   return await res.json();
       // })
 
-      // Promise.all(promises).then((clipList) =>
-      //   setClips(clipList)
-      // )
     }
 
     if (!clips.length) {

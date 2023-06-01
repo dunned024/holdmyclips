@@ -43,7 +43,26 @@ export class ClipdexStack extends Stack {
               'TableName': clipdexTable.tableName,
           }),
         },
-        integrationResponses: [{ statusCode: '200' }],
+        integrationResponses: [{ 
+          statusCode: '200', 
+          responseTemplates: {
+            'application/json': JSON.stringify(`
+              #set($inputRoot = $input.path('$'))
+              {
+                  "clips": [
+                      #foreach($elem in $inputRoot.Items) {
+                          "id": "$elem.id.S",
+                          "duration": "$elem.duration.N",
+                          "description": "$elem.description.N",
+                          "uploader": "$elem.uploader.N",
+                          "title": "$elem.title.S"
+                      }#if($foreach.hasNext),#end
+                #end
+                  ]
+              }
+            `)
+          } 
+        }],
       }
     })
 
