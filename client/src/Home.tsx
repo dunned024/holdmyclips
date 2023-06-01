@@ -8,17 +8,18 @@ export function Home() {
 
   useEffect(() => {
     async function getClips() {
-      const res = await fetch(`https://clips.dunned024.com/clips/clips.json`);
+      const res = await fetch('/clips');
       const data = await res.json();
+      console.log(data)
 
-      const promises = data.map(async (id: string) => {
-        const res = await fetch(`https://clips.dunned024.com/clips/${id}/${id}.json`);
-        return await res.json();
-      })
+      // const promises = data.map(async (id: string) => {
+      //   const res = await fetch(`https://clips.dunned024.com/clips/${id}/${id}.json`);
+      //   return await res.json();
+      // })
 
-      Promise.all(promises).then((clipList) =>
-        setClips(clipList)
-      )
+      // Promise.all(promises).then((clipList) =>
+      //   setClips(clipList)
+      // )
     }
 
     if (!clips.length) {

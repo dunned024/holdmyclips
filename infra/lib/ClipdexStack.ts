@@ -15,7 +15,11 @@ export class ClipdexStack extends Stack {
     //   handler: uploadLambda.handler,
     //   proxy: false,
     // });
-    this.apiGateway = new RestApi(this, "RestApi");
+    this.apiGateway = new RestApi(this, "RestApi", {
+      defaultCorsPreflightOptions: {
+        allowOrigins: ['*'],
+      }
+    });
     const clipsResource = this.apiGateway.root.addResource('clips');
 
     const integrationRole = new Role(this, 'IntegrationRole', {

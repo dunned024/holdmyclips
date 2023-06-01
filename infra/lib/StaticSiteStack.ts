@@ -42,25 +42,24 @@ export class StaticSiteStack extends Stack {
     const clipdexBehavior: BehaviorOptions = {
       allowedMethods: AllowedMethods.ALLOW_ALL,
       origin: apiOrigin,
-      originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
+      originRequestPolicy: OriginRequestPolicy.CORS_CUSTOM_ORIGIN,
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     }
 
     const originAccessIdentity = new OriginAccessIdentity(this, 'OAI');
 
-    const cachePolicy = new CachePolicy(this, 'DistributionCachePolicy', {
-      defaultTtl: Duration.days(7),
-      headerBehavior: CacheHeaderBehavior.allowList('Origin'),
-      maxTtl: Duration.days(30),
-      minTtl: Duration.days(1),
-    })
+    // const cachePolicy = new CachePolicy(this, 'DistributionCachePolicy', {
+    //   defaultTtl: Duration.days(7),
+    //   headerBehavior: CacheHeaderBehavior.allowList('Origin'),
+    //   maxTtl: Duration.days(30),
+    //   minTtl: Duration.days(1),
+    // })
 
     const authLambda = new AuthLambda(this, 'AuthLambda');
     const s3Origin = new S3Origin(bucket, {originAccessIdentity})
     const defaultBehavior: BehaviorOptions = {
       allowedMethods: AllowedMethods.ALLOW_ALL,
       cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
-      cachePolicy,
       origin: s3Origin,
       originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
