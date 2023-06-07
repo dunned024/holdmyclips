@@ -1,4 +1,4 @@
-import { Duration, Stack, StackProps } from 'aws-cdk-lib';
+import { CfnOutput, Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { Bucket, BlockPublicAccess, CorsRule, HttpMethods, CfnBucket } from 'aws-cdk-lib/aws-s3';
 import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions } from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
@@ -119,6 +119,8 @@ export class StaticSiteStack extends Stack {
       "Properties.PolicyDocument.Statement.0.Action",
       ["s3:GetObject", "s3:PutObject"],
     );
+
+    new CfnOutput(this, 'StaticSiteDistributionId', { value: distribution.distributionId });
   }
 }
 

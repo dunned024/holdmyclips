@@ -10,11 +10,7 @@ export class ClipdexStack extends Stack {
   public readonly apiGateway: LambdaRestApi;
 
   constructor(scope: Construct, id: string, props?: StackProps) {
-    super(scope, id, props);    
-    // this.apiGateway = new LambdaRestApi(this, "RestApi", {
-    //   handler: uploadLambda.handler,
-    //   proxy: false,
-    // });
+    super(scope, id, props);
     this.apiGateway = new RestApi(this, "RestApi", {
       defaultCorsPreflightOptions: {
         allowOrigins: ['*'],
@@ -103,11 +99,18 @@ class UploadLambda extends Construct {
       actions: [
         'cloudformation:DescribeStacks',
       ],
-      resources: ['arn:aws:cloudformation:us-east-1:*:stack/HMCClipdex*'],
+      resources: ['arn:aws:cloudformation:us-east-1:*:stack/HMC*'],
+    })
+
+    const cloudfrontPolicyStatement = new PolicyStatement({
+      actions: [
+        'cloudfront:CreateInvalidation',
+      ],
+      resources: ['*'],
     })
 
     const uploadPolicy = new PolicyDocument({
-      statements: [s3PolicyStatement, cloudformationPolicyStatement]
+      statements: [s3PolicyStatement, cloudformationPolicyStatement, cloudfrontPolicyStatement]
     })
     
     const uploadRole = new Role(this, 'Role', {
