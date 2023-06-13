@@ -1,10 +1,17 @@
 import { App, Environment, Fn, Stack } from 'aws-cdk-lib';
 import { StaticSiteStack } from './StaticSiteStack';
 import { ClipdexStack } from './ClipdexStack';
+import { HostedDomainStack } from './HostedDomainStack';
+import { AuthStack } from './AuthStack';
+import { ConfiguredStackProps, loadConfig } from './config';
 
 export default function createStacks(app: App, env: Environment): Stack[] {
-  const clipdexStack = new ClipdexStack(app, 'HMCClipdex', {env});
-  const staticSiteStack = new StaticSiteStack(app, 'HMCStaticSite', {env, apiGateway: clipdexStack.apiGateway});
+  const config: ConfiguredStackProps = loadConfig(app, env);
 
-  return [staticSiteStack, clipdexStack];
+  const hostedDomainStack = new HostedDomainStack(app, 'HMCHostedDomain', config);
+  const clipdexStack = new ClipdexStack(app, 'HMCClipdex', config);
+  const authStack = new AuthStack(app, 'HMCAuth', {...config, hostedDomain: hostedDomainStack.hostedDomain});
+  const staticSiteStack = new StaticSiteStack(app, 'HMCStaticSite', {...config, apiGateway: clipdexStack.apiGateway, hostedDomain: hostedDomainStack.hostedDomain});
+
+  return [hostedDomainStack, clipdexStack, authStack, staticSiteStack];
 }

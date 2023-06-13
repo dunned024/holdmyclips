@@ -5,11 +5,12 @@ import { ManagedPolicy, PolicyDocument, PolicyStatement, Role, ServicePrincipal 
 import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 import path from 'path';
+import { ConfiguredStackProps } from './config';
 
 export class ClipdexStack extends Stack {
   public readonly apiGateway: LambdaRestApi;
 
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props: ConfiguredStackProps) {
     super(scope, id, props);
     this.apiGateway = new RestApi(this, "RestApi", {
       defaultCorsPreflightOptions: {

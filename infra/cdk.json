@@ -48,6 +48,12 @@
     "@aws-cdk/aws-redshift:columnId": true,
     "@aws-cdk/aws-stepfunctions-tasks:enableEmrServicePolicyV2": true,
     "@aws-cdk/aws-ec2:restrictDefaultSecurityGroup": true,
-    "@aws-cdk/aws-apigateway:requestValidatorUniqueId": true
+    "@aws-cdk/aws-apigateway:requestValidatorUniqueId": true,
+    "appConfig": {
+      "domainName": "dunned024.com",
+      "fqdn": "clips.dunned024.com",
+      "certArn": "arn:aws:acm:us-east-1:879223189443:certificate/7af9de79-58db-41b7-a4ae-d93334ff4f9e",
+      "hostedZoneId": "Z03422011GHHEJEF39FO6"
+    }
   }
 }
