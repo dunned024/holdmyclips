@@ -52,7 +52,7 @@
     "appConfig": {
       "domainName": "dunned024.com",
       "fqdn": "clips.dunned024.com",
-      "certArn": "arn:aws:acm:us-east-1:879223189443:certificate/7af9de79-58db-41b7-a4ae-d93334ff4f9e",
+      "certArn": "arn:aws:acm:us-east-1:879223189443:certificate/4bb6a310-c73e-4e65-a4d1-9359a4c74efe",
       "hostedZoneId": "Z03422011GHHEJEF39FO6"
     }
   }

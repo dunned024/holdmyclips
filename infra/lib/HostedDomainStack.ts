@@ -32,12 +32,6 @@ export class HostedDomainStack extends Stack {
       }
     );
 
-    new ARecord(this, 'DummyDnsRecord', {
-      recordName: props.domainName,
-      target: RecordTarget.fromIpAddresses('8.8.8.8'),
-      zone: hostedZone
-    })
-
     this.hostedDomain = {
       cert,
       hostedZone,

@@ -11,7 +11,7 @@ export default function createStacks(app: App, env: Environment): Stack[] {
   const hostedDomainStack = new HostedDomainStack(app, 'HMCHostedDomain', config);
   const clipdexStack = new ClipdexStack(app, 'HMCClipdex', config);
   const authStack = new AuthStack(app, 'HMCAuth', {...config, hostedDomain: hostedDomainStack.hostedDomain});
-  const staticSiteStack = new StaticSiteStack(app, 'HMCStaticSite', {...config, apiGateway: clipdexStack.apiGateway, hostedDomain: hostedDomainStack.hostedDomain});
+  const staticSiteStack = new StaticSiteStack(app, 'HMCStaticSite', {...config, apiGateway: clipdexStack.apiGateway, cloudFrontAuth: authStack.cloudFrontAuth, hostedDomain: hostedDomainStack.hostedDomain});
 
   return [hostedDomainStack, clipdexStack, authStack, staticSiteStack];
 }
