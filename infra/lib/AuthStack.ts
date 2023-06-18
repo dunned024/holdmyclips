@@ -33,10 +33,6 @@ export class AuthStack extends Stack {
 
     const userPool = new UserPool(this, 'UserPool', {
       autoVerify: { email: true },
-      // lambdaTriggers: {
-      //   preSignUp: 
-      //   preAuthentication: 
-      // },
       userPoolName: 'hold-my-clips-user-pool',
       selfSignUpEnabled: true,
       signInAliases: {
@@ -99,13 +95,7 @@ export class AuthStack extends Stack {
       zone: props.hostedDomain.hostedZone
     });
 
-    // Sign-up Lambda ??
-    // const signupLambda = SignupLambda()
-    // const role = new Role(this, 'role', {
-    //   assumedBy: new ServicePrincipal(signupLambda),
-    // });
-    // userPool.grant(role, 'cognito-idp:AdminCreateUser');
-
+    // From https://github.com/henrist/cdk-cloudfront-auth
     const authLambdas = new AuthLambdas(this, 'AuthLambdas', {
       regions: ["us-east-1"],
     })
@@ -115,31 +105,5 @@ export class AuthStack extends Stack {
       authLambdas,
       userPool,
     })
-  }
-}
-
-
-
-class AuthLambda extends Construct {
-  public readonly edgeLambda: experimental.EdgeFunction;
-
-  constructor(scope: Construct, id: string) {
-    super(scope, id);
-
-    const authRole = new Role(this, 'Role', {
-      roleName: 'hold-my-clips-lambda-auth-role',
-      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
-      managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
-        ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMReadOnlyAccess'),
-      ]
-    });
-
-    this.edgeLambda = new experimental.EdgeFunction(this, 'Function', {
-      runtime: Runtime.NODEJS_18_X,
-      handler: 'index.handler',
-      code: Code.fromAsset(path.join(__dirname, '../services/auth/')),
-      role: authRole,
-    });
   }
 }

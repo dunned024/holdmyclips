@@ -1,5 +1,5 @@
 import { CfnOutput, Duration, Stack, StackProps } from 'aws-cdk-lib';
-import { Bucket, BlockPublicAccess, CorsRule, HttpMethods, CfnBucket } from 'aws-cdk-lib/aws-s3';
+import { Bucket, BlockPublicAccess, CorsRule, HttpMethods, CfnBucket, ObjectOwnership, BucketAccessControl } from 'aws-cdk-lib/aws-s3';
 import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions, AddBehaviorOptions } from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
 import { experimental } from 'aws-cdk-lib/aws-cloudfront';
@@ -57,7 +57,6 @@ export class StaticSiteStack extends Stack {
     //   minTtl: Duration.days(1),
     // })
 
-    // const authLambda = new AuthLambda(this, 'AuthLambda');
     const defaultBehavior: AddBehaviorOptions = {
       allowedMethods: AllowedMethods.ALLOW_ALL,
       cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
@@ -74,6 +73,17 @@ export class StaticSiteStack extends Stack {
       }}
     )
 
+    // Re-evaluate whether or not this is needed, based on how much it
+    // costs to store these logs vs. their usefulness.
+    // They're also not easy to use, since I'm not spending money on
+    // Athena.
+    const logBucket = new Bucket(this, 'LogBucket', {
+      accessControl: BucketAccessControl.BUCKET_OWNER_FULL_CONTROL,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      bucketName: 'hold-my-clips-distribution-logs',
+      objectOwnership: ObjectOwnership.OBJECT_WRITER,
+    });
+
     const s3Origin = new S3Origin(bucket, {originAccessIdentity})
     const auth = props.cloudFrontAuth;
     const distribution = new Distribution(this, 'Distribution', {
@@ -86,6 +96,7 @@ export class StaticSiteStack extends Stack {
       defaultRootObject: 'index.html',
       domainNames: [props.fqdn],
       errorResponses: errorResponses,
+      logBucket: logBucket,
     });
 
     new ARecord(this, 'DnsRecord', {
