@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Clip, Comment } from './types';
+import { Clip, Comment, parseClip } from './types';
 import './Player.css';
 import { useParams } from 'react-router-dom';
 
@@ -14,7 +14,7 @@ export function Player(){
       try {
         const res = await fetch(`https://clips.dunned024.com/clips/${id}/${id}.json`);
         const data = await res.json();
-        setClip(data);
+        setClip(parseClip(data));
       } catch (error) {
         console.log(error);
       }

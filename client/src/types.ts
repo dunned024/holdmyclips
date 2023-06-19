@@ -15,3 +15,15 @@ export interface Comment {
   text: string,
   postedAt: Date
 }
+
+export function parseClip(rawClip: Record<string, string>): Clip {
+  return {
+    id: rawClip.id,
+    title: rawClip.title,
+    uploader: rawClip.uploader,
+    description: rawClip.description,
+    duration: parseInt(rawClip.duration),
+    views: parseInt(rawClip.views),
+    comments: JSON.parse(rawClip.comments)
+  }
+}

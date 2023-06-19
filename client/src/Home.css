@@ -3,6 +3,10 @@
 }
 
 .upload-link button {
+    height: 45px;
+    width: 200px;
+
+    font-size: 26px;
     transition-duration: 0.1s;
     background-color: #f4faff;
     border: none;
