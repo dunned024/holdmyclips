@@ -17,12 +17,14 @@ export class ClipdexStack extends Stack {
         allowOrigins: ['*'],
       }
     });
-    const clipsResource = this.apiGateway.root.addResource('clips');
 
     const integrationRole = new Role(this, 'IntegrationRole', {
       assumedBy: new ServicePrincipal('apigateway.amazonaws.com'),
     })
 
+    // Create 'clips' resource for uploading & querying clip metadata
+    const clipsResource = this.apiGateway.root.addResource('clips');
+  
     // Create DynamoDB table to act as metadata index
     const clipdexTable = new Table(this, 'ClipdexTable', {
       partitionKey: {name:'id', type: AttributeType.STRING},
@@ -76,6 +78,10 @@ export class ClipdexStack extends Stack {
     clipdexTable.grantReadWriteData(uploadLambda.handler);
 
     new CfnOutput(this, 'ClipdexTableName', { value: clipdexTable.tableName });
+
+    // Create 'users' resource for querying user details
+    const usersResource = this.apiGateway.root.addResource('users');
+  
   }
 }
 
