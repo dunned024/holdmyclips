@@ -1,6 +1,6 @@
 import { CfnOutput, Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { Bucket, BlockPublicAccess, CorsRule, HttpMethods, CfnBucket, ObjectOwnership, BucketAccessControl } from 'aws-cdk-lib/aws-s3';
-import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions, AddBehaviorOptions } from 'aws-cdk-lib/aws-cloudfront';
+import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions, AddBehaviorOptions, ResponseHeadersPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
 import { experimental } from 'aws-cdk-lib/aws-cloudfront';
 import { Code, Runtime } from 'aws-cdk-lib/aws-lambda';
@@ -28,7 +28,7 @@ export class StaticSiteStack extends Stack {
   constructor(scope: Construct, id: string, props: StaticSiteStackProps) {
     super(scope, id, props);
     const corsRule: CorsRule = {
-      allowedMethods: [HttpMethods.DELETE, HttpMethods.GET, HttpMethods.HEAD, HttpMethods.POST, HttpMethods.PUT],
+      allowedMethods: [HttpMethods.GET, HttpMethods.HEAD, HttpMethods.POST, HttpMethods.PUT],
       allowedOrigins: ['*'],
       allowedHeaders: ['*'],
     };
@@ -52,15 +52,31 @@ export class StaticSiteStack extends Stack {
 
     // const cachePolicy = new CachePolicy(this, 'DistributionCachePolicy', {
     //   defaultTtl: Duration.days(7),
-    //   headerBehavior: CacheHeaderBehavior.allowList('Origin'),
+    //   headerBehavior: CacheHeaderBehavior.allowList('Origin', "Content-Security-Policy"),
     //   maxTtl: Duration.days(30),
     //   minTtl: Duration.days(1),
     // })
 
+    const responseHeadersPolicy = new ResponseHeadersPolicy(this, 'ResponseHeadersPolicy', {
+      responseHeadersPolicyName: 'CorsAndCsp',
+      comment: 'Policy to allow CORS and CSP for media streaming',
+      corsBehavior: {
+        accessControlAllowCredentials: false,
+        accessControlAllowMethods: ['GET', 'HEAD', 'POST', 'PUT'],
+        accessControlAllowHeaders: ['*'],
+        accessControlAllowOrigins: ['*'],
+        originOverride: true,
+      },
+      securityHeadersBehavior: {
+        contentSecurityPolicy: { contentSecurityPolicy: "media-src 'self' blob:; manifest-src 'self'", override: true },
+      }
+    })
+  
     const defaultBehavior: AddBehaviorOptions = {
       allowedMethods: AllowedMethods.ALLOW_ALL,
       cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
       originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
+      responseHeadersPolicy,
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     }
 
