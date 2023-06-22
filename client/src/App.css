@@ -19,7 +19,7 @@
 }
 
 .app {
-  height: 100%;
+  min-height: calc(100vh - 64px);
   padding: 20px;
   background: linear-gradient(180deg, #374153 0%, #374153 75%, #282c34 100%);
 
