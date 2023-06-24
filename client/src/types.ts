@@ -27,3 +27,11 @@ export function parseClip(rawClip: Record<string, string>): Clip {
     comments: JSON.parse(rawClip.comments)
   }
 }
+
+export interface UploadForm extends FormData {
+  id: string,
+  title: string,
+  duration: number,
+  uploader: string,
+  description: string,
+}

@@ -4,7 +4,8 @@
 }
 
 .video-preview-container {
-    width: 70%;
+    height: 100%;
+    width: 75%;
 
     margin: 10px 10px;
 }
@@ -15,7 +16,7 @@
 }
 
 #clip-details-form {
-    width: 30%;
+    width: 25%;
 
     margin: 10px 10px;
     padding: 10px 10px;
@@ -28,35 +29,39 @@
     font-size: 20px;
 }
 
-#clip-details-form.field {
-    width: 100%;
-}
-
-#clip-details-form label {
-    width: 140px;
-    padding: 0 10px 0 0;
-
-    display: inline-block;
-    text-align: right;
-
-    font-size: 20px;
-}
-
-#clip-details-form input,textarea {
-    width: 70%;
-}
-
-#clip-details-form span {
-    display: inline-block;
-    width: 70%;
-    text-align: left;
-}
-
 #clip-details-form button {
-    height: 40px;
     width: 100%;
 }
 
 #clip-details-form button:hover {
     background-color: green;
+}
+
+#submit-button {
+    height: 50px;
+    width: 100%;
+    font-size: 32px;
+    margin: 20px 0px;
+}
+
+
+#thumbnail-container {
+    background-color: #1f2531;
+    margin: 0px 0px;
+    border-radius: 4px;
+    padding: 10px
+}
+
+/* #thumbnail-button-grid {
+    padding: 0px 10px;
+} */
+
+#thumbnail-button-grid button {
+    height: 30px;
+}
+
+#clip-details-form canvas {
+    margin: 10px 10px;
+    height: 400px;
+    width: 400px;
 }

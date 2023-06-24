@@ -2,22 +2,19 @@ import { DragEvent, useState } from 'react';
 import { FileSelector } from './FileSelector'
 import { Previewer } from './Previewer'
 import './Uploader.css';
+import { UploadForm } from '../types';
 
 
  export function Uploader() {
   const [source, setSource] = useState<File>();
 
-  async function uploadClip(formData: FormData) {
+  async function uploadClip(formData: UploadForm) {
     if (!source) {
       console.log('how did you get here?')
       return
     }
 
     try {
-      // TODO: create a lambda that uploads the function
-      // https://aws.amazon.com/blogs/compute/patterns-for-building-an-api-to-upload-files-to-amazon-s3/
-      // "The CloudFront event is set Viewer request to meaning the function is invoked in reaction to PUT events from the client"
-      
       const id = formData.get('id')
       const res = await fetch('/clips', {
         method: 'PUT',
