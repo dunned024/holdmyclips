@@ -103,9 +103,75 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
   );
 };
 
+
+enum ImageFit {
+  FIT,
+  FILL,
+  CROP,
+}
+
+interface Dimensions {
+  xOffset: number;
+  yOffset: number;
+  width: number;
+  height: number;
+}
+
+// class ThumbnailSource {
+//   public readonly width: number;
+//   public readonly height: number;
+
+//   constructor(source: HTMLVideoElement | HTMLImageElement | string) {
+//     if (typeof source === "string") {
+//       const s = new Image()
+//       s.src = source
+//     }
+//     this.width = s.tagName === "VIDEO" ? (source as HTMLVideoElement).videoWidth : source.width
+//     this.height = source.tagName === "VIDEO" ? (source as HTMLVideoElement).videoHeight : source.height
+//   }
+
+//   public getDestinationDimensions(canvas: HTMLCanvasElement, fit: ImageFit): Dimensions {
+//     const wRatio = canvas.width / this.width
+//     const hRatio = canvas.height / this.height
+    
+//     let dWidth, dHeight;
+//     if (fit === ImageFit.FILL) {
+//       dWidth = this.width * wRatio
+//       dHeight = this.height * hRatio
+//     }
+//     else if (fit === ImageFit.FIT) {
+//       const ratio = Math.min(wRatio, hRatio)
+//       dWidth = this.width * ratio
+//       dHeight = this.height * ratio
+//     }
+//     else if (fit === ImageFit.CROP) {
+//       const ratio = Math.max(wRatio, hRatio)
+//       dWidth = this.width * ratio
+//       dHeight = this.height * ratio
+//     }
+//     else {
+//       dWidth = this.width * wRatio
+//       dHeight = this.height * hRatio
+//     }
+
+//     const dx = ( canvas.width - dWidth ) / 2;
+//     const dy = ( canvas.height - dHeight ) / 2;
+
+//     return {
+//       xOffset: dx,
+//       yOffset: dy,
+//       width: dWidth,
+//       height: dHeight
+//     }
+//   }
+// }
+
 function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoElement | null>}) {
+  const [source, setSource] = useState<Blob | null>(null);
+  const [sourceDims, setSourceDims] = useState({width: 1920, height: 1080});
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const hiddenCanvasRef = useRef<HTMLCanvasElement>(null)
 
   const clear = function(canvas: HTMLCanvasElement) {
     const context = canvas.getContext('2d')
@@ -114,13 +180,99 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     }
     context.clearRect(0, 0, canvas.width, canvas.height);
     setThumbnailBlob(null)
+    setSource(null)
   }
 
-  enum ImageFit {
-    FIT,
-    FILL,
-    CROP,
+
+  const capture2 = function() {
+    const video = props.videoRef.current
+    if (video === null) {
+      return
+    }
+    const width = video.videoWidth
+    const height = video.videoHeight
+    setSourceDims({width, height})
+
+    const hiddenCanvas = hiddenCanvasRef.current;
+    if (hiddenCanvas === undefined || hiddenCanvas === null) {
+      return null
+    }
+    const context = hiddenCanvas.getContext('2d')
+    if (context === null) {
+      return null
+    }
+    context.drawImage(video, 0, 0);
+    hiddenCanvas.toBlob((blob: Blob | null) => {
+      if (!blob) {
+        return
+      }
+      setSource(blob)
+      translate(ImageFit.FILL, blob)
+    });
+    
+    // TODO: This resets the thumbnail if the user seeks a different time in the video
+    // Best bet is to: draw image onto canvas and save as image? Try toDataUrl()
+    //  https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toDataURL
+    //  Then https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Using_images#embedding_an_image_via_data_url
+    // Although, I don't want to reset the source image every time i resize/translate...
+    // I think I need a hidden canvas with 1:1 video ratio. When I capture, I draw the
+    // video frame onto this hidden canvas, then store the dataUrl as the image source
+    // Similarly, when uploading, I simply store the dataUrl as the image source
+    //  https://stackoverflow.com/questions/43007634/javascript-how-to-extract-frame-from-video
   }
+
+  const translate = function(fit: ImageFit, newSource?: Blob) {
+    const canvas = canvasRef.current;
+    if (canvas === undefined || canvas === null) {
+      return
+    }
+    const context = canvas.getContext('2d')
+    if (context === null) {
+      return
+    }
+  
+    const sourceImage = new Image();
+    sourceImage.onload = function(){
+      const width = sourceImage.naturalWidth
+      const height = sourceImage.naturalHeight
+      const wRatio = canvas.width / width
+      const hRatio = canvas.height / height
+      
+      let dWidth, dHeight;
+      if (fit === ImageFit.FILL) {
+        dWidth = width * wRatio
+        dHeight = height * hRatio
+      }
+      else if (fit === ImageFit.FIT) {
+        const ratio = Math.min(wRatio, hRatio)
+        dWidth = width * ratio
+        dHeight = height * ratio
+      }
+      else if (fit === ImageFit.CROP) {
+        const ratio = Math.max(wRatio, hRatio)
+        dWidth = width * ratio
+        dHeight = height * ratio
+      }
+      else {
+        dWidth = width * wRatio
+        dHeight = height * hRatio
+      }
+
+      const dx = ( canvas.width - dWidth ) / 2;
+      const dy = ( canvas.height - dHeight ) / 2;
+
+      context.fillStyle = "black";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(sourceImage, 0, 0, width, height, dx, dy, dWidth, dHeight);
+    }
+    if (source !== null) {
+      sourceImage.src = URL.createObjectURL(source);
+    } else if (newSource !== undefined) {
+      sourceImage.src = URL.createObjectURL(newSource);
+    } else {return}
+    canvas.toBlob((blob: Blob | null) => setThumbnailBlob(blob));
+  }
+
   
   const parseRefs = function(func: (canvas: HTMLCanvasElement, video: HTMLVideoElement) => void ) {
     const canvas = canvasRef.current
@@ -131,67 +283,46 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     func(canvas, video)
   }
 
-  const capture = function(canvas: HTMLCanvasElement, video: HTMLVideoElement, fit: ImageFit) {
-    const context = canvas.getContext('2d')
-    if (context === null) {
-      return
-    }
-    context.fillStyle = "black";
-    context.fillRect(0, 0, canvas.width, canvas.height);
+  // const handleUpload = function(canvas: HTMLCanvasElement, video: HTMLVideoElement){
+  //   const context = canvas.getContext('2d')
+  //   if (context === null) {
+  //     return
+  //   }
+  //   const reader = new FileReader();
+  //   reader.onload = function(event){
+  //       var img = new Image();
+  //       img.onload = () => fillSource(canvas)
+  //       img.src = event.target?.result ?? ""
+  //   }
+  //   reader.readAsDataURL(e.target.files[0]);     
+  // }
 
-    const width = video.videoWidth
-    const height = video.videoHeight
-    const wRatio = canvas.width / width
-    const hRatio = canvas.height / height
-    let dWidth, dHeight;
-
-    if (fit === ImageFit.FILL) {
-      dWidth = width * wRatio
-      dHeight = height * hRatio
-    }
-    else if (fit === ImageFit.FIT) {
-      const ratio = Math.min(wRatio, hRatio)
-      dWidth = width * ratio
-      dHeight = height * ratio
-    }
-    else if (fit === ImageFit.CROP) {
-      const ratio = Math.max(wRatio, hRatio)
-      dWidth = width * ratio
-      dHeight = height * ratio
-    }
-    else {
-      dWidth = width * wRatio
-      dHeight = height * hRatio
-    }
-
-    const dx = ( canvas.width - dWidth ) / 2;
-    const dy = ( canvas.height - dHeight ) / 2;
-    context.drawImage(video, 0, 0, width, height, dx, dy, dWidth, dHeight);
-    canvas.toBlob((blob: Blob | null) => setThumbnailBlob(blob));
-  }
-  
   return (
     <div id="thumbnail-container">
+      <canvas id="hiddenCanvas" ref={hiddenCanvasRef} width={sourceDims.width} height={sourceDims.height} style={{overflow: 'hidden', display: 'none'}}/>
       <div>Thumbnail:</div>
-      <canvas id="canvas" width="300" height="300" ref={canvasRef}></canvas>
+      <canvas id="canvas" width="400" height="400" ref={canvasRef} />
       <Grid id="thumbnail-button-grid" container spacing={0}>
-        <Grid xs={12}>
+        {/* <Grid xs={12}>
           <button type="button" onClick={() => parseRefs((x, y) => capture(x, y, ImageFit.FILL))}>Capture frame</button>
+        </Grid> */}
+        <Grid xs={12}>
+          <button type="button" onClick={() => capture2()}>Capture frame</button>
         </Grid>
         <Grid xs={12}>
-          <button type="button" onClick={() => parseRefs((x, y) => capture(x, y, ImageFit.FILL))}>Upload from file...</button>
+          <button type="button" onClick={() => capture2()}>Upload from file...</button>
         </Grid>
         <Grid xs={4}>
-          <button type="button" disabled={!thumbnailBlob} onClick={() => parseRefs((x, y) => capture(x, y, ImageFit.FILL))}>Fill</button>
+          <button type="button" disabled={!source} onClick={() => translate(ImageFit.FILL)}>Fill</button>
         </Grid>
         <Grid xs={4}>
-          <button type="button" disabled={!thumbnailBlob} onClick={() => parseRefs((x, y) => capture(x, y, ImageFit.FIT))}>Fit</button>
+          <button type="button" disabled={!source} onClick={() => translate(ImageFit.FIT)}>Fit</button>
         </Grid>
         <Grid xs={4}>
-          <button type="button" disabled={!thumbnailBlob} onClick={() => parseRefs((x, y) => capture(x, y, ImageFit.CROP))}>Crop</button>
+          <button type="button" disabled={!source} onClick={() => translate(ImageFit.CROP)}>Crop</button>
         </Grid>
         <Grid xs={12}>
-          <button type="button" disabled={!thumbnailBlob} onClick={() => parseRefs(clear)}>Clear</button>
+          <button type="button" disabled={!source} onClick={() => parseRefs(clear)}>Clear</button>
         </Grid>
       </Grid>
     </div>
