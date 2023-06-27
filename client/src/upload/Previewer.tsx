@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import './Previewer.css'
 import { randomId } from '../services/clipIdentifiers'
 import { UploadForm } from '../types';
@@ -170,10 +170,21 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
   const [source, setSource] = useState<Blob | null>(null);
   const [sourceDims, setSourceDims] = useState({width: 1920, height: 1080});
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
+  const inputRef = useRef(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hiddenCanvasRef = useRef<HTMLCanvasElement>(null)
 
-  const clear = function(canvas: HTMLCanvasElement) {
+  useEffect(() => {
+    if (source){
+      translate(ImageFit.FILL, source)
+    }
+  }, [source]);
+  
+  const clear = function() {
+    const canvas = canvasRef.current;
+    if (canvas === undefined || canvas === null) {
+      return
+    }
     const context = canvas.getContext('2d')
     if (context === null) {
       return
@@ -181,10 +192,10 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     context.clearRect(0, 0, canvas.width, canvas.height);
     setThumbnailBlob(null)
     setSource(null)
+    setSourceDims({width: 1920, height: 1080})
   }
 
-
-  const capture2 = function() {
+  const capture = function() {
     const video = props.videoRef.current
     if (video === null) {
       return
@@ -195,30 +206,14 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
 
     const hiddenCanvas = hiddenCanvasRef.current;
     if (hiddenCanvas === undefined || hiddenCanvas === null) {
-      return null
+      return
     }
     const context = hiddenCanvas.getContext('2d')
     if (context === null) {
-      return null
+      return
     }
     context.drawImage(video, 0, 0);
-    hiddenCanvas.toBlob((blob: Blob | null) => {
-      if (!blob) {
-        return
-      }
-      setSource(blob)
-      translate(ImageFit.FILL, blob)
-    });
-    
-    // TODO: This resets the thumbnail if the user seeks a different time in the video
-    // Best bet is to: draw image onto canvas and save as image? Try toDataUrl()
-    //  https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toDataURL
-    //  Then https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Using_images#embedding_an_image_via_data_url
-    // Although, I don't want to reset the source image every time i resize/translate...
-    // I think I need a hidden canvas with 1:1 video ratio. When I capture, I draw the
-    // video frame onto this hidden canvas, then store the dataUrl as the image source
-    // Similarly, when uploading, I simply store the dataUrl as the image source
-    //  https://stackoverflow.com/questions/43007634/javascript-how-to-extract-frame-from-video
+    hiddenCanvas.toBlob((blob: Blob | null) => setSource(blob));
   }
 
   const translate = function(fit: ImageFit, newSource?: Blob) {
@@ -273,7 +268,6 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     canvas.toBlob((blob: Blob | null) => setThumbnailBlob(blob));
   }
 
-  
   const parseRefs = function(func: (canvas: HTMLCanvasElement, video: HTMLVideoElement) => void ) {
     const canvas = canvasRef.current
     const video = props.videoRef.current
@@ -283,34 +277,50 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     func(canvas, video)
   }
 
-  // const handleUpload = function(canvas: HTMLCanvasElement, video: HTMLVideoElement){
-  //   const context = canvas.getContext('2d')
-  //   if (context === null) {
-  //     return
-  //   }
-  //   const reader = new FileReader();
-  //   reader.onload = function(event){
-  //       var img = new Image();
-  //       img.onload = () => fillSource(canvas)
-  //       img.src = event.target?.result ?? ""
-  //   }
-  //   reader.readAsDataURL(e.target.files[0]);     
-  // }
+  const handleUpload = function(event: ChangeEvent<HTMLInputElement>){
+    const reader = new FileReader();
+    reader.onload = function(){
+      const img = new Image()
+      img.onload = () => {
+        const hiddenCanvas = canvasRef.current
+        if (hiddenCanvas === null) {
+          return
+        }
+        const context = hiddenCanvas.getContext('2d')
+        if (context === null) {
+          return
+        }
+        setSourceDims({width: img.width, height: img.height})
+        context.drawImage(img, 0, 0);
+        hiddenCanvas.toBlob((blob: Blob | null) => setSource(blob));
+      }
+      if (reader.result) {
+        img.src = reader.result as string;
+      }
+    }
+    if (event.target.files && event.target.files[0]) {
+      reader.readAsDataURL(event.target.files[0]);
+    }   
+  }
 
+  const onButtonClick = () => {
+    if (inputRef.current) {
+      (inputRef.current as any).click();
+    }
+  };
+  
   return (
     <div id="thumbnail-container">
       <canvas id="hiddenCanvas" ref={hiddenCanvasRef} width={sourceDims.width} height={sourceDims.height} style={{overflow: 'hidden', display: 'none'}}/>
       <div>Thumbnail:</div>
       <canvas id="canvas" width="400" height="400" ref={canvasRef} />
       <Grid id="thumbnail-button-grid" container spacing={0}>
-        {/* <Grid xs={12}>
-          <button type="button" onClick={() => parseRefs((x, y) => capture(x, y, ImageFit.FILL))}>Capture frame</button>
-        </Grid> */}
         <Grid xs={12}>
-          <button type="button" onClick={() => capture2()}>Capture frame</button>
+          <button type="button" onClick={capture}>Capture frame</button>
         </Grid>
         <Grid xs={12}>
-          <button type="button" onClick={() => capture2()}>Upload from file...</button>
+          <input ref={inputRef} type="file" accept=".jpg,.png" className="file-selector-input" multiple={false} onChange={handleUpload} />
+          <button type="button" onClick={onButtonClick}>Upload from file...</button>
         </Grid>
         <Grid xs={4}>
           <button type="button" disabled={!source} onClick={() => translate(ImageFit.FILL)}>Fill</button>
@@ -322,7 +332,7 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
           <button type="button" disabled={!source} onClick={() => translate(ImageFit.CROP)}>Crop</button>
         </Grid>
         <Grid xs={12}>
-          <button type="button" disabled={!source} onClick={() => parseRefs(clear)}>Clear</button>
+          <button type="button" disabled={!source} onClick={clear}>Clear</button>
         </Grid>
       </Grid>
     </div>
