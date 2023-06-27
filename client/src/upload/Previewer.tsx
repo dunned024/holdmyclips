@@ -5,6 +5,8 @@ import { UploadForm } from '../types';
 // import * as defaultThumbnail from '../assets/default_thumbnail.jpg';
 import Grid from '@mui/material/Unstable_Grid2'; 
 import TextField from '@mui/material/TextField'; 
+import ReactCrop, { type Crop } from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
 
 // const defaultThumbnailBlob = new Blob([ defaultThumbnail ], { type: 'image/jpg' });
 
@@ -110,63 +112,8 @@ enum ImageFit {
   CROP,
 }
 
-interface Dimensions {
-  xOffset: number;
-  yOffset: number;
-  width: number;
-  height: number;
-}
-
-// class ThumbnailSource {
-//   public readonly width: number;
-//   public readonly height: number;
-
-//   constructor(source: HTMLVideoElement | HTMLImageElement | string) {
-//     if (typeof source === "string") {
-//       const s = new Image()
-//       s.src = source
-//     }
-//     this.width = s.tagName === "VIDEO" ? (source as HTMLVideoElement).videoWidth : source.width
-//     this.height = source.tagName === "VIDEO" ? (source as HTMLVideoElement).videoHeight : source.height
-//   }
-
-//   public getDestinationDimensions(canvas: HTMLCanvasElement, fit: ImageFit): Dimensions {
-//     const wRatio = canvas.width / this.width
-//     const hRatio = canvas.height / this.height
-    
-//     let dWidth, dHeight;
-//     if (fit === ImageFit.FILL) {
-//       dWidth = this.width * wRatio
-//       dHeight = this.height * hRatio
-//     }
-//     else if (fit === ImageFit.FIT) {
-//       const ratio = Math.min(wRatio, hRatio)
-//       dWidth = this.width * ratio
-//       dHeight = this.height * ratio
-//     }
-//     else if (fit === ImageFit.CROP) {
-//       const ratio = Math.max(wRatio, hRatio)
-//       dWidth = this.width * ratio
-//       dHeight = this.height * ratio
-//     }
-//     else {
-//       dWidth = this.width * wRatio
-//       dHeight = this.height * hRatio
-//     }
-
-//     const dx = ( canvas.width - dWidth ) / 2;
-//     const dy = ( canvas.height - dHeight ) / 2;
-
-//     return {
-//       xOffset: dx,
-//       yOffset: dy,
-//       width: dWidth,
-//       height: dHeight
-//     }
-//   }
-// }
-
 function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoElement | null>}) {
+  const [crop, setCrop] = useState<Crop>()
   const [source, setSource] = useState<Blob | null>(null);
   const [sourceDims, setSourceDims] = useState({width: 1920, height: 1080});
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
@@ -176,7 +123,7 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
 
   useEffect(() => {
     if (source){
-      translate(ImageFit.FILL, source)
+      translate(ImageFit.FILL)
     }
   }, [source]);
   
@@ -216,7 +163,7 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     hiddenCanvas.toBlob((blob: Blob | null) => setSource(blob));
   }
 
-  const translate = function(fit: ImageFit, newSource?: Blob) {
+  const translate = function(fit: ImageFit) {
     const canvas = canvasRef.current;
     if (canvas === undefined || canvas === null) {
       return
@@ -262,8 +209,6 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     }
     if (source !== null) {
       sourceImage.src = URL.createObjectURL(source);
-    } else if (newSource !== undefined) {
-      sourceImage.src = URL.createObjectURL(newSource);
     } else {return}
     canvas.toBlob((blob: Blob | null) => setThumbnailBlob(blob));
   }
@@ -282,7 +227,7 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     reader.onload = function(){
       const img = new Image()
       img.onload = () => {
-        const hiddenCanvas = canvasRef.current
+        const hiddenCanvas = hiddenCanvasRef.current
         if (hiddenCanvas === null) {
           return
         }
@@ -290,6 +235,7 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
         if (context === null) {
           return
         }
+
         setSourceDims({width: img.width, height: img.height})
         context.drawImage(img, 0, 0);
         hiddenCanvas.toBlob((blob: Blob | null) => setSource(blob));
@@ -314,23 +260,26 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
       <canvas id="hiddenCanvas" ref={hiddenCanvasRef} width={sourceDims.width} height={sourceDims.height} style={{overflow: 'hidden', display: 'none'}}/>
       <div>Thumbnail:</div>
       <canvas id="canvas" width="400" height="400" ref={canvasRef} />
-      <Grid id="thumbnail-button-grid" container spacing={0}>
-        <Grid xs={12}>
+      <ReactCrop crop={crop} onChange={c => setCrop(c)}>
+        {source && <img src={URL.createObjectURL(source)} alt='test' />}
+      </ReactCrop>
+      <Grid id="thumbnail-button-grid" container spacing={1}>
+        <Grid xs={6}>
           <button type="button" onClick={capture}>Capture frame</button>
         </Grid>
-        <Grid xs={12}>
+        <Grid xs={6}>
           <input ref={inputRef} type="file" accept=".jpg,.png" className="file-selector-input" multiple={false} onChange={handleUpload} />
           <button type="button" onClick={onButtonClick}>Upload from file...</button>
         </Grid>
-        <Grid xs={4}>
+        {/* <Grid xs={2}>
           <button type="button" disabled={!source} onClick={() => translate(ImageFit.FILL)}>Fill</button>
         </Grid>
-        <Grid xs={4}>
+        <Grid xs={2}>
           <button type="button" disabled={!source} onClick={() => translate(ImageFit.FIT)}>Fit</button>
         </Grid>
-        <Grid xs={4}>
+        <Grid xs={2}>
           <button type="button" disabled={!source} onClick={() => translate(ImageFit.CROP)}>Crop</button>
-        </Grid>
+        </Grid> */}
         <Grid xs={12}>
           <button type="button" disabled={!source} onClick={clear}>Clear</button>
         </Grid>
