@@ -12,6 +12,8 @@ import 'react-image-crop/dist/ReactCrop.css'
 
 export function Previewer(props: {source: File, uploadClip: (clipForm: UploadForm) => void}) {
   const [clipDuration, setClipDuration] = useState("");
+  const [crop, setCrop] = useState<Crop>()
+  const [cropping, setCropping] = useState<boolean>(false);
   const videoSrc = URL.createObjectURL(props.source);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -26,8 +28,8 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
   }, [videoSrc]);
 
   const handleSubmit = function(e: FormEvent) {
-    console.log('here')
     e.preventDefault()
+    console.log('here')
 
     const form = (e.target as HTMLFormElement);
     const formData = new FormData(form) as UploadForm; // TODO: strongly type this so it throws if any fields are missing
@@ -112,114 +114,273 @@ enum ImageFit {
   CROP,
 }
 
+interface Dimensions {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+class Rect {
+  public readonly width: number;
+  public readonly height: number;
+  public readonly x: number;
+  public readonly y: number;
+
+  public static fromCanvas(canvas: HTMLCanvasElement): Rect {
+    return new this({width: canvas.width, height: canvas.height, x: 0, y: 0});
+  }
+
+  public static fromImage(image: HTMLImageElement): Rect {
+    return new this({width: image.width, height: image.height, x: 0, y: 0});
+  }
+
+  public static fromVideo(video: HTMLVideoElement): Rect {
+    return new this({width: video.videoWidth, height: video.videoHeight, x: 0, y: 0});
+  }
+
+  public static fromDomRect(domRect: DOMRect): Rect {
+    return new this({width: domRect.width, height: domRect.height, x: 0, y: 0});
+  }
+
+  public static fromCrop(crop: Crop): Rect {
+    return new this({width: crop.width, height: crop.height, x: crop.x, y: crop.y});
+  }
+
+  constructor(dimensions: Dimensions){
+    this.x = dimensions.x;
+    this.y = dimensions.y;
+    this.width = dimensions.width;
+    this.height = dimensions.height;
+  }
+
+  get dimensions(): Dimensions {
+    return {x: this.x, y: this.y, width: this.width, height: this.height};
+  }
+
+  getScaleValues(dest: Rect, keepAspect: boolean = false): {wRatio: number, hRatio: number} {
+    let wRatio = dest.width / this.width
+    let hRatio = dest.height / this.height
+  
+    // If we want the aspect ratio to stay the same, scale by smallest side
+    if (keepAspect) {
+      const ratio = Math.min(wRatio, hRatio)
+      wRatio = ratio
+      hRatio = ratio
+    }
+
+    return {wRatio, hRatio}
+  }
+  
+  getScaledRect(dest: Rect | {wRatio: number, hRatio: number}, keepAspect: boolean = false): Rect {
+    const {wRatio, hRatio} = dest instanceof Rect ? this.getScaleValues(dest, keepAspect) : dest
+    return new Rect({
+      width: this.width * wRatio,
+      height: this.height * hRatio,
+      x: this.x * wRatio,
+      y: this.y * hRatio
+    })
+  }
+}
+
+function getScaledRect(source: DOMRect, dest: DOMRect, keepAspect: boolean = false): DOMRect {
+  let wRatio = dest.width / source.width
+  let hRatio = dest.height / source.height
+
+  // If we want the aspect ratio to stay the same, scale by smallest side
+  if (keepAspect) {
+    const ratio = Math.min(wRatio, hRatio)
+    wRatio = ratio
+    hRatio = ratio
+  }
+
+  return DOMRect.fromRect({
+    width: source.width * wRatio,
+    height: source.height * hRatio,
+    x: source.x * wRatio,
+    y: source.y * hRatio
+  })
+}
+
+// function getScaledRect(rect: Rect, source: {width: number, height: number}, dest: {width: number, height: number}, keepAspect: boolean = false): Rect {
+//   // Get scales between source canvas and destination canvas
+//   let wRatio = dest.width / source.width
+//   let hRatio = dest.height / source.height
+
+//   // If we want the aspect ratio to stay the same, scale by smallest side
+//   if (keepAspect) {
+//     const ratio = Math.min(wRatio, hRatio)
+//     wRatio = ratio
+//     hRatio = ratio
+//   }
+
+//   // Apply scales to Rect to get new side lengths
+//   const dWidth = rect.width * wRatio
+//   const dHeight = rect.height * hRatio
+
+//   // Find upper-left <x,y> coordinates in destination canvas
+//   const dx = rect.x * wRatio
+//   const dy = rect.y * hRatio
+
+//   return {
+//     width: dWidth,
+//     height: dHeight,
+//     x: dx,
+//     y: dy
+//   }
+// }
+
 function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoElement | null>}) {
   const [crop, setCrop] = useState<Crop>()
   const [source, setSource] = useState<Blob | null>(null);
-  const [sourceDims, setSourceDims] = useState({width: 1920, height: 1080});
+  const [cropping, setCropping] = useState<boolean>(false);
+  const [acceptedCrop, setAcceptedCrop] = useState<Crop>();
+  const [fixedAspect, setFixedAspect] = useState<boolean>(true)
   const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
   const inputRef = useRef(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const hiddenCanvasRef = useRef<HTMLCanvasElement>(null)
 
-  useEffect(() => {
-    if (source){
-      translate(ImageFit.FILL)
-    }
-  }, [source]);
-  
+  const croppingCanvasRef = useRef<HTMLCanvasElement>(null)
+
   const clear = function() {
     const canvas = canvasRef.current;
-    if (canvas === undefined || canvas === null) {
+    if (!canvas) {
       return
     }
     const context = canvas.getContext('2d')
-    if (context === null) {
+    if (!context) {
       return
     }
     context.clearRect(0, 0, canvas.width, canvas.height);
     setThumbnailBlob(null)
-    setSource(null)
-    setSourceDims({width: 1920, height: 1080})
   }
 
-  const capture = function() {
+  const handleCapture = function() {
     const video = props.videoRef.current
     if (video === null) {
       return
     }
-    const width = video.videoWidth
-    const height = video.videoHeight
-    setSourceDims({width, height})
+    const croppingCanvas = croppingCanvasRef.current;
+    if (!croppingCanvas) {
+      return
+    }
+    const context = croppingCanvas.getContext('2d')
+    if (!context) {
+      return
+    }
+    const videoRect = Rect.fromVideo(video);
+    const canvasRect = Rect.fromCanvas(croppingCanvas)
+    const destRect = videoRect.getScaledRect(canvasRect)
 
-    const hiddenCanvas = hiddenCanvasRef.current;
-    if (hiddenCanvas === undefined || hiddenCanvas === null) {
-      return
-    }
-    const context = hiddenCanvas.getContext('2d')
-    if (context === null) {
-      return
-    }
-    context.drawImage(video, 0, 0);
-    hiddenCanvas.toBlob((blob: Blob | null) => setSource(blob));
+    context.drawImage(video, 0, 0, videoRect.width, videoRect.height, destRect.x, destRect.y, destRect.width, destRect.height);
+    setCropping(true)
   }
 
-  const translate = function(fit: ImageFit) {
-    const canvas = canvasRef.current;
-    if (canvas === undefined || canvas === null) {
+  function handleToggleAspectClick() {
+    const croppingCanvas = croppingCanvasRef.current;
+    if (!croppingCanvas) {
       return
     }
-    const context = canvas.getContext('2d')
-    if (context === null) {
-      return
+    if (fixedAspect) {
+      setFixedAspect(false)
+    } else if (croppingCanvas) {
+      setFixedAspect(true)
+      centerCrop()
     }
-  
-    const sourceImage = new Image();
-    sourceImage.onload = function(){
-      const width = sourceImage.naturalWidth
-      const height = sourceImage.naturalHeight
-      const wRatio = canvas.width / width
-      const hRatio = canvas.height / height
-      
-      let dWidth, dHeight;
-      if (fit === ImageFit.FILL) {
-        dWidth = width * wRatio
-        dHeight = height * hRatio
-      }
-      else if (fit === ImageFit.FIT) {
-        const ratio = Math.min(wRatio, hRatio)
-        dWidth = width * ratio
-        dHeight = height * ratio
-      }
-      else if (fit === ImageFit.CROP) {
-        const ratio = Math.max(wRatio, hRatio)
-        dWidth = width * ratio
-        dHeight = height * ratio
-      }
-      else {
-        dWidth = width * wRatio
-        dHeight = height * hRatio
-      }
-
-      const dx = ( canvas.width - dWidth ) / 2;
-      const dy = ( canvas.height - dHeight ) / 2;
-
-      context.fillStyle = "black";
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(sourceImage, 0, 0, width, height, dx, dy, dWidth, dHeight);
-    }
-    if (source !== null) {
-      sourceImage.src = URL.createObjectURL(source);
-    } else {return}
-    canvas.toBlob((blob: Blob | null) => setThumbnailBlob(blob));
   }
 
-  const parseRefs = function(func: (canvas: HTMLCanvasElement, video: HTMLVideoElement) => void ) {
-    const canvas = canvasRef.current
-    const video = props.videoRef.current
-    if (canvas === null || video === null) {
+  const centerCrop = function() {
+    const croppingCanvas = croppingCanvasRef.current;
+    if (!croppingCanvas) {
       return
     }
-    func(canvas, video)
+    const { width, height } = croppingCanvas.getBoundingClientRect();
+    const dx = ( width - 800 ) / 2;
+    const dy = ( height - 800 ) / 2;
+
+    setCrop({
+      unit: 'px',
+      x: dx,
+      y: dy,
+      width: 800,
+      height: 800
+    })
+  }
+
+  const acceptCrop = function() {
+    const thumbnailCanvas = canvasRef.current;
+    const croppingCanvas = croppingCanvasRef.current;
+    if (!thumbnailCanvas || !croppingCanvas || !crop) {
+      return
+    }
+    const thumbnailContext = thumbnailCanvas.getContext('2d')
+    if (thumbnailContext === null) {
+      return
+    }
+
+    // There are a series of transformations that need to occur here to
+    // get the correct scaling. First, we need to find the transformation
+    // from the "visual" dimensions of the cropping canvas (i.e. what's on
+    // screen) to the "actual" dimensions of the croppings canvas (defined
+    // in the element declaration below -- probably 1920 x 1080)
+    const cropCanvasBoundRect = Rect.fromDomRect(croppingCanvas.getBoundingClientRect())
+    const cropCanvasRect = Rect.fromCanvas(croppingCanvas)
+    const cropScaling = cropCanvasRect.getScaleValues(cropCanvasBoundRect)
+    
+    // That ratio is applied to the size of the crop box, as well as its
+    // <x, y> coordinates That to get the true image we want to transpose
+    // from the cropping canvas
+    const cropRect = Rect.fromCrop(crop)
+    const scaledCropRect = cropRect.getScaledRect(cropScaling)
+
+    // Once we have the true cropped image, we want to scale it down to the
+    // thumbnailCanvas. Thankfully, this canvas has a fixed size, so we
+    // don't need any more calculations
+    thumbnailContext.drawImage(croppingCanvas, scaledCropRect.x, scaledCropRect.y, scaledCropRect.width, scaledCropRect.height, 0, 0, 400, 400);
+    setAcceptedCrop(crop)
+    setCropping(false)
+  }
+
+  const closeCrop = function() {
+    setCropping(false)
+    if (acceptedCrop) {
+      setCrop(acceptedCrop)
+    }
+  }
+
+  const acceptAndFitCrop = function() {
+    const thumbnailCanvas = canvasRef.current;
+    const croppingCanvas = croppingCanvasRef.current;
+    if (!thumbnailCanvas || !croppingCanvas || !crop) {
+      return
+    }
+    const thumbnailContext = thumbnailCanvas.getContext('2d')
+    if (thumbnailContext === null) {
+      return
+    }
+
+    const { width: croppingCanvasVisualWidth, height: croppingCanvasVisualHeight } = croppingCanvas.getBoundingClientRect();
+    const wRatio = croppingCanvas.width / croppingCanvasVisualWidth 
+    const hRatio = croppingCanvas.height / croppingCanvasVisualHeight
+
+    const sWidth = crop.width * wRatio
+    const sHeight = crop.height * hRatio
+    const sx = crop.x * wRatio
+    const sy = crop.y * hRatio
+
+    const thumbWidth = thumbnailCanvas.width
+    const thumbHeight = thumbnailCanvas.height
+    const dRatio = Math.min(thumbWidth / sWidth, thumbHeight / sHeight)
+    const dWidth = sWidth * dRatio
+    const dHeight = sHeight * dRatio
+    const dx = ( thumbWidth - dWidth ) / 2;
+    const dy = ( thumbHeight - dHeight ) / 2;
+
+    thumbnailContext.fillStyle = "black";
+    thumbnailContext.fillRect(0, 0, thumbWidth, thumbHeight);
+    thumbnailContext.drawImage(croppingCanvas, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+    setAcceptedCrop(crop)
+    setCropping(false)
   }
 
   const handleUpload = function(event: ChangeEvent<HTMLInputElement>){
@@ -227,7 +388,7 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     reader.onload = function(){
       const img = new Image()
       img.onload = () => {
-        const hiddenCanvas = hiddenCanvasRef.current
+        const hiddenCanvas = croppingCanvasRef.current
         if (hiddenCanvas === null) {
           return
         }
@@ -236,7 +397,6 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
           return
         }
 
-        setSourceDims({width: img.width, height: img.height})
         context.drawImage(img, 0, 0);
         hiddenCanvas.toBlob((blob: Blob | null) => setSource(blob));
       }
@@ -257,29 +417,29 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
   
   return (
     <div id="thumbnail-container">
-      <canvas id="hiddenCanvas" ref={hiddenCanvasRef} width={sourceDims.width} height={sourceDims.height} style={{overflow: 'hidden', display: 'none'}}/>
+      <div id="cropping-overlay" style={{display: cropping === true ? 'block' : 'none'}}>
+        <button id="cropping-close-button" onClick={closeCrop}>{'\u2a2f'}</button>
+        <div id="cropping-dimensions">Dimensions: {crop?.width || 0}px {'\u00d7'} {crop?.height || 0}px</div>
+        <div id="cropping-element-container">
+          <ReactCrop crop={crop} onChange={c => setCrop(c)} aspect={Number(fixedAspect)}>
+            <canvas id="cropping-canvas" width="1920" height="1080" ref={croppingCanvasRef} />
+          </ReactCrop>
+        </div>
+        <button id="cropping-toggle-aspect" onClick={handleToggleAspectClick}>Toggle 1:1 aspect ratio {fixedAspect ? 'off' : 'on'}</button>
+        <button id="cropping-center-selection" onClick={centerCrop}>Center</button>
+        <button id="cropping-accept" onClick={acceptCrop}>Accept</button>
+        <button id="cropping-accept-fit" onClick={acceptAndFitCrop}>Accept & Fit</button>
+      </div>
       <div>Thumbnail:</div>
-      <canvas id="canvas" width="400" height="400" ref={canvasRef} />
-      <ReactCrop crop={crop} onChange={c => setCrop(c)}>
-        {source && <img src={URL.createObjectURL(source)} alt='test' />}
-      </ReactCrop>
+      <canvas id="thumbnail-canvas" width="400" height="400" ref={canvasRef} />
       <Grid id="thumbnail-button-grid" container spacing={1}>
         <Grid xs={6}>
-          <button type="button" onClick={capture}>Capture frame</button>
+          <button type="button" onClick={handleCapture}>Capture frame</button>
         </Grid>
         <Grid xs={6}>
           <input ref={inputRef} type="file" accept=".jpg,.png" className="file-selector-input" multiple={false} onChange={handleUpload} />
           <button type="button" onClick={onButtonClick}>Upload from file...</button>
         </Grid>
-        {/* <Grid xs={2}>
-          <button type="button" disabled={!source} onClick={() => translate(ImageFit.FILL)}>Fill</button>
-        </Grid>
-        <Grid xs={2}>
-          <button type="button" disabled={!source} onClick={() => translate(ImageFit.FIT)}>Fit</button>
-        </Grid>
-        <Grid xs={2}>
-          <button type="button" disabled={!source} onClick={() => translate(ImageFit.CROP)}>Crop</button>
-        </Grid> */}
         <Grid xs={12}>
           <button type="button" disabled={!source} onClick={clear}>Clear</button>
         </Grid>
