@@ -107,13 +107,6 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
   );
 };
 
-
-enum ImageFit {
-  FIT,
-  FILL,
-  CROP,
-}
-
 interface Dimensions {
   x: number;
   y: number;
@@ -122,10 +115,10 @@ interface Dimensions {
 }
 
 class Rect {
-  public readonly width: number;
-  public readonly height: number;
   public readonly x: number;
   public readonly y: number;
+  public readonly width: number;
+  public readonly height: number;
 
   public static fromCanvas(canvas: HTMLCanvasElement): Rect {
     return new this({width: canvas.width, height: canvas.height, x: 0, y: 0});
@@ -183,52 +176,57 @@ class Rect {
   }
 }
 
-function getScaledRect(source: DOMRect, dest: DOMRect, keepAspect: boolean = false): DOMRect {
-  let wRatio = dest.width / source.width
-  let hRatio = dest.height / source.height
+class Rect2 {
+  public readonly x: number;
+  public readonly y: number;
+  public readonly width: number;
+  public readonly height: number;
 
-  // If we want the aspect ratio to stay the same, scale by smallest side
-  if (keepAspect) {
-    const ratio = Math.min(wRatio, hRatio)
-    wRatio = ratio
-    hRatio = ratio
+  constructor(rectSource: any, keepCoords: boolean = false){
+    this.x = 0;
+    this.y = 0;
+
+    if (rectSource instanceof HTMLVideoElement) {
+      this.width = rectSource.videoWidth
+      this.height = rectSource.videoHeight
+    } else {
+      this.width = rectSource.width
+      this.height = rectSource.height
+    }
+
+    if (keepCoords) {
+      if (rectSource.hasOwnProperty('x')) {
+        this.x = rectSource.x
+        this.y = rectSource.y
+      }
+    }
   }
 
-  return DOMRect.fromRect({
-    width: source.width * wRatio,
-    height: source.height * hRatio,
-    x: source.x * wRatio,
-    y: source.y * hRatio
-  })
+  getScaleValues(dest: Rect, keepAspect: boolean = false): {wRatio: number, hRatio: number} {
+    let wRatio = dest.width / this.width
+    let hRatio = dest.height / this.height
+  
+    // If we want the aspect ratio to stay the same, scale by smallest side
+    if (keepAspect) {
+      const ratio = Math.min(wRatio, hRatio)
+      wRatio = ratio
+      hRatio = ratio
+    }
+
+    return {wRatio, hRatio}
+  }
+  
+  getScaledRect(dest: Rect | {wRatio: number, hRatio: number}, keepAspect: boolean = false): Rect {
+    const {wRatio, hRatio} = dest instanceof Rect ? this.getScaleValues(dest, keepAspect) : dest
+    return new Rect({
+      width: this.width * wRatio,
+      height: this.height * hRatio,
+      x: this.x * wRatio,
+      y: this.y * hRatio
+    })
+  }
 }
 
-// function getScaledRect(rect: Rect, source: {width: number, height: number}, dest: {width: number, height: number}, keepAspect: boolean = false): Rect {
-//   // Get scales between source canvas and destination canvas
-//   let wRatio = dest.width / source.width
-//   let hRatio = dest.height / source.height
-
-//   // If we want the aspect ratio to stay the same, scale by smallest side
-//   if (keepAspect) {
-//     const ratio = Math.min(wRatio, hRatio)
-//     wRatio = ratio
-//     hRatio = ratio
-//   }
-
-//   // Apply scales to Rect to get new side lengths
-//   const dWidth = rect.width * wRatio
-//   const dHeight = rect.height * hRatio
-
-//   // Find upper-left <x,y> coordinates in destination canvas
-//   const dx = rect.x * wRatio
-//   const dy = rect.y * hRatio
-
-//   return {
-//     width: dWidth,
-//     height: dHeight,
-//     x: dx,
-//     y: dy
-//   }
-// }
 
 function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoElement | null>}) {
   const [crop, setCrop] = useState<Crop>()
@@ -325,8 +323,8 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     // in the element declaration below -- probably 1920 x 1080)
     const cropCanvasBoundRect = Rect.fromDomRect(croppingCanvas.getBoundingClientRect())
     const cropCanvasRect = Rect.fromCanvas(croppingCanvas)
-    const cropScaling = cropCanvasRect.getScaleValues(cropCanvasBoundRect)
-    
+    const cropScaling = cropCanvasBoundRect.getScaleValues(cropCanvasRect)
+
     // That ratio is applied to the size of the crop box, as well as its
     // <x, y> coordinates That to get the true image we want to transpose
     // from the cropping canvas
