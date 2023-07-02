@@ -28,7 +28,3 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: #374153;
 }
-
-button, input {
-  font-family: inherit;
-}

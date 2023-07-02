@@ -432,7 +432,7 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
           </Grid>
           <Grid xs={6} container direction="column" spacing={1}>
             <Grid xs>
-              <input ref={inputRef} type="file" accept=".jpg,.png" className="file-selector-input" multiple={false} onChange={handleUpload} />
+              <input ref={inputRef} type="file" accept=".jpg,.png" id="file-selector-input" multiple={false} onChange={handleUpload} />
               <button type="button" onClick={onButtonClick}>Upload from file...</button>
             </Grid>
             <Grid xs>

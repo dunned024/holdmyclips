@@ -41,16 +41,17 @@ export function FileSelector(props: {setSource: (source: File) => void}) {
   };
   
   return (
-    <div className="file-selector">
-      <form className="file-selector-form" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>
-        <input ref={inputRef} type="file" accept=".mov,.mp4" className="file-selector-input" multiple={false} onChange={handleChange} />
-        <label id="drag-drop-label" htmlFor="file-selector-input" className={dragActive ? "drag-active" : "" }>
+    <div id="file-selector">
+      <form id="file-selector-form" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>
+        <input ref={inputRef} type="file" accept=".mov,.mp4" id="file-selector-input" multiple={false} onChange={handleChange} />
+          <button id="file-selector-button" onClick={onButtonClick}></button>
+          <label id="drag-drop-label" htmlFor="file-selector-input" className={dragActive ? "drag-active" : "" }>
           <div>
             <p>Drag and drop your file here</p>
-            <button className="file-selector-button" onClick={onButtonClick}>Or click to upload a file</button>
+            <p id="click-label">Or <u>click</u> to upload a file</p>
           </div> 
         </label>
-        { dragActive && <div className="drag-file-element" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}></div> }
+        { dragActive && <div id="drag-file-element" onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}></div> }
       </form>
     </div>
   );

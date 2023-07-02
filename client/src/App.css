@@ -34,3 +34,7 @@
   color: white;
   text-align: center;
 }
+
+button, input {
+  font-family: inherit;
+}
