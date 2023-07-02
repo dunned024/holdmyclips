@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import './Previewer.css'
 import { randomId } from '../services/clipIdentifiers'
 import { UploadForm } from '../types';
@@ -107,48 +107,15 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
   );
 };
 
-interface Dimensions {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 class Rect {
   public readonly x: number;
   public readonly y: number;
   public readonly width: number;
   public readonly height: number;
 
-  public static fromCanvas(canvas: HTMLCanvasElement): Rect {
-    return new this({width: canvas.width, height: canvas.height, x: 0, y: 0});
-  }
-
-  public static fromImage(image: HTMLImageElement): Rect {
-    return new this({width: image.width, height: image.height, x: 0, y: 0});
-  }
-
-  public static fromVideo(video: HTMLVideoElement): Rect {
-    return new this({width: video.videoWidth, height: video.videoHeight, x: 0, y: 0});
-  }
-
-  public static fromDomRect(domRect: DOMRect): Rect {
-    return new this({width: domRect.width, height: domRect.height, x: 0, y: 0});
-  }
-
-  public static fromCrop(crop: Crop): Rect {
-    return new this({width: crop.width, height: crop.height, x: crop.x, y: crop.y});
-  }
-
-  constructor(dimensions: Dimensions){
-    this.x = dimensions.x;
-    this.y = dimensions.y;
-    this.width = dimensions.width;
-    this.height = dimensions.height;
-  }
-
-  get dimensions(): Dimensions {
-    return {x: this.x, y: this.y, width: this.width, height: this.height};
+  constructor(s: any, keepCoords: boolean = false){
+    [this.width, this.height] = s instanceof HTMLVideoElement ? [s.videoWidth, s.videoHeight] : [s.width, s.height];
+    [this.x, this.y] = keepCoords && s.hasOwnProperty('x') ? [s.x, s.y] : [0, 0];
   }
 
   getScaleValues(dest: Rect, keepAspect: boolean = false): {wRatio: number, hRatio: number} {
@@ -165,80 +132,52 @@ class Rect {
     return {wRatio, hRatio}
   }
   
-  getScaledRect(dest: Rect | {wRatio: number, hRatio: number}, keepAspect: boolean = false): Rect {
-    const {wRatio, hRatio} = dest instanceof Rect ? this.getScaleValues(dest, keepAspect) : dest
+  scaleTo(dest: Rect | {wRatio: number, hRatio: number}): Rect {
+    const {wRatio, hRatio} = dest instanceof Rect ? this.getScaleValues(dest, false) : dest
     return new Rect({
       width: this.width * wRatio,
       height: this.height * hRatio,
       x: this.x * wRatio,
       y: this.y * hRatio
-    })
-  }
-}
-
-class Rect2 {
-  public readonly x: number;
-  public readonly y: number;
-  public readonly width: number;
-  public readonly height: number;
-
-  constructor(rectSource: any, keepCoords: boolean = false){
-    this.x = 0;
-    this.y = 0;
-
-    if (rectSource instanceof HTMLVideoElement) {
-      this.width = rectSource.videoWidth
-      this.height = rectSource.videoHeight
-    } else {
-      this.width = rectSource.width
-      this.height = rectSource.height
-    }
-
-    if (keepCoords) {
-      if (rectSource.hasOwnProperty('x')) {
-        this.x = rectSource.x
-        this.y = rectSource.y
-      }
-    }
+    }, true)
   }
 
-  getScaleValues(dest: Rect, keepAspect: boolean = false): {wRatio: number, hRatio: number} {
-    let wRatio = dest.width / this.width
-    let hRatio = dest.height / this.height
-  
-    // If we want the aspect ratio to stay the same, scale by smallest side
-    if (keepAspect) {
-      const ratio = Math.min(wRatio, hRatio)
-      wRatio = ratio
-      hRatio = ratio
-    }
-
-    return {wRatio, hRatio}
-  }
-  
-  getScaledRect(dest: Rect | {wRatio: number, hRatio: number}, keepAspect: boolean = false): Rect {
-    const {wRatio, hRatio} = dest instanceof Rect ? this.getScaleValues(dest, keepAspect) : dest
+  fitTo(dest: Rect): Rect {
+    const ratio = Math.min(dest.width / this.width, dest.height / this.height)
     return new Rect({
-      width: this.width * wRatio,
-      height: this.height * hRatio,
-      x: this.x * wRatio,
-      y: this.y * hRatio
-    })
+      width: this.width * ratio,
+      height: this.height * ratio,
+      x:  ( dest.width - this.width * ratio ) / 2,
+      y:( dest.height - this.height * ratio ) / 2,
+    }, true)
   }
 }
 
 
 function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoElement | null>}) {
-  const [crop, setCrop] = useState<Crop>()
-  const [source, setSource] = useState<Blob | null>(null);
+  const [canClear, setCanClear] = useState<boolean>(false);
+  const [uploadedImage, setUploadedImage] = useState<HTMLImageElement | null>(null);
+
   const [cropping, setCropping] = useState<boolean>(false);
-  const [acceptedCrop, setAcceptedCrop] = useState<Crop>();
+  const [crop, setCrop] = useState<Crop | null>(null)
+  const [acceptedCrop, setAcceptedCrop] = useState<Crop | null>(null);
   const [fixedAspect, setFixedAspect] = useState<boolean>(true)
-  const [thumbnailBlob, setThumbnailBlob] = useState<Blob | null>(null);
+
   const inputRef = useRef(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const croppingCanvasRef = useRef<HTMLCanvasElement>(null)
+
+  let croppingCanvasWidth, croppingCanvasHeight;
+  if (uploadedImage) {
+    croppingCanvasWidth = uploadedImage.width;
+    croppingCanvasHeight = uploadedImage.height;
+  } else {
+    if (props.videoRef.current !== null) {
+      croppingCanvasWidth = props.videoRef.current.videoWidth;
+      croppingCanvasHeight = props.videoRef.current.videoHeight;
+    }
+  }
 
   const clear = function() {
     const canvas = canvasRef.current;
@@ -250,10 +189,13 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
       return
     }
     context.clearRect(0, 0, canvas.width, canvas.height);
-    setThumbnailBlob(null)
+    setUploadedImage(null);
+    setCrop(null);
+    setAcceptedCrop(null);
+    setCanClear(false);
   }
 
-  const handleCapture = function() {
+  const captureAndCrop = function() {
     const video = props.videoRef.current
     if (video === null) {
       return
@@ -266,11 +208,11 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     if (!context) {
       return
     }
-    const videoRect = Rect.fromVideo(video);
-    const canvasRect = Rect.fromCanvas(croppingCanvas)
-    const destRect = videoRect.getScaledRect(canvasRect)
+    const videoRect = new Rect(video);
+    const canvasRect = new Rect(croppingCanvas);
+    const destRect = videoRect.scaleTo(canvasRect)
 
-    context.drawImage(video, 0, 0, videoRect.width, videoRect.height, destRect.x, destRect.y, destRect.width, destRect.height);
+    context.drawImage(video, videoRect.x, videoRect.y, videoRect.width, videoRect.height, destRect.x, destRect.y, destRect.width, destRect.height);
     setCropping(true)
   }
 
@@ -321,28 +263,33 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     // from the "visual" dimensions of the cropping canvas (i.e. what's on
     // screen) to the "actual" dimensions of the croppings canvas (defined
     // in the element declaration below -- probably 1920 x 1080)
-    const cropCanvasBoundRect = Rect.fromDomRect(croppingCanvas.getBoundingClientRect())
-    const cropCanvasRect = Rect.fromCanvas(croppingCanvas)
+    const cropCanvasBoundRect = new Rect(croppingCanvas.getBoundingClientRect())
+    const cropCanvasRect = new Rect(croppingCanvas)
     const cropScaling = cropCanvasBoundRect.getScaleValues(cropCanvasRect)
 
     // That ratio is applied to the size of the crop box, as well as its
     // <x, y> coordinates That to get the true image we want to transpose
     // from the cropping canvas
-    const cropRect = Rect.fromCrop(crop)
-    const scaledCropRect = cropRect.getScaledRect(cropScaling)
+    const cropRect = new Rect(crop, true)
+    const scaledCropRect = cropRect.scaleTo(cropScaling)
 
     // Once we have the true cropped image, we want to scale it down to the
     // thumbnailCanvas. Thankfully, this canvas has a fixed size, so we
     // don't need any more calculations
-    thumbnailContext.drawImage(croppingCanvas, scaledCropRect.x, scaledCropRect.y, scaledCropRect.width, scaledCropRect.height, 0, 0, 400, 400);
+    const thumbRect = new Rect(thumbnailCanvas)
+    thumbnailContext.drawImage(croppingCanvas, scaledCropRect.x, scaledCropRect.y, scaledCropRect.width, scaledCropRect.height, thumbRect.x, thumbRect.y, thumbRect.width, thumbRect.height);
     setAcceptedCrop(crop)
     setCropping(false)
+    setCanClear(true)
   }
 
   const closeCrop = function() {
     setCropping(false)
     if (acceptedCrop) {
       setCrop(acceptedCrop)
+      if (acceptedCrop.width !== acceptedCrop.height && fixedAspect) {
+        setFixedAspect(false)
+      }
     }
   }
 
@@ -357,28 +304,39 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
       return
     }
 
-    const { width: croppingCanvasVisualWidth, height: croppingCanvasVisualHeight } = croppingCanvas.getBoundingClientRect();
-    const wRatio = croppingCanvas.width / croppingCanvasVisualWidth 
-    const hRatio = croppingCanvas.height / croppingCanvasVisualHeight
+    const cropCanvasBoundRect = new Rect(croppingCanvas.getBoundingClientRect())
+    const cropCanvasRect = new Rect(croppingCanvas)
+    const cropScaling = cropCanvasBoundRect.getScaleValues(cropCanvasRect)
 
-    const sWidth = crop.width * wRatio
-    const sHeight = crop.height * hRatio
-    const sx = crop.x * wRatio
-    const sy = crop.y * hRatio
+    const cropRect = new Rect(crop, true)
+    const scaledCropRect = cropRect.scaleTo(cropScaling)
 
-    const thumbWidth = thumbnailCanvas.width
-    const thumbHeight = thumbnailCanvas.height
-    const dRatio = Math.min(thumbWidth / sWidth, thumbHeight / sHeight)
-    const dWidth = sWidth * dRatio
-    const dHeight = sHeight * dRatio
-    const dx = ( thumbWidth - dWidth ) / 2;
-    const dy = ( thumbHeight - dHeight ) / 2;
-
+    const thumbRect = new Rect(thumbnailCanvas)
+    const destRect = scaledCropRect.fitTo(thumbRect)
+    
     thumbnailContext.fillStyle = "black";
-    thumbnailContext.fillRect(0, 0, thumbWidth, thumbHeight);
-    thumbnailContext.drawImage(croppingCanvas, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+    thumbnailContext.fillRect(0, 0, thumbRect.width, thumbRect.height);
+    thumbnailContext.drawImage(croppingCanvas, scaledCropRect.x, scaledCropRect.y, scaledCropRect.width, scaledCropRect.height, destRect.x, destRect.y, destRect.width, destRect.height);
     setAcceptedCrop(crop)
     setCropping(false)
+    setCanClear(true)
+  }
+
+  const openCropOverlay = function(sourceImage: HTMLImageElement | HTMLVideoElement) {
+    const croppingCanvas = croppingCanvasRef.current;
+    if (!croppingCanvas) {
+      return
+    }
+    const context = croppingCanvas.getContext('2d')
+    if (!context) {
+      return
+    }
+    const sourceRect = new Rect(sourceImage);
+    const canvasRect = new Rect(croppingCanvas);
+    const destRect = sourceRect.fitTo(canvasRect)
+
+    context.drawImage(sourceImage, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height, destRect.x, destRect.y, destRect.width, destRect.height);
+    setCropping(true)
   }
 
   const handleUpload = function(event: ChangeEvent<HTMLInputElement>){
@@ -386,17 +344,27 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     reader.onload = function(){
       const img = new Image()
       img.onload = () => {
-        const hiddenCanvas = croppingCanvasRef.current
-        if (hiddenCanvas === null) {
+        const thumbnailCanvas = canvasRef.current;
+        if (!thumbnailCanvas) {
           return
         }
-        const context = hiddenCanvas.getContext('2d')
-        if (context === null) {
+        const context = thumbnailCanvas.getContext('2d')
+        if (!context) {
           return
         }
+        const videoRect = new Rect(img);
+        const canvasRect = new Rect(thumbnailCanvas);
+        const destRect = videoRect.scaleTo(canvasRect)
 
-        context.drawImage(img, 0, 0);
-        hiddenCanvas.toBlob((blob: Blob | null) => setSource(blob));
+        // TODO: these things:
+        // X1. Fit image to thumbnail canvas when uploaded
+        // X2. Add button to crop uploaded image
+        //  3. Figure out why this sometimes breaks?
+        //  4. When cropping uploaded image, center cropping canvas
+        // X5. If a thumb has been cropped, cleared, and then a different image is uploaded, clear acceptedCrop (or somehow get crop to not exist already)
+        context.drawImage(img, videoRect.x, videoRect.y, videoRect.width, videoRect.height, destRect.x, destRect.y, destRect.width, destRect.height);
+        setUploadedImage(img)
+        setCanClear(true)
       }
       if (reader.result) {
         img.src = reader.result as string;
@@ -413,14 +381,27 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     }
   };
   
+  const handleCaptureFrame = () => {
+    const video = props.videoRef.current
+    if (video !== null) {
+      openCropOverlay(video);
+    }
+  };
+  
+  const handleCropUploadedImage = () => {
+    if (uploadedImage !== null) {
+      openCropOverlay(uploadedImage);
+    }
+  };
+  
   return (
     <div id="thumbnail-container">
       <div id="cropping-overlay" style={{display: cropping === true ? 'block' : 'none'}}>
         <button id="cropping-close-button" onClick={closeCrop}>{'\u2a2f'}</button>
         <div id="cropping-dimensions">Dimensions: {crop?.width || 0}px {'\u00d7'} {crop?.height || 0}px</div>
         <div id="cropping-element-container">
-          <ReactCrop crop={crop} onChange={c => setCrop(c)} aspect={Number(fixedAspect)}>
-            <canvas id="cropping-canvas" width="1920" height="1080" ref={croppingCanvasRef} />
+          <ReactCrop crop={crop ?? undefined} onChange={c => setCrop(c)} aspect={Number(fixedAspect)}>
+            <canvas id="cropping-canvas" width={croppingCanvasWidth} height={croppingCanvasHeight} ref={croppingCanvasRef} />
           </ReactCrop>
         </div>
         <button id="cropping-toggle-aspect" onClick={handleToggleAspectClick}>Toggle 1:1 aspect ratio {fixedAspect ? 'off' : 'on'}</button>
@@ -430,16 +411,25 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
       </div>
       <div>Thumbnail:</div>
       <canvas id="thumbnail-canvas" width="400" height="400" ref={canvasRef} />
-      <Grid id="thumbnail-button-grid" container spacing={1}>
-        <Grid xs={6}>
-          <button type="button" onClick={handleCapture}>Capture frame</button>
+      <Grid id="thumbnail-button-grid" container direction="column" spacing={1}>
+        <Grid id="thumbnail-button-grid2" container spacing={1}>
+          <Grid xs={6} container direction="column">
+            <Grid style={{height: "100%"}}>
+              <button style={{height: "100%"}} type="button" onClick={handleCaptureFrame}>Capture frame</button>
+            </Grid>
+          </Grid>
+          <Grid xs={6} container direction="column" spacing={1}>
+            <Grid xs>
+              <input ref={inputRef} type="file" accept=".jpg,.png" className="file-selector-input" multiple={false} onChange={handleUpload} />
+              <button type="button" onClick={onButtonClick}>Upload from file...</button>
+            </Grid>
+            <Grid xs>
+              <button type="button" disabled={!uploadedImage} onClick={handleCropUploadedImage}>Crop uploaded image</button>
+            </Grid>
+          </Grid>
         </Grid>
-        <Grid xs={6}>
-          <input ref={inputRef} type="file" accept=".jpg,.png" className="file-selector-input" multiple={false} onChange={handleUpload} />
-          <button type="button" onClick={onButtonClick}>Upload from file...</button>
-        </Grid>
-        <Grid xs={12}>
-          <button type="button" disabled={!source} onClick={clear}>Clear</button>
+        <Grid xs>
+          <button type="button" disabled={!canClear} onClick={clear}>Clear</button>
         </Grid>
       </Grid>
     </div>

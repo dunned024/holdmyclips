@@ -33,10 +33,6 @@
     width: 100%;
 }
 
-#clip-details-form button:hover {
-    background-color: green;
-}
-
 #submit-button {
     height: 50px;
     width: 100%;
@@ -95,11 +91,28 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    margin-top: -42vh;
-    margin-left: -42vw;
+    transform: translate(-50%, -50%);
+    /* margin-top: -42vh;
+    margin-left: -42vw; */
+    max-width: 80vw;
+    max-height: 80vh;
 }
 
 #cropping-canvas {
-    width: 84vw;
+    max-width: 80vw;
+    max-height: 80vh;
 }
 
+
+button {
+    color: #272727;
+    border: 0px;
+    border-radius: 2px;
+    cursor: pointer;
+    width: max-content;
+    transition: 0.25s ease;
+}
+
+button:hover {
+    background-color: #23aca0;
+}
