@@ -397,17 +397,29 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
   return (
     <div id="thumbnail-container">
       <div id="cropping-overlay" style={{display: cropping === true ? 'block' : 'none'}}>
-        <button id="cropping-close-button" onClick={closeCrop}>{'\u2a2f'}</button>
-        <div id="cropping-dimensions">Dimensions: {crop?.width || 0}px {'\u00d7'} {crop?.height || 0}px</div>
-        <div id="cropping-element-container">
+        <div id="cropping-overlay-element-container">
+          <button id="cropping-close-button" onClick={closeCrop}>{'\u2a2f'}</button>
+          <div id="cropping-button-grid-container">
+            <Grid id="cropping-button-grid" container spacing={1}>
+              <Grid xs={6}>
+                <button id="cropping-toggle-aspect" onClick={handleToggleAspectClick}>Toggle 1:1 aspect ratio {fixedAspect ? 'off' : 'on'}</button>
+              </Grid>
+              <Grid xs={6}>
+              <button id="cropping-center-selection" onClick={centerCrop}>Center</button>
+              </Grid>
+              <Grid xs={6}>
+              <button id="cropping-accept" onClick={acceptCrop}>Accept</button>
+              </Grid>
+              <Grid xs={6}>
+              <button id="cropping-accept-fit" onClick={acceptAndFitCrop}>Accept & Fit</button>
+              </Grid>
+            </Grid>
+          </div>
           <ReactCrop crop={crop ?? undefined} onChange={c => setCrop(c)} aspect={Number(fixedAspect)}>
             <canvas id="cropping-canvas" width={croppingCanvasWidth} height={croppingCanvasHeight} ref={croppingCanvasRef} />
           </ReactCrop>
+          <div id="cropping-dimensions">Dimensions: {crop?.width || 0}px {'\u00d7'} {crop?.height || 0}px</div>
         </div>
-        <button id="cropping-toggle-aspect" onClick={handleToggleAspectClick}>Toggle 1:1 aspect ratio {fixedAspect ? 'off' : 'on'}</button>
-        <button id="cropping-center-selection" onClick={centerCrop}>Center</button>
-        <button id="cropping-accept" onClick={acceptCrop}>Accept</button>
-        <button id="cropping-accept-fit" onClick={acceptAndFitCrop}>Accept & Fit</button>
       </div>
       <div>Thumbnail:</div>
       <canvas id="thumbnail-canvas" width="400" height="400" ref={canvasRef} />
