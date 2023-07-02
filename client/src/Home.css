@@ -8,14 +8,13 @@
 
     font-size: 26px;
     transition-duration: 0.1s;
-    background-color: #f4faff;
     border: none;
     border-radius: 8px;
 }
 
 .upload-link button:hover {
     transition-duration: 0.1s;
-    background-color: #3fb18e;
+    background-color: #23aca0;
 }
 
 .clip-rows {

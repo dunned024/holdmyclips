@@ -14,9 +14,11 @@ function App() {
     <div>
       <div className="app-header">
         <div className="site-name">
-          hold my clips
+          <a className="link" href="/" rel="noreferrer">
+            hold my clips
+          </a>
         </div>
-        <a className="github-link" href="https://github.com/dunned024" rel="noreferrer">
+        <a className="link" id="github-link" href="https://github.com/dunned024" rel="noreferrer">
           <AiFillGithub />
           dunned024
         </a>

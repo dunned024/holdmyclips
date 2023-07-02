@@ -1,3 +1,9 @@
+@font-face {
+  font-family: "NotoSansMono";
+  src: local("NotoSansMono"),
+   url("./assets/fonts/NotoSansMono/NotoSansMono.ttf") format("truetype");
+ }
+
 header, footer {
   background-color: #374153;
   text-align: center;
@@ -17,8 +23,12 @@ footer {
 
 body {
   margin: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'NotoSansMono';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #374153;
+}
+
+button, input {
+  font-family: inherit;
 }

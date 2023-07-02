@@ -1,6 +1,6 @@
 .app-header {
   padding: 2px 10px;
-  height: 20px;
+  height: 24px;
 
   display: flex;
   flex-direction: row;
@@ -13,17 +13,24 @@
   font-size: 16px;
 }
 
-.github-link {
+.link {
   color: white;
+  text-decoration: none
+}
+
+.link:hover {
+  text-decoration: underline
+}
+
+#github-link {
   float: left;
 }
 
 .app {
-  min-height: calc(100vh - 64px);
-  padding: 20px;
+  height: calc(100vh - 48px);
+  padding: 10px;
   background: linear-gradient(180deg, #374153 0%, #374153 75%, #282c34 100%);
 
   color: white;
   text-align: center;
-  font-size: calc(10px + 2vmin);
 }

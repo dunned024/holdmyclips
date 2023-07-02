@@ -5,3 +5,16 @@
     justify-content: center;
     align-items: center;
 }
+
+button {
+    color: #272727;
+    border: 0px;
+    border-radius: 2px;
+    cursor: pointer;
+    width: max-content;
+    transition: 0.25s ease;
+}
+
+button:hover {
+    background-color: #23aca0;
+}

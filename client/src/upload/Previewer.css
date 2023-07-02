@@ -106,8 +106,7 @@
 
 #cropping-button-grid-container button {
     height: 30px;
-
-    font-size: 24px
+    font-size: 20px
 }
 
 #cropping-button-grid {
@@ -116,18 +115,4 @@
 
 #cropping-canvas {
     max-height: 800px;
-}
-
-
-button {
-    color: #272727;
-    border: 0px;
-    border-radius: 2px;
-    cursor: pointer;
-    width: max-content;
-    transition: 0.25s ease;
-}
-
-button:hover {
-    background-color: #23aca0;
 }
