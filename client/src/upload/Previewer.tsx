@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './Previewer.css'
 import { randomId } from '../services/clipIdentifiers'
 import { UploadForm } from '../types';
@@ -168,16 +168,28 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
 
   const croppingCanvasRef = useRef<HTMLCanvasElement>(null)
 
-  let croppingCanvasWidth, croppingCanvasHeight;
-  if (uploadedImage) {
-    croppingCanvasWidth = uploadedImage.width;
-    croppingCanvasHeight = uploadedImage.height;
-  } else {
-    if (props.videoRef.current !== null) {
-      croppingCanvasWidth = props.videoRef.current.videoWidth;
-      croppingCanvasHeight = props.videoRef.current.videoHeight;
-    }
-  }
+  // let croppingCanvasWidth, croppingCanvasHeight;
+  // if (uploadedImage) {
+  //   croppingCanvasWidth = uploadedImage.width;
+  //   croppingCanvasHeight = uploadedImage.height;
+  // } else {
+  //   if (props.videoRef.current !== null) {
+  //     croppingCanvasWidth = props.videoRef.current.videoWidth;
+  //     croppingCanvasHeight = props.videoRef.current.videoHeight;
+  //   }
+  // }
+  // const croppingCanvasDims = useMemo(
+  //   () => {
+  //     if (uploadedImage) {
+  //       return [uploadedImage.width, uploadedImage.height]
+  //     } else {
+  //       if (props.videoRef.current !== null) {
+  //         return [props.videoRef.current.videoWidth, props.videoRef.current.videoHeight]
+  //       }
+  //     }
+  //   },
+  //   [uploadedImage, props.videoRef.current]
+  // );
 
   const clear = function() {
     const canvas = canvasRef.current;
@@ -193,27 +205,9 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     setCrop(null);
     setAcceptedCrop(null);
     setCanClear(false);
-  }
-
-  const captureAndCrop = function() {
-    const video = props.videoRef.current
-    if (video === null) {
-      return
+    if (inputRef.current) {
+      (inputRef.current as HTMLInputElement).value = "";
     }
-    const croppingCanvas = croppingCanvasRef.current;
-    if (!croppingCanvas) {
-      return
-    }
-    const context = croppingCanvas.getContext('2d')
-    if (!context) {
-      return
-    }
-    const videoRect = new Rect(video);
-    const canvasRect = new Rect(croppingCanvas);
-    const destRect = videoRect.scaleTo(canvasRect)
-
-    context.drawImage(video, videoRect.x, videoRect.y, videoRect.width, videoRect.height, destRect.x, destRect.y, destRect.width, destRect.height);
-    setCropping(true)
   }
 
   function handleToggleAspectClick() {
@@ -238,13 +232,7 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     const dx = ( width - 800 ) / 2;
     const dy = ( height - 800 ) / 2;
 
-    setCrop({
-      unit: 'px',
-      x: dx,
-      y: dy,
-      width: 800,
-      height: 800
-    })
+    setCrop({unit: 'px', x: dx, y: dy, width: 800, height: 800})
   }
 
   const acceptCrop = function() {
@@ -283,16 +271,6 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     setCanClear(true)
   }
 
-  const closeCrop = function() {
-    setCropping(false)
-    if (acceptedCrop) {
-      setCrop(acceptedCrop)
-      if (acceptedCrop.width !== acceptedCrop.height && fixedAspect) {
-        setFixedAspect(false)
-      }
-    }
-  }
-
   const acceptAndFitCrop = function() {
     const thumbnailCanvas = canvasRef.current;
     const croppingCanvas = croppingCanvasRef.current;
@@ -304,16 +282,20 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
       return
     }
 
+    // Find "visual" to "actual" canvas scaling values
     const cropCanvasBoundRect = new Rect(croppingCanvas.getBoundingClientRect())
     const cropCanvasRect = new Rect(croppingCanvas)
     const cropScaling = cropCanvasBoundRect.getScaleValues(cropCanvasRect)
 
+    // Apply scaling values to cropped selection
     const cropRect = new Rect(crop, true)
     const scaledCropRect = cropRect.scaleTo(cropScaling)
 
+    // Scale the scaled, cropped selection to the thumbnail canvas
     const thumbRect = new Rect(thumbnailCanvas)
     const destRect = scaledCropRect.fitTo(thumbRect)
     
+    // Fill empty space with black and draw the final image on the thumbnail canvas
     thumbnailContext.fillStyle = "black";
     thumbnailContext.fillRect(0, 0, thumbRect.width, thumbRect.height);
     thumbnailContext.drawImage(croppingCanvas, scaledCropRect.x, scaledCropRect.y, scaledCropRect.width, scaledCropRect.height, destRect.x, destRect.y, destRect.width, destRect.height);
@@ -322,19 +304,40 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     setCanClear(true)
   }
 
+  const closeCrop = function() {
+    setCropping(false)
+    if (acceptedCrop) {
+      setCrop(acceptedCrop)
+      if (acceptedCrop.width !== acceptedCrop.height && fixedAspect) {
+        setFixedAspect(false)
+      }
+    }
+  }
+
   const openCropOverlay = function(sourceImage: HTMLImageElement | HTMLVideoElement) {
     const croppingCanvas = croppingCanvasRef.current;
     if (!croppingCanvas) {
       return
     }
-    const context = croppingCanvas.getContext('2d')
-    if (!context) {
-      return
+    if (sourceImage instanceof HTMLVideoElement && props.videoRef.current) {
+      croppingCanvas.width = props.videoRef.current.videoWidth;
+      croppingCanvas.height = props.videoRef.current.videoHeight;
+    } else if (uploadedImage) {
+      croppingCanvas.width = uploadedImage.width;
+      croppingCanvas.height = uploadedImage.height;
+    } else {
+      croppingCanvas.width = 1920;
+      croppingCanvas.height = 1080;
     }
+    
     const sourceRect = new Rect(sourceImage);
     const canvasRect = new Rect(croppingCanvas);
     const destRect = sourceRect.fitTo(canvasRect)
 
+    const context = croppingCanvas.getContext('2d')
+    if (!context) {
+      return
+    }
     context.drawImage(sourceImage, sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height, destRect.x, destRect.y, destRect.width, destRect.height);
     setCropping(true)
   }
@@ -356,12 +359,6 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
         const canvasRect = new Rect(thumbnailCanvas);
         const destRect = videoRect.scaleTo(canvasRect)
 
-        // TODO: these things:
-        // X1. Fit image to thumbnail canvas when uploaded
-        // X2. Add button to crop uploaded image
-        //  3. Figure out why this sometimes breaks?
-        //  4. When cropping uploaded image, center cropping canvas
-        // X5. If a thumb has been cropped, cleared, and then a different image is uploaded, clear acceptedCrop (or somehow get crop to not exist already)
         context.drawImage(img, videoRect.x, videoRect.y, videoRect.width, videoRect.height, destRect.x, destRect.y, destRect.width, destRect.height);
         setUploadedImage(img)
         setCanClear(true)
@@ -415,8 +412,8 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
               </Grid>
             </Grid>
           </div>
-          <ReactCrop crop={crop ?? undefined} onChange={c => setCrop(c)} aspect={Number(fixedAspect)}>
-            <canvas id="cropping-canvas" width={croppingCanvasWidth} height={croppingCanvasHeight} ref={croppingCanvasRef} />
+          <ReactCrop crop={crop ?? undefined} onChange={c => setCrop(c)} aspect={Number(fixedAspect)} className="react-crop">
+            <canvas id="cropping-canvas" ref={croppingCanvasRef} />
           </ReactCrop>
           <div id="cropping-dimensions">Dimensions: {crop?.width || 0}px {'\u00d7'} {crop?.height || 0}px</div>
         </div>
@@ -427,7 +424,7 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
         <Grid id="thumbnail-button-grid2" container spacing={1}>
           <Grid xs={6} container direction="column">
             <Grid style={{height: "100%"}}>
-              <button style={{height: "100%"}} type="button" onClick={handleCaptureFrame}>Capture frame</button>
+              <button type="button" onClick={handleCaptureFrame}>Capture frame</button>
             </Grid>
           </Grid>
           <Grid xs={6} container direction="column" spacing={1}>

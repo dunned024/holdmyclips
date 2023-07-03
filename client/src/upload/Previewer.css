@@ -113,6 +113,10 @@
     width: 50%;
 }
 
+.react-crop {
+    max-height: 800px;
+}
+
 #cropping-canvas {
     max-height: 800px;
 }
