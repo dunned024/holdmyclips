@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 import './Previewer.css'
 import { randomId } from '../services/clipIdentifiers'
 import { UploadForm } from '../types';
@@ -52,56 +52,60 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
   }
 
   return (
-    <div className="previewer">
+    <div id="previewer">
       <div className="video-preview-container">
         <video controls src={videoSrc} ref={videoRef} id="video" />
       </div>
 
       <form id="clip-details-form" method='put' onSubmit={handleSubmit}>
-        <Grid id="form-grid" container spacing={2}>
-          <Grid xs={12} className="field">
-            <TextField 
-              label="Title"
-              color="secondary"
-              fullWidth
-              type="text"
-              InputLabelProps={{ shrink: true }}
-              defaultValue={props.source.name}
-              required
-            />
+        <div id="form-fields-container">
+          <Grid id="form-grid" container spacing={2}>
+            <Grid xs={12} className="field">
+              <TextField 
+                label="Title"
+                color="secondary"
+                fullWidth
+                type="text"
+                InputLabelProps={{ shrink: true }}
+                defaultValue={props.source.name}
+                required
+              />
+            </Grid>
+            <Grid xs={4} className="field">
+              <TextField
+                label="Duration"
+                color="secondary"
+                disabled
+                InputLabelProps={{ shrink: true }}
+                value={clipDuration}
+              />
+            </Grid>
+            <Grid xs={8} className="field">
+              <TextField 
+                label="Uploader"
+                fullWidth
+                color="secondary"
+                type="text"
+                disabled
+                InputLabelProps={{ shrink: true }}
+                defaultValue={props.source.name || ''}
+              />
+            </Grid>
+            <Grid xs={12} className="field">
+              <TextField 
+                label="Description"
+                color="secondary"
+                fullWidth
+                type="textarea"
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
           </Grid>
-          <Grid xs={4} className="field">
-            <TextField
-              label="Duration"
-              color="secondary"
-              disabled
-              InputLabelProps={{ shrink: true }}
-              value={clipDuration}
-            />
-          </Grid>
-          <Grid xs={8} className="field">
-            <TextField 
-              label="Uploader"
-              fullWidth
-              color="secondary"
-              type="text"
-              disabled
-              InputLabelProps={{ shrink: true }}
-              defaultValue={props.source.name || ''}
-            />
-          </Grid>
-          <Grid xs={12} className="field">
-            <TextField 
-              label="Description"
-              color="secondary"
-              fullWidth
-              type="textarea"
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-        </Grid>
-        <button id="submit-button" type="submit">Upload!</button>
+        </div>
         <ThumbnailSetter videoRef={videoRef} />
+        <div id="submit-button-container">
+          <button id="submit-button" type="submit">Upload!</button>
+        </div>
       </form>
     </div>
   );
@@ -165,31 +169,7 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
 
   const inputRef = useRef(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
   const croppingCanvasRef = useRef<HTMLCanvasElement>(null)
-
-  // let croppingCanvasWidth, croppingCanvasHeight;
-  // if (uploadedImage) {
-  //   croppingCanvasWidth = uploadedImage.width;
-  //   croppingCanvasHeight = uploadedImage.height;
-  // } else {
-  //   if (props.videoRef.current !== null) {
-  //     croppingCanvasWidth = props.videoRef.current.videoWidth;
-  //     croppingCanvasHeight = props.videoRef.current.videoHeight;
-  //   }
-  // }
-  // const croppingCanvasDims = useMemo(
-  //   () => {
-  //     if (uploadedImage) {
-  //       return [uploadedImage.width, uploadedImage.height]
-  //     } else {
-  //       if (props.videoRef.current !== null) {
-  //         return [props.videoRef.current.videoWidth, props.videoRef.current.videoHeight]
-  //       }
-  //     }
-  //   },
-  //   [uploadedImage, props.videoRef.current]
-  // );
 
   const clear = function() {
     const canvas = canvasRef.current;

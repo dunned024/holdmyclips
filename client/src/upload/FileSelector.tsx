@@ -40,6 +40,7 @@ export function FileSelector(props: {setSource: (source: File) => void}) {
     }
   };
   
+  // TODO: disallow dropping anywhere outside the drop zone
   return (
     <div id="file-selector">
       <form id="file-selector-form" onDragEnter={handleDrag} onSubmit={(e) => e.preventDefault()}>

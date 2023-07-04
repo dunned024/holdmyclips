@@ -1,4 +1,4 @@
-import { DragEvent, useState } from 'react';
+import { useState } from 'react';
 import { FileSelector } from './FileSelector'
 import { Previewer } from './Previewer'
 import './Uploader.css';
@@ -37,14 +37,8 @@ import { UploadForm } from '../types';
     }
   }
 
-  const handleEvent = function(e: DragEvent) {
-    // TODO: disallow dropping anywhere outside the drop zone
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
   return (
-    <div className="uploader" onDragEnter={handleEvent} onDragLeave={handleEvent} onDrop={handleEvent}>
+    <div id="uploader">
       {!source && <FileSelector setSource={setSource}/>}
       {source && <Previewer source={source} uploadClip={uploadClip} />}
     </div>

@@ -1,9 +1,5 @@
-.page {
-    display: flex;
-    min-height: 100vh;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+#uploader {
+    height: 100%;
 }
 
 button {
@@ -15,6 +11,10 @@ button {
     transition: 0.25s ease;
 }
 
-button:hover {
+button:hover:enabled {
     background-color: #23aca0;
+}
+
+button:hover:disabled {
+    cursor: default ;
 }
