@@ -9,11 +9,27 @@
     width: 75%;
 
     margin: 10px 10px;
+    padding: 10px;
+    background-color: #7774a1;
+    border-radius: 4px;
+
+    display: flex;
+    flex-direction: column;
 }
 
 .video-preview-container video {
-    width: 100%;
+    max-height: 85%;
+    background-color: #000000;
 }
+
+#trimmer-container {
+    height: calc(15% - 10px);
+    margin-top: 10px;
+    width: 100%;
+    background-color: #1f2531;
+    border-radius: 4px;
+}
+
 
 #clip-details-form {
     height: calc(100% - 40px);
@@ -25,7 +41,7 @@
     display: flex;
     flex-direction: column;
     
-    background-color: rgb(119, 116, 161);
+    background-color: #7774a1;
     border-radius: 4px;
     font-size: 20px;
 }

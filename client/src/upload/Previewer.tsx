@@ -5,8 +5,11 @@ import { UploadForm } from '../types';
 // import * as defaultThumbnail from '../assets/default_thumbnail.jpg';
 import Grid from '@mui/material/Unstable_Grid2'; 
 import TextField from '@mui/material/TextField'; 
+import Slider from '@mui/material/Slider';
 import ReactCrop, { type Crop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
+import ReactPlayer from 'react-player'
+
 
 // const defaultThumbnailBlob = new Blob([ defaultThumbnail ], { type: 'image/jpg' });
 
@@ -16,6 +19,7 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
   const [cropping, setCropping] = useState<boolean>(false);
   const videoSrc = URL.createObjectURL(props.source);
   const videoRef = useRef<HTMLVideoElement>(null);
+  // const videoRef = useRef<ReactPlayer>(null);
 
   useEffect(() => {
     if (videoRef && videoRef.current) {
@@ -54,7 +58,10 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
   return (
     <div id="previewer">
       <div className="video-preview-container">
-        <video controls src={videoSrc} ref={videoRef} id="video" />
+        <ReactPlayer controls url={videoSrc} id="video" />
+        <div id="trimmer-container">
+          Testing
+        </div>
       </div>
 
       <form id="clip-details-form" method='put' onSubmit={handleSubmit}>
