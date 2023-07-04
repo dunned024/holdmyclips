@@ -18,18 +18,8 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
   const [crop, setCrop] = useState<Crop>()
   const [cropping, setCropping] = useState<boolean>(false);
   const videoSrc = URL.createObjectURL(props.source);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  // const videoRef = useRef<ReactPlayer>(null);
-
-  useEffect(() => {
-    if (videoRef && videoRef.current) {
-      const currentVideo = (videoRef.current as HTMLMediaElement);
-
-      currentVideo.onloadedmetadata = () => {
-        setClipDuration(`${Math.ceil(currentVideo.duration).toString()}s`)
-      };
-    }
-  }, [videoSrc]);
+  // const videoRef = useRef<HTMLVideoElement>(null);
+  const playerRef = useRef<ReactPlayer>(null);
 
   const handleSubmit = function(e: FormEvent) {
     e.preventDefault()
@@ -57,8 +47,16 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
 
   return (
     <div id="previewer">
-      <div className="video-preview-container">
-        <ReactPlayer controls url={videoSrc} id="video" />
+      <div id="video-preview-container">
+        <ReactPlayer
+          id="video"
+          controls
+          width="100%"
+          height="100%"
+          url={videoSrc}
+          ref={playerRef}
+          onDuration={(d: number) => setClipDuration(`${Math.ceil(d).toString()}s`)}
+        />
         <div id="trimmer-container">
           Testing
         </div>
@@ -109,7 +107,7 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
             </Grid>
           </Grid>
         </div>
-        <ThumbnailSetter videoRef={videoRef} />
+        <ThumbnailSetter playerRef={playerRef} />
         <div id="submit-button-container">
           <button id="submit-button" type="submit">Upload!</button>
         </div>
@@ -165,7 +163,7 @@ class Rect {
 }
 
 
-function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoElement | null>}) {
+function ThumbnailSetter(props: {playerRef: React.MutableRefObject<ReactPlayer | null>}) {
   const [canClear, setCanClear] = useState<boolean>(false);
   const [uploadedImage, setUploadedImage] = useState<HTMLImageElement | null>(null);
 
@@ -174,6 +172,7 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
   const [acceptedCrop, setAcceptedCrop] = useState<Crop | null>(null);
   const [fixedAspect, setFixedAspect] = useState<boolean>(true)
 
+  const video = (props.playerRef.current?.getInternalPlayer() as HTMLVideoElement)
   const inputRef = useRef(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const croppingCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -197,7 +196,7 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     }
   }
 
-  function handleToggleAspectClick() {
+  const handleToggleAspectClick = function() {
     const croppingCanvas = croppingCanvasRef.current;
     if (!croppingCanvas) {
       return
@@ -306,9 +305,9 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
     if (!croppingCanvas) {
       return
     }
-    if (sourceImage instanceof HTMLVideoElement && props.videoRef.current) {
-      croppingCanvas.width = props.videoRef.current.videoWidth;
-      croppingCanvas.height = props.videoRef.current.videoHeight;
+    if (sourceImage instanceof HTMLVideoElement && video) {
+      croppingCanvas.width = video.videoWidth;
+      croppingCanvas.height = video.videoHeight;
     } else if (uploadedImage) {
       croppingCanvas.width = uploadedImage.width;
       croppingCanvas.height = uploadedImage.height;
@@ -366,14 +365,13 @@ function ThumbnailSetter(props: {videoRef: React.MutableRefObject<HTMLVideoEleme
   };
   
   const handleCaptureFrame = () => {
-    const video = props.videoRef.current
-    if (video !== null) {
+    if (video) {
       openCropOverlay(video);
     }
   };
   
   const handleCropUploadedImage = () => {
-    if (uploadedImage !== null) {
+    if (uploadedImage) {
       openCropOverlay(uploadedImage);
     }
   };

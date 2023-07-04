@@ -4,7 +4,7 @@
     flex-direction: row;
 }
 
-.video-preview-container {
+#video-preview-container {
     max-height: 100%;
     width: 75%;
 
@@ -17,9 +17,9 @@
     flex-direction: column;
 }
 
-.video-preview-container video {
+#video {
     max-height: 85%;
-    background-color: #000000;
+    /* background-color: #000000; */
 }
 
 #trimmer-container {
