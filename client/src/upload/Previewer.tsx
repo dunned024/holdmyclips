@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, MutableRefObject, SyntheticEvent, useEffect, useRef, useState } from 'react';
 import './Previewer.css'
 import { randomId } from '../services/clipIdentifiers'
 import { UploadForm } from '../types';
@@ -9,17 +9,58 @@ import Slider from '@mui/material/Slider';
 import ReactCrop, { type Crop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import ReactPlayer from 'react-player'
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
 
 
 // const defaultThumbnailBlob = new Blob([ defaultThumbnail ], { type: 'image/jpg' });
 
 export function Previewer(props: {source: File, uploadClip: (clipForm: UploadForm) => void}) {
   const [clipDuration, setClipDuration] = useState("");
-  const [crop, setCrop] = useState<Crop>()
-  const [cropping, setCropping] = useState<boolean>(false);
   const videoSrc = URL.createObjectURL(props.source);
-  // const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<ReactPlayer>(null);
+
+  return (
+    <div id="previewer">
+      <div id="video-preview-container">
+        <ReactPlayer
+          id="video"
+          controls
+          width="100%"
+          height="100%"
+          url={videoSrc}
+          ref={playerRef}
+          onDuration={(d: number) => setClipDuration(`${Math.ceil(d).toString()}s`)}
+        />
+        <div id="trimmer-container">
+          Testing
+        </div>
+      </div>
+      <FormAccordian source={props.source} uploadClip={props.uploadClip} clipDuration={clipDuration} playerRef={playerRef}/>
+    </div>
+  );
+};
+
+function Controller(props: {range: number[], handleChange: () => void}) {
+  return (
+    <div>
+      <Slider
+        id="seeker"
+        value={props.range}
+        onChange={props.handleChange} // TODO: does this handle seeking, or trimming?
+      />
+    </div>
+  )
+
+}
+
+function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) => void, clipDuration: string, playerRef: MutableRefObject<ReactPlayer | null>}) {
+  const [expanded, setExpanded] = useState<string | false>(false);
+
+  const handleChange = (panel: string) => (event: SyntheticEvent, isExpanded: boolean) => {
+    setExpanded(isExpanded ? panel : false);
+  };
 
   const handleSubmit = function(e: FormEvent) {
     e.preventDefault()
@@ -38,83 +79,77 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
     const id = randomId()
     formData.append('id', id)
     
-    formData.append('duration', clipDuration)
+    formData.append('duration', props.clipDuration)
     formData.append('views', '0')
     formData.append('comments', '[]')
     
     props.uploadClip(formData)
   }
-
   return (
-    <div id="previewer">
-      <div id="video-preview-container">
-        <ReactPlayer
-          id="video"
-          controls
-          width="100%"
-          height="100%"
-          url={videoSrc}
-          ref={playerRef}
-          onDuration={(d: number) => setClipDuration(`${Math.ceil(d).toString()}s`)}
-        />
-        <div id="trimmer-container">
-          Testing
-        </div>
+    <form id="clip-details-form" method='put' onSubmit={handleSubmit}>
+      <div id="form-container">
+        <Accordion expanded={expanded === 'panel1'} onChange={handleChange('panel1')} defaultExpanded={true}>
+          <AccordionSummary>Details</AccordionSummary>
+          <AccordionDetails>
+            <div id="form-fields-container">
+              <Grid id="form-grid" container spacing={2}>
+                <Grid xs={12} className="field">
+                  <TextField 
+                    label="Title"
+                    color="secondary"
+                    fullWidth
+                    type="text"
+                    InputLabelProps={{ shrink: true }}
+                    defaultValue={props.source.name}
+                    required
+                  />
+                </Grid>
+                <Grid xs={4} className="field">
+                  <TextField
+                    label="Duration"
+                    color="secondary"
+                    disabled
+                    InputLabelProps={{ shrink: true }}
+                    value={props.clipDuration}
+                  />
+                </Grid>
+                <Grid xs={8} className="field">
+                  <TextField 
+                    label="Uploader"
+                    fullWidth
+                    color="secondary"
+                    type="text"
+                    disabled
+                    InputLabelProps={{ shrink: true }}
+                    defaultValue={props.source.name || ''}
+                  />
+                </Grid>
+                <Grid xs={12} className="field">
+                  <TextField 
+                    label="Description"
+                    color="secondary"
+                    fullWidth
+                    type="textarea"
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+              </Grid>
+            </div>
+          </AccordionDetails>
+        </Accordion>
+        <Accordion expanded={expanded === 'panel2'} onChange={handleChange('panel2')}>
+          <AccordionSummary>Thumbnail</AccordionSummary>
+          <AccordionDetails>
+            <ThumbnailSetter playerRef={props.playerRef} />
+          </ AccordionDetails>
+        </Accordion>
       </div>
-
-      <form id="clip-details-form" method='put' onSubmit={handleSubmit}>
-        <div id="form-fields-container">
-          <Grid id="form-grid" container spacing={2}>
-            <Grid xs={12} className="field">
-              <TextField 
-                label="Title"
-                color="secondary"
-                fullWidth
-                type="text"
-                InputLabelProps={{ shrink: true }}
-                defaultValue={props.source.name}
-                required
-              />
-            </Grid>
-            <Grid xs={4} className="field">
-              <TextField
-                label="Duration"
-                color="secondary"
-                disabled
-                InputLabelProps={{ shrink: true }}
-                value={clipDuration}
-              />
-            </Grid>
-            <Grid xs={8} className="field">
-              <TextField 
-                label="Uploader"
-                fullWidth
-                color="secondary"
-                type="text"
-                disabled
-                InputLabelProps={{ shrink: true }}
-                defaultValue={props.source.name || ''}
-              />
-            </Grid>
-            <Grid xs={12} className="field">
-              <TextField 
-                label="Description"
-                color="secondary"
-                fullWidth
-                type="textarea"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-          </Grid>
-        </div>
-        <ThumbnailSetter playerRef={playerRef} />
-        <div id="submit-button-container">
-          <button id="submit-button" type="submit">Upload!</button>
-        </div>
-      </form>
-    </div>
-  );
-};
+      <div id="submit-button-container">
+        <button id="submit-button" type="submit">Upload!</button>
+      </div>
+    </form>
+  )
+}
 
 class Rect {
   public readonly x: number;
@@ -163,9 +198,10 @@ class Rect {
 }
 
 
-function ThumbnailSetter(props: {playerRef: React.MutableRefObject<ReactPlayer | null>}) {
+function ThumbnailSetter(props: {playerRef: MutableRefObject<ReactPlayer | null>}) {
   const [canClear, setCanClear] = useState<boolean>(false);
   const [uploadedImage, setUploadedImage] = useState<HTMLImageElement | null>(null);
+  const [thumbnailFilename, setThumbnailFilename] = useState<string>('');
 
   const [cropping, setCropping] = useState<boolean>(false);
   const [crop, setCrop] = useState<Crop | null>(null)
@@ -188,6 +224,7 @@ function ThumbnailSetter(props: {playerRef: React.MutableRefObject<ReactPlayer |
     }
     context.clearRect(0, 0, canvas.width, canvas.height);
     setUploadedImage(null);
+    setThumbnailFilename('')
     setCrop(null);
     setAcceptedCrop(null);
     setCanClear(false);
@@ -215,10 +252,11 @@ function ThumbnailSetter(props: {playerRef: React.MutableRefObject<ReactPlayer |
       return
     }
     const { width, height } = croppingCanvas.getBoundingClientRect();
-    const dx = ( width - 800 ) / 2;
-    const dy = ( height - 800 ) / 2;
+    const scale = Math.min.apply(Math, [width, height, 800])
+    const dx = ( width - scale ) / 2;
+    const dy = ( height - scale ) / 2;
 
-    setCrop({unit: 'px', x: dx, y: dy, width: 800, height: 800})
+    setCrop({unit: 'px', x: dx, y: dy, width: scale, height: scale})
   }
 
   const acceptCrop = function() {
@@ -297,6 +335,8 @@ function ThumbnailSetter(props: {playerRef: React.MutableRefObject<ReactPlayer |
       if (acceptedCrop.width !== acceptedCrop.height && fixedAspect) {
         setFixedAspect(false)
       }
+    } else {
+      setCrop(null)
     }
   }
 
@@ -355,6 +395,7 @@ function ThumbnailSetter(props: {playerRef: React.MutableRefObject<ReactPlayer |
     }
     if (event.target.files && event.target.files[0]) {
       reader.readAsDataURL(event.target.files[0]);
+      setThumbnailFilename(event.target.files[0].name)
     }   
   }
 
@@ -397,7 +438,7 @@ function ThumbnailSetter(props: {playerRef: React.MutableRefObject<ReactPlayer |
               </Grid>
             </Grid>
           </div>
-          <ReactCrop crop={crop ?? undefined} onChange={c => setCrop(c)} aspect={Number(fixedAspect)} className="react-crop">
+          <ReactCrop crop={crop ?? undefined} onChange={c => setCrop(c)} aspect={Number(fixedAspect)} className="react-crop" maxHeight={croppingCanvasRef.current?.height}>
             <canvas id="cropping-canvas" ref={croppingCanvasRef} />
           </ReactCrop>
           <div id="cropping-dimensions">Dimensions: {crop?.width || 0}px {'\u00d7'} {crop?.height || 0}px</div>
@@ -417,6 +458,21 @@ function ThumbnailSetter(props: {playerRef: React.MutableRefObject<ReactPlayer |
               <input ref={inputRef} type="file" accept=".jpg,.png" id="file-selector-input" multiple={false} onChange={handleUpload} />
               <button type="button" onClick={onButtonClick}>Upload from file...</button>
             </Grid>
+            {/* <Grid xs>
+              <TextField
+                id="thumbnail-filename-field"
+                fullWidth
+                hiddenLabel
+                color="primary"
+                variant="filled"
+                type="text"
+                disabled
+                InputLabelProps={{ shrink: true }}
+                placeholder="Filename"
+                size="small"
+                value={thumbnailFilename}
+              />
+            </Grid> */}
             <Grid xs>
               <button type="button" disabled={!uploadedImage} onClick={handleCropUploadedImage}>Crop uploaded image</button>
             </Grid>
