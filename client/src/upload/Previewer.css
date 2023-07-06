@@ -78,7 +78,7 @@
 
 #thumbnail-filename-field {
     background-color: #949494;
-    padding: 0px;
+    padding: 0;
 }
 
 #thumbnail-filename-field::placeholder {
@@ -88,7 +88,7 @@
 
 #cropping-overlay {
     z-index: 2;
-    position: absolute;
+    position: fixed;
     background-color: rgba(0, 0, 0, 0.90);
     width: 100vw;
     height: 100vh;
@@ -130,7 +130,7 @@
     display: flex;
     justify-content: center;
 
-    margin: 20px 0px;
+    margin: 20px 0;
 }
 
 #cropping-button-grid-container button {
@@ -155,8 +155,8 @@
 
 
 #submit-button-container {
-    width: calc(100%-20px);
-    padding: 10px 0px;
+    width: 100%;
+    padding: 10px 0;
     height: calc(15% - 10px);
     /* margin: 10px; */
     box-sizing: border-box;

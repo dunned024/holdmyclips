@@ -12,6 +12,8 @@ import ReactPlayer from 'react-player'
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import CloseIcon from '@mui/icons-material/Close';
 
 
 // const defaultThumbnailBlob = new Blob([ defaultThumbnail ], { type: 'image/jpg' });
@@ -56,7 +58,7 @@ function Controller(props: {range: number[], handleChange: () => void}) {
 }
 
 function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) => void, clipDuration: string, playerRef: MutableRefObject<ReactPlayer | null>}) {
-  const [expanded, setExpanded] = useState<string | false>(false);
+  const [expanded, setExpanded] = useState<string | false>('panel1');
 
   const handleChange = (panel: string) => (event: SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
@@ -88,8 +90,12 @@ function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) 
   return (
     <form id="clip-details-form" method='put' onSubmit={handleSubmit}>
       <div id="form-container">
-        <Accordion expanded={expanded === 'panel1'} onChange={handleChange('panel1')} defaultExpanded={true}>
-          <AccordionSummary>Details</AccordionSummary>
+        <Accordion
+          expanded={expanded === 'panel1'}
+          onChange={handleChange('panel1')}
+          defaultExpanded={true}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>Details</AccordionSummary>
           <AccordionDetails>
             <div id="form-fields-container">
               <Grid id="form-grid" container spacing={2}>
@@ -137,8 +143,11 @@ function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) 
             </div>
           </AccordionDetails>
         </Accordion>
-        <Accordion expanded={expanded === 'panel2'} onChange={handleChange('panel2')}>
-          <AccordionSummary>Thumbnail</AccordionSummary>
+        <Accordion
+          expanded={expanded === 'panel2'}
+          onChange={handleChange('panel2')}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>Thumbnail</AccordionSummary>
           <AccordionDetails>
             <ThumbnailSetter playerRef={props.playerRef} />
           </ AccordionDetails>
@@ -345,12 +354,12 @@ function ThumbnailSetter(props: {playerRef: MutableRefObject<ReactPlayer | null>
     if (!croppingCanvas) {
       return
     }
-    if (sourceImage instanceof HTMLVideoElement && video) {
-      croppingCanvas.width = video.videoWidth;
-      croppingCanvas.height = video.videoHeight;
-    } else if (uploadedImage) {
-      croppingCanvas.width = uploadedImage.width;
-      croppingCanvas.height = uploadedImage.height;
+    if (sourceImage instanceof HTMLVideoElement) {
+      croppingCanvas.width = sourceImage.videoWidth;
+      croppingCanvas.height = sourceImage.videoHeight;
+    } else if (sourceImage) {
+      croppingCanvas.width = sourceImage.width;
+      croppingCanvas.height = sourceImage.height;
     } else {
       croppingCanvas.width = 1920;
       croppingCanvas.height = 1080;
@@ -419,9 +428,9 @@ function ThumbnailSetter(props: {playerRef: MutableRefObject<ReactPlayer | null>
   
   return (
     <div id="thumbnail-container">
-      <div id="cropping-overlay" style={{display: cropping === true ? 'block' : 'none'}}>
+      <div id="cropping-overlay" style={{display: cropping ? 'block' : 'none'}}>
         <div id="cropping-overlay-element-container">
-          <button id="cropping-close-button" onClick={closeCrop}>{'\u2a2f'}</button>
+          <button id="cropping-close-button" onClick={closeCrop}><CloseIcon /></button>
           <div id="cropping-button-grid-container">
             <Grid id="cropping-button-grid" container spacing={1}>
               <Grid xs={6}>
@@ -444,7 +453,6 @@ function ThumbnailSetter(props: {playerRef: MutableRefObject<ReactPlayer | null>
           <div id="cropping-dimensions">Dimensions: {crop?.width || 0}px {'\u00d7'} {crop?.height || 0}px</div>
         </div>
       </div>
-      <div>Thumbnail:</div>
       <canvas id="thumbnail-canvas" width="400" height="400" ref={canvasRef} />
       <Grid id="thumbnail-button-grid" container direction="column" spacing={1}>
         <Grid id="thumbnail-button-grid2" container spacing={1}>
@@ -458,7 +466,7 @@ function ThumbnailSetter(props: {playerRef: MutableRefObject<ReactPlayer | null>
               <input ref={inputRef} type="file" accept=".jpg,.png" id="file-selector-input" multiple={false} onChange={handleUpload} />
               <button type="button" onClick={onButtonClick}>Upload from file...</button>
             </Grid>
-            {/* <Grid xs>
+            <Grid xs>
               <TextField
                 id="thumbnail-filename-field"
                 fullWidth
@@ -472,7 +480,7 @@ function ThumbnailSetter(props: {playerRef: MutableRefObject<ReactPlayer | null>
                 size="small"
                 value={thumbnailFilename}
               />
-            </Grid> */}
+            </Grid>
             <Grid xs>
               <button type="button" disabled={!uploadedImage} onClick={handleCropUploadedImage}>Crop uploaded image</button>
             </Grid>
