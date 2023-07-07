@@ -94,6 +94,7 @@ function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) 
           expanded={expanded === 'panel1'}
           onChange={handleChange('panel1')}
           defaultExpanded={true}
+          disableGutters
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>Details</AccordionSummary>
           <AccordionDetails>
@@ -135,7 +136,9 @@ function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) 
                     label="Description"
                     color="secondary"
                     fullWidth
-                    type="textarea"
+                    // type="textarea"
+                    multiline
+                    rows={2}
                     InputLabelProps={{ shrink: true }}
                   />
                 </Grid>
@@ -146,6 +149,7 @@ function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) 
         <Accordion
           expanded={expanded === 'panel2'}
           onChange={handleChange('panel2')}
+          disableGutters
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>Thumbnail</AccordionSummary>
           <AccordionDetails>
@@ -469,15 +473,15 @@ function ThumbnailSetter(props: {playerRef: MutableRefObject<ReactPlayer | null>
             <Grid xs>
               <TextField
                 id="thumbnail-filename-field"
+                style={{height: '100%'}}
                 fullWidth
                 hiddenLabel
                 color="primary"
-                variant="filled"
                 type="text"
                 disabled
+                // InputProps={{}}
                 InputLabelProps={{ shrink: true }}
                 placeholder="Filename"
-                size="small"
                 value={thumbnailFilename}
               />
             </Grid>

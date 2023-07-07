@@ -26,7 +26,7 @@
     height: calc(15% - 10px);
     margin-top: 10px;
     width: 100%;
-    background-color: #1f2531;
+    background-color: #8dc7e8;
     border-radius: 4px;
 }
 
@@ -52,6 +52,7 @@
 }
 
 #form-fields-container {
+    background-color: #8dc7e8;
     max-width: 100%;
 }
 
@@ -78,7 +79,7 @@
 
 #thumbnail-filename-field {
     background-color: #949494;
-    padding: 0;
+    padding: 10px;
 }
 
 #thumbnail-filename-field::placeholder {
