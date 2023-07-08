@@ -1,6 +1,7 @@
-import { ChangeEvent, FormEvent, MutableRefObject, SyntheticEvent, useEffect, useRef, useState } from 'react';
+import React, { ChangeEvent, FormEvent, MutableRefObject, SyntheticEvent, useRef, useState } from 'react';
 import './Previewer.css'
 import { randomId } from '../services/clipIdentifiers'
+import { styled } from '@mui/material/styles';
 import { UploadForm } from '../types';
 // import * as defaultThumbnail from '../assets/default_thumbnail.jpg';
 import Grid from '@mui/material/Unstable_Grid2'; 
@@ -9,7 +10,7 @@ import Slider from '@mui/material/Slider';
 import ReactCrop, { type Crop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import ReactPlayer from 'react-player'
-import Accordion from '@mui/material/Accordion';
+import Accordion, { AccordionProps } from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -57,6 +58,16 @@ function Controller(props: {range: number[], handleChange: () => void}) {
 
 }
 
+const StyledAccordion = styled((props: AccordionProps) => (
+  <Accordion disableGutters {...props} />
+))(({ theme }) => ({
+  'background-color': '#8dc7e8',
+  border: `1px solid ${theme.palette.divider}`,
+  '&:not(:last-child)': {
+    borderBottom: 0,
+  },
+}));
+
 function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) => void, clipDuration: string, playerRef: MutableRefObject<ReactPlayer | null>}) {
   const [expanded, setExpanded] = useState<string | false>('panel1');
 
@@ -90,11 +101,10 @@ function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) 
   return (
     <form id="clip-details-form" method='put' onSubmit={handleSubmit}>
       <div id="form-container">
-        <Accordion
+        <StyledAccordion
           expanded={expanded === 'panel1'}
           onChange={handleChange('panel1')}
           defaultExpanded={true}
-          disableGutters
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>Details</AccordionSummary>
           <AccordionDetails>
@@ -145,17 +155,16 @@ function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) 
               </Grid>
             </div>
           </AccordionDetails>
-        </Accordion>
-        <Accordion
+        </StyledAccordion>
+        <StyledAccordion
           expanded={expanded === 'panel2'}
           onChange={handleChange('panel2')}
-          disableGutters
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>Thumbnail</AccordionSummary>
           <AccordionDetails>
             <ThumbnailSetter playerRef={props.playerRef} />
           </ AccordionDetails>
-        </Accordion>
+        </StyledAccordion>
       </div>
       <div id="submit-button-container">
         <button id="submit-button" type="submit">Upload!</button>
