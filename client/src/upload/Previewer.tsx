@@ -20,7 +20,7 @@ import CloseIcon from '@mui/icons-material/Close';
 // const defaultThumbnailBlob = new Blob([ defaultThumbnail ], { type: 'image/jpg' });
 
 export function Previewer(props: {source: File, uploadClip: (clipForm: UploadForm) => void}) {
-  const [clipDuration, setClipDuration] = useState("");
+  const [clipDuration, setClipDuration] = useState(0);
   const videoSrc = URL.createObjectURL(props.source);
   const playerRef = useRef<ReactPlayer>(null);
 
@@ -34,10 +34,10 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
           height="100%"
           url={videoSrc}
           ref={playerRef}
-          onDuration={(d: number) => setClipDuration(`${Math.ceil(d).toString()}s`)}
+          onDuration={(d: number) => setClipDuration(d)}
         />
         <div id="trimmer-container">
-          Testing
+          <Controller duration={clipDuration * 1000} />
         </div>
       </div>
       <FormAccordian source={props.source} uploadClip={props.uploadClip} clipDuration={clipDuration} playerRef={playerRef}/>
@@ -45,13 +45,44 @@ export function Previewer(props: {source: File, uploadClip: (clipForm: UploadFor
   );
 };
 
-function Controller(props: {range: number[], handleChange: () => void}) {
+function Controller(props: {duration: number}) {
+  // I think I want two sliders, one to control playback, and one to control trimming
+  // If I could override the video element playback slider I'd be really happy, but I don't think that's possible
+  const [trimmedStartEnd, setTrimmedStartEnd] = useState([0, props.duration]);
+  const minDistance = 1000
+
+  const handleChange1 = ( // This will probably need to be moved up to the parent component
+    event: Event,
+    newValue: number | number[],
+    activeThumb: number,
+  ) => {
+    console.log(newValue);
+    if (!Array.isArray(newValue)) {
+      return;
+    }
+
+    if (activeThumb === 0) {
+      setTrimmedStartEnd([Math.min(newValue[0], trimmedStartEnd[1] - minDistance), trimmedStartEnd[1]]);
+    } else {
+      setTrimmedStartEnd([trimmedStartEnd[0], Math.max(newValue[1], trimmedStartEnd[0] + minDistance)]);
+    }
+  };
+
+  function valueLabelFormat(value: number) {
+    const seconds = Math.trunc(value / 10) / 100
+    return `${seconds}s`;
+  }
+
   return (
     <div>
       <Slider
         id="seeker"
-        value={props.range}
-        onChange={props.handleChange} // TODO: does this handle seeking, or trimming?
+        max={props.duration}
+        value={trimmedStartEnd}
+        onChange={handleChange1}
+        valueLabelFormat={valueLabelFormat}
+        valueLabelDisplay="auto"
+        disableSwap
       />
     </div>
   )
@@ -68,8 +99,9 @@ const StyledAccordion = styled((props: AccordionProps) => (
   },
 }));
 
-function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) => void, clipDuration: string, playerRef: MutableRefObject<ReactPlayer | null>}) {
+function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) => void, clipDuration: number, playerRef: MutableRefObject<ReactPlayer | null>}) {
   const [expanded, setExpanded] = useState<string | false>('panel1');
+  const duration = `${Math.ceil(props.clipDuration).toString()}s`
 
   const handleChange = (panel: string) => (event: SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
@@ -92,7 +124,7 @@ function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) 
     const id = randomId()
     formData.append('id', id)
     
-    formData.append('duration', props.clipDuration)
+    formData.append('duration', duration)
     formData.append('views', '0')
     formData.append('comments', '[]')
     
@@ -127,7 +159,7 @@ function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) 
                     color="secondary"
                     disabled
                     InputLabelProps={{ shrink: true }}
-                    value={props.clipDuration}
+                    value={duration}
                   />
                 </Grid>
                 <Grid xs={8} className="field">
