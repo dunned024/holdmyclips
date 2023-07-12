@@ -40,7 +40,7 @@ import { UploadForm } from '../types';
   return (
     <div id="uploader">
       {!source && <FileSelector setSource={setSource}/>}
-      {source && <Previewer source={source} uploadClip={uploadClip} />}
+      {source && <Previewer source={source} sourceUrl={URL.createObjectURL(source)} uploadClip={uploadClip} />}
     </div>
   );
 }

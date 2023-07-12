@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEvent, MutableRefObject, SyntheticEvent, useRef, useState } from 'react';
+import React, { ChangeEvent, FormEvent, MutableRefObject, SyntheticEvent, useEffect, useRef, useState } from 'react';
 import './Previewer.css'
 import { randomId } from '../services/clipIdentifiers'
 import { styled } from '@mui/material/styles';
@@ -6,7 +6,7 @@ import { UploadForm } from '../types';
 // import * as defaultThumbnail from '../assets/default_thumbnail.jpg';
 import Grid from '@mui/material/Unstable_Grid2'; 
 import TextField from '@mui/material/TextField'; 
-import Slider from '@mui/material/Slider';
+import Slider, { SliderThumb } from '@mui/material/Slider';
 import ReactCrop, { type Crop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import ReactPlayer from 'react-player'
@@ -19,39 +19,42 @@ import CloseIcon from '@mui/icons-material/Close';
 
 // const defaultThumbnailBlob = new Blob([ defaultThumbnail ], { type: 'image/jpg' });
 
-export function Previewer(props: {source: File, uploadClip: (clipForm: UploadForm) => void}) {
+export function Previewer(props: {source: File, sourceUrl: string, uploadClip: (clipForm: UploadForm) => void}) {
   const [clipDuration, setClipDuration] = useState(0);
-  const videoSrc = URL.createObjectURL(props.source);
   const playerRef = useRef<ReactPlayer>(null);
-
-  return (
-    <div id="previewer">
-      <div id="video-preview-container">
-        <ReactPlayer
-          id="video"
-          controls
-          width="100%"
-          height="100%"
-          url={videoSrc}
-          ref={playerRef}
-          onDuration={(d: number) => setClipDuration(d)}
-        />
-        <div id="trimmer-container">
-          <Controller duration={clipDuration * 1000} />
-        </div>
-      </div>
-      <FormAccordian source={props.source} uploadClip={props.uploadClip} clipDuration={clipDuration} playerRef={playerRef}/>
-    </div>
-  );
-};
-
-function Controller(props: {duration: number}) {
-  // I think I want two sliders, one to control playback, and one to control trimming
-  // If I could override the video element playback slider I'd be really happy, but I don't think that's possible
-  const [trimmedStartEnd, setTrimmedStartEnd] = useState([0, props.duration]);
+  const [currentSeek, setCurrentSeek] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [trimmedStartEnd, setTrimmedStartEnd] = useState([0, clipDuration]);
+  const [sliderPips, setSliderPips] = useState([0, 0, clipDuration]);
+  const [isTrimming, setIsTrimming] = useState(false);
   const minDistance = 1000
 
-  const handleChange1 = ( // This will probably need to be moved up to the parent component
+  useEffect(() => {
+    if (currentSeek / 1000 === playerRef.current?.getDuration()) {
+      setIsPlaying(false)
+    }
+  }, [currentSeek])
+
+  const _loadClipDuration = function(d: number) {
+    setClipDuration(d)
+    setTrimmedStartEnd([0, d * 1000])
+    setSliderPips([0, 0, d * 1000])
+  }
+
+  const handleOnProgress = function(e: any) {
+    setCurrentSeek(e.playedSeconds * 1000)
+  }
+
+  const handleSeekChange = function(e: any) {
+    setCurrentSeek(e.target.value)
+    playerRef.current?.seekTo(e.target.value / 1000)
+  }
+
+  const handlePlayPause = function() {
+    setIsPlaying(!isPlaying)
+  }
+  
+  const handleTrim = (
     event: Event,
     newValue: number | number[],
     activeThumb: number,
@@ -68,6 +71,128 @@ function Controller(props: {duration: number}) {
     }
   };
 
+  const handleSliderChange = (
+    event: Event,
+    newValue: number | number[],
+    activeThumb: number,
+  ) => {
+    // I think no matter what, I want clicking on the track to move the currentSeek, even while trimming
+    console.log(newValue);
+    if (!Array.isArray(newValue)) {
+      return;
+    }
+
+    console.log({
+      newValue: newValue,
+      activeThumb: activeThumb
+    });
+    // TODO: this works, but the alternate thumbs are highlighted if active -- maybe there's a way to only allow one active thumb?
+    if (isTrimming) {
+      if (activeThumb === 0) {
+        setSliderPips([Math.min(newValue[0],  sliderPips[1], sliderPips[2] - minDistance), sliderPips[2]]);
+      } else if (activeThumb === 2) {
+        setSliderPips([sliderPips[0], sliderPips[1], Math.max(newValue[2], sliderPips[0] + minDistance)]);
+      } else {
+        newValue.forEach(value => {
+          if (!sliderPips.includes(value)) {
+            setSliderPips([sliderPips[0], value, sliderPips[2]])
+            setCurrentSeek(value)
+            playerRef.current?.seekTo(value / 1000)
+          }
+        });
+      }
+    } else {
+      newValue.forEach(value => {
+        if (!sliderPips.includes(value)) {
+          setSliderPips([sliderPips[0], value, sliderPips[2]])
+          setCurrentSeek(value)
+          playerRef.current?.seekTo(value / 1000)
+        }
+      });
+    }
+  };
+
+  return (
+    <div id="previewer">
+      <div id="video-preview-container">
+        <ReactPlayer
+          id="video"
+          controls
+          width="100%"
+          height="100%"
+          url={props.sourceUrl}
+          ref={playerRef}
+          playing={isPlaying}
+          onDuration={_loadClipDuration}
+          progressInterval={100}
+          onProgress={handleOnProgress}
+        />
+        <div id="trimmer-container">
+          <VideoController isPlaying={isPlaying} sliderPips={sliderPips} duration={clipDuration * 1000} handleSliderChange={handleSliderChange} handlePlayPause={handlePlayPause}/>
+          {/* <Controller isPlaying={isPlaying} currentSeek={currentSeek} trimmedStartEnd={trimmedStartEnd} handleSeekChange={handleSeekChange} handlePlayPause={handlePlayPause}/> */}
+          <TrimController duration={clipDuration * 1000} trimmedStartEnd={trimmedStartEnd} handleTrim={handleTrim} />
+        </div>
+      </div>
+      <FormAccordian source={props.source} uploadClip={props.uploadClip} clipDuration={clipDuration} playerRef={playerRef}/>
+    </div>
+  );
+};
+
+
+const TrimSlider = styled(Slider)(({ theme }) => ({
+  color: "#3a8589",
+  height: 3,
+  padding: "13px 0",
+  "& .MuiSlider-thumb": {
+    height: 27,
+    width: 27,
+    backgroundColor: "#fff",
+    border: "1px solid currentColor",
+    "&.trim-end": {
+      border: "2px dashed purple"
+    },
+    "&:hover": {
+      boxShadow: "0 0 0 8px rgba(58, 133, 137, 0.16)"
+    },
+    "& .airbnb-bar": {
+      height: 9,
+      width: 1,
+      marginLeft: 1,
+      marginRight: 1
+    },
+    "&.trim-start .airbnb-bar": {
+      backgroundColor: "red"
+    },
+    "&.trim-end .airbnb-bar": {
+      backgroundColor: "currentColor"
+    }
+  },
+  "& .MuiSlider-track": {
+    height: 3
+  },
+  "& .MuiSlider-rail": {
+    color: theme.palette.mode === "dark" ? "#bfbfbf" : "#d8d8d8",
+    opacity: theme.palette.mode === "dark" ? undefined : 1,
+    height: 3
+  }
+}));
+
+function TrimSliderThumbComponent(props: any) {
+  const { children, className, ...other } = props;
+  const thumbClassMap = ['trimmed-start', 'current-seek', 'trimmed-end']
+  const extraClassName = thumbClassMap[other["data-index"]]
+  return (
+    <SliderThumb {...other} className={`${className} ${extraClassName}`}>
+      {children}
+      <span className="airbnb-bar" />
+      <span className="airbnb-bar" />
+      <span className="airbnb-bar" />
+    </SliderThumb>
+  );
+}
+
+function VideoController(props: {isPlaying: boolean, sliderPips: number[], duration: number, handleSliderChange: (e: Event, newValue: number | number[], activeThumb: number) => void, handlePlayPause: () => void}) {
+  const [trimmedStart, currentSeek, trimmedEnd] = props.sliderPips
   function valueLabelFormat(value: number) {
     const seconds = Math.trunc(value / 10) / 100
     return `${seconds}s`;
@@ -75,11 +200,82 @@ function Controller(props: {duration: number}) {
 
   return (
     <div>
+      <button onClick={props.handlePlayPause}>Play/Pause</button>
+      <div>{`${Math.ceil(currentSeek / 1000).toString()}s`}</div>
       <Slider
         id="seeker"
         max={props.duration}
-        value={trimmedStartEnd}
-        onChange={handleChange1}
+        value={props.sliderPips}
+        onChange={props.handleSliderChange}
+        valueLabelFormat={valueLabelFormat}
+        valueLabelDisplay="auto"
+      />
+    </div>
+  )
+
+}
+
+function Controller(props: {isPlaying: boolean, currentSeek: number, trimmedStartEnd: number[], handleSeekChange: (e: any) => void, handlePlayPause: () => void}) {
+  function valueLabelFormat(value: number) {
+    const seconds = Math.trunc(value / 10) / 100
+    return `${seconds}s`;
+  }
+
+  console.log(props.trimmedStartEnd)
+  return (
+    <div>
+      <button onClick={props.handlePlayPause}>Play/Pause</button>
+      <div>{`${Math.ceil(props.currentSeek / 1000).toString()}s`}</div>
+      <Slider
+        id="seeker"
+        min={props.trimmedStartEnd[0]}
+        max={props.trimmedStartEnd[1]}
+        value={props.currentSeek}
+        onChange={props.handleSeekChange}
+        valueLabelFormat={valueLabelFormat}
+        valueLabelDisplay="auto"
+      />
+    </div>
+  )
+
+}
+
+function TrimController(props: {duration: number, trimmedStartEnd: number[], handleTrim: (e: Event, newValue: number | number[], activeThumb: number) => void}) {
+  // I think I want two sliders, one to control playback, and one to control trimming
+  // If I could override the video element playback slider I'd be really happy, but I don't think that's possible
+  // An array of three values representing the three timestamps we care about:
+  //  sliderPips[0] = clip start (can be non-zero if user trims the clips)
+  //  sliderPips[1] = current playback time
+  //  sliderPips[2] = clip end
+  // const [sliderPips, setSliderPips] = useState([0, props.currentSeek, props.duration]);
+
+
+
+  // function onChange(e: any) {
+  //   // It looks like the "changed value" is the value closest to the selected time
+  //   // Here, I can compare the current trimmedStartEnd array to e.target.value to get the "changed value",
+  //   // then set the middle value to that. The first and last value will be controlled separately.
+  //   // I need to figure out what 'slots' are, and how to style the individual sliders ('thumbs'?)
+  //   console.log(e.target)
+  //   console.log(e.target.value[1])
+  //   setSliderPips([0, e.target.value[1], props.duration])
+  //   props.handleSeekChange(e)
+  // }
+  
+
+  function valueLabelFormat(value: number) {
+    const seconds = Math.trunc(value / 10) / 100
+    return `${seconds}s`;
+  }
+
+  return (
+    <div>
+      <TrimSlider
+        id="trim-slider"
+        components={{ Thumb: TrimSliderThumbComponent }}
+        max={props.duration}
+        value={props.trimmedStartEnd}
+        onChange={props.handleTrim}
         valueLabelFormat={valueLabelFormat}
         valueLabelDisplay="auto"
         disableSwap
@@ -92,7 +288,7 @@ function Controller(props: {duration: number}) {
 const StyledAccordion = styled((props: AccordionProps) => (
   <Accordion disableGutters {...props} />
 ))(({ theme }) => ({
-  'background-color': '#8dc7e8',
+  'backgroundColor': '#8dc7e8',
   border: `1px solid ${theme.palette.divider}`,
   '&:not(:last-child)': {
     borderBottom: 0,
