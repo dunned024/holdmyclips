@@ -5,7 +5,6 @@
 }
 
 #video-preview-container {
-    max-height: 100%;
     width: 75%;
 
     margin: 10px 10px;
@@ -17,19 +16,42 @@
     flex-direction: column;
 }
 
-#video {
-    max-height: 85%;
-    /* background-color: #000000; */
+#player-box {
+    height: 84%;
+    aspect-ratio: 16 / 9;
+    background-color: #000000;
 }
 
-#trimmer-container {
-    height: calc(15% - 10px);
-    margin-top: 10px;
+#controller {
     width: 100%;
     background-color: #8dc7e8;
-    border-radius: 4px;
+    border-radius: 0 0 4px 4px;
 }
 
+#controller-stack {
+    display: flex;
+    margin: 10px;
+}
+
+#slider-stack {
+    flex-grow: 1;
+    display: flex;
+    font-size: 14px;
+}
+
+#slider-container {
+    flex-grow: 1;
+    display: grid
+}
+
+#seeker, #trimmer{
+    grid-column: 1;
+    grid-row: 1;
+}
+
+#volume-slider{
+    width: 50px
+}
 
 #clip-details-form {
     height: calc(100% - 20px);

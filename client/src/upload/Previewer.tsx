@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FormEvent, ForwardRefExoticComponent, MutableRefObject, RefAttributes, SyntheticEvent, forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import React, { ChangeEvent, FormEvent, MutableRefObject, SyntheticEvent, useRef, useState } from 'react';
 import './Previewer.css'
 import { randomId } from '../services/clipIdentifiers'
 import { styled } from '@mui/material/styles';
@@ -6,7 +6,7 @@ import { UploadForm } from '../types';
 // import * as defaultThumbnail from '../assets/default_thumbnail.jpg';
 import Grid from '@mui/material/Unstable_Grid2'; 
 import TextField from '@mui/material/TextField'; 
-import Slider, { SliderProps, SliderThumb } from '@mui/material/Slider';
+import Slider from '@mui/material/Slider';
 import ReactCrop, { type Crop } from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
 import ReactPlayer from 'react-player'
@@ -15,35 +15,45 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CloseIcon from '@mui/icons-material/Close';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PauseIcon from '@mui/icons-material/Pause';
+import VolumeDown from '@mui/icons-material/VolumeDown';
+import VolumeUp from '@mui/icons-material/VolumeUp';
 
 
 // const defaultThumbnailBlob = new Blob([ defaultThumbnail ], { type: 'image/jpg' });
 
 export function Previewer(props: {source: File, sourceUrl: string, uploadClip: (clipForm: UploadForm) => void}) {
   const [clipDuration, setClipDuration] = useState(0);
+  const [maxDuration, setMaxDuration] = useState(0);
   const playerRef = useRef<ReactPlayer>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [trimmedStartEnd, setTrimmedStartEnd] = useState([0, clipDuration]);
-  const [sliderPips, setSliderPips] = useState([0, 0, clipDuration]);
-  const [selectedPip, setSelectedPip] = useState(-1);
+  const [currentSeek, setCurrentSeek] = useState(0);
+  const [trimPips, setTrimPips] = useState([0, clipDuration]);
   const [isTrimming, setIsTrimming] = useState(false);
-  const minDistance = 1000
-  
+  const [trimStartError, setTrimStartError] = useState('')
+  const [trimEndError, setTrimEndError] = useState('')
+
+  const [volume, setVolume] = useState(1);
+  const minDistance = 5000
+
   const loadClipDuration = function(d: number) {
     setClipDuration(d)
-    setTrimmedStartEnd([0, d * 1000])
-    setSliderPips([0, 0, d * 1000])
+    setMaxDuration(d)
+    setTrimPips([0, d * 1000])
   }
 
   const handleOnProgress = function(e: any) {
     // Because ReactPlayer updates every 100ms, playedSeconds may exceed
-    // sliderPips[2], i.e. the trimmed end of the clip, so we re-set it
+    // trimPips[1], i.e. the trimmed end of the clip, so we re-set it
     // back to the "allowed maximum"
-    if (e.playedSeconds * 1000 >= sliderPips[2]) {
-      playerRef.current?.seekTo(sliderPips[2] / 1000, 'seconds')
+    if (e.playedSeconds * 1000 >= trimPips[1]) {
+      playerRef.current?.seekTo(trimPips[1] / 1000, 'seconds')
       setIsPlaying(false)
     } else {
-      setSliderPips([sliderPips[0], e.playedSeconds * 1000, sliderPips[2]])
+      setCurrentSeek(e.playedSeconds * 1000)
     }
   }
 
@@ -53,13 +63,28 @@ export function Previewer(props: {source: File, sourceUrl: string, uploadClip: (
     }
     const currentTime = playerRef.current?.getCurrentTime() * 1000
     
-    if (currentTime >= sliderPips[2]) {
-      playerRef.current?.seekTo(0)
+    if (currentTime >= trimPips[1]) {
+      playerRef.current?.seekTo(trimPips[0] / 1000)
+      setCurrentSeek(trimPips[0])
     }
     setIsPlaying(!isPlaying)
   }
   
-  const handleSliderChange = (
+  const handleSeekChange = (
+    event: Event,
+    newValue: number | number[],
+  ) => {
+    if (Array.isArray(newValue)) {
+      return;
+    }
+
+    if (trimPips[0] <= newValue && newValue <= trimPips[1]) {
+      playerRef.current?.seekTo(newValue / 1000, 'seconds')
+      setCurrentSeek(newValue)
+    }
+  }
+
+  const handleTrimChange = (
     event: Event,
     newValue: number | number[],
     activeThumb: number,
@@ -67,137 +92,239 @@ export function Previewer(props: {source: File, sourceUrl: string, uploadClip: (
     if (!Array.isArray(newValue)) {
       return;
     }
-
-    // TODO: this works, but the alternate thumbs are highlighted if active -- maybe there's a way to only allow one active thumb?
-    if (isTrimming && activeThumb === 0 && selectedPip === 0) {
-      setSliderPips([Math.min(newValue[0], sliderPips[2] - minDistance),  sliderPips[1], sliderPips[2]]);
-    } else if (isTrimming && activeThumb === 2 && selectedPip === 2) {
-      setSliderPips([sliderPips[0], sliderPips[1], Math.max(newValue[2], sliderPips[0] + minDistance)]);
+    
+    if (activeThumb === 0) {
+      const value = Math.min(newValue[0], trimPips[1] - minDistance, currentSeek)
+      setTrimPips([value, trimPips[1]]);
+      setClipDuration((trimPips[1] - value) / 1000)
     } else {
-      if (sliderPips[0] <= newValue[activeThumb] && newValue[activeThumb] <= sliderPips[2]) {
-        playerRef.current?.seekTo(newValue[activeThumb] / 1000, 'seconds')
-      }
+      const value = Math.max(newValue[1], trimPips[0] + minDistance, currentSeek)
+      setTrimPips([trimPips[0], value]);
+      setClipDuration((value - trimPips[0]) / 1000)
     }
   }
 
+  const handleTrimStartInput = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = +e.target.value * 1000
+    if (value < 0) {
+      setTrimStartError('Start must be greater than 0')
+      setTrimPips([0, trimPips[1]])
+    } else if (value > trimPips[1] - minDistance) {
+      setTrimStartError(`Clip must be at least ${minDistance / 1000}s long`)
+    } else if (value > currentSeek) {
+      setCurrentSeek(value)
+      setTrimPips([value, trimPips[1]])
+      setTrimStartError('')
+    } else {
+      setTrimPips([value, trimPips[1]])
+      setTrimStartError('')
+    }
+  }
+
+  const handleTrimEndInput = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = +e.target.value * 1000
+    if (value > maxDuration * 1000) {
+      setTrimEndError('Cannot exceed max clip length')
+      setTrimPips([trimPips[0], Math.trunc(maxDuration * 100) * 10])
+    } else if (value < trimPips[0] + minDistance) {
+      setTrimEndError(`Clip must be at least ${minDistance / 1000}s long`)
+    } else if (value < currentSeek) {
+      setCurrentSeek(value)
+      setTrimPips([trimPips[0], value])
+      setTrimEndError('')
+    } else {
+      setTrimPips([trimPips[0], value])
+      setTrimEndError('')
+    }
+  }
+
+  const handleVolumeChange = (
+    event: Event,
+    newValue: number | number[],
+  ) => {
+    if (Array.isArray(newValue)) {
+      return;
+    }
+    setVolume(newValue)
+  }
+
   return (
-    <div id="previewer" onMouseUp={() => setSelectedPip(-1)} onMouseLeave={() => setSelectedPip(-1)}>
+    <div id="previewer">
       <div id="video-preview-container">
-        <ReactPlayer
-          id="video"
-          controls
-          width="100%"
-          height="100%"
-          url={props.sourceUrl}
-          ref={playerRef}
-          playing={isPlaying}
-          onDuration={loadClipDuration}
-          progressInterval={100}
-          onProgress={handleOnProgress}
-          onEnded={() => setIsPlaying(false)}
-        />
-        {selectedPip}
-        <div id="trimmer-container">
-          <VideoController
-            isPlaying={isPlaying}
-            isTrimming={isTrimming}
-            sliderPips={sliderPips}
-            duration={clipDuration * 1000}
-            handleSliderChange={handleSliderChange}
-            handlePlayPause={handlePlayPause}
-            setIsTrimming={setIsTrimming}
-            setSelectedPip={setSelectedPip}
+        <div id="player-box">
+          <ReactPlayer
+            id="video"
+            // controls={false}
+            width="100%"
+            height="100%"
+            volume={volume}
+            url={props.sourceUrl}
+            ref={playerRef}
+            playing={isPlaying}
+            onDuration={loadClipDuration}
+            progressInterval={100}
+            onProgress={handleOnProgress}
+            onEnded={() => setIsPlaying(false)}
           />
         </div>
+        <VideoController
+          isPlaying={isPlaying}
+          isTrimming={isTrimming}
+          currentSeek={currentSeek}
+          trimPips={trimPips}
+          maxDuration={maxDuration * 1000}
+          volume={volume}
+          handleSeekChange={handleSeekChange}
+          handleTrimChange={handleTrimChange}
+          handlePlayPause={handlePlayPause}
+          setIsTrimming={setIsTrimming}
+          handleVolumeChange={handleVolumeChange}
+        />
+        <Stack direction="row" >
+          <button onClick={() => setIsTrimming(!isTrimming)} style={isTrimming ? {backgroundColor: "#7774a1"} : {}}>Trim clip</button>
+          
+          <TextField
+            id="trim-start-field"
+            label="Start"
+            type="number"
+            error={trimStartError !== ''}
+            helperText={trimStartError}
+            onChange={handleTrimStartInput}
+            onBlur={(e) => {
+              e.target.value = (trimPips[0] / 1000).toString()
+              setTrimStartError('')
+            }}
+          />
+
+          <TextField
+            id="trim-end-field"
+            label="End"
+            type="number"
+            error={trimEndError !== ''}
+            helperText={trimEndError}
+            onChange={handleTrimEndInput}
+            onBlur={(e) => {
+              e.target.value = (trimPips[1] / 1000).toString()
+              setTrimEndError('')
+            }}
+          />
+
+        </Stack>
       </div>
       <FormAccordian source={props.source} uploadClip={props.uploadClip} clipDuration={clipDuration} playerRef={playerRef}/>
     </div>
   );
 };
 
-const TrimSlider = styled(Slider)(({ theme }) => ({
-  color: "#3a8589",
-  height: 3,
-  padding: "13px 0",
+const SeekSlider = styled(Slider)(({ theme }) => ({
+  color: "#175f63",
   "& .MuiSlider-track": {
-    height: 3
+    opacity : 0,
   },
   "& .MuiSlider-rail": {
-    color: theme.palette.mode === "dark" ? "#bfbfbf" : "#d8d8d8",
-    opacity: theme.palette.mode === "dark" ? undefined : 1,
-    height: 3
+    opacity : 0,
+  },
+  '& .MuiSlider-thumb': {
+    "z-index": 1,
+    width: 20,
+    height: 20,
   }
 }));
 
-const CurrentSeekThumb = styled(SliderThumb,
-  {
-    shouldForwardProp: (prop) => prop !== "isTrimming" && prop !== "setSelectedPip"
-  })(() => ({
-  width: 20,
-  height: 20,
-}));
-
-const TrimThumb = styled(SliderThumb,
-  {
-    shouldForwardProp: (prop) => prop !== "isTrimming" && prop !== "setSelectedPip"
-  })((props: any) => ({
-  height: 27,
-  width: 6,
-  borderRadius: 0,
-  display: props.isTrimming ? "flex" : "none",
-}));
-
-function CustomThumb(props: any) {
-  // A warning against this usage:
-  //  "Using an inline function as an argument for the component prop may
-  //  result in unexpected unmounting, since a new component is passed
-  //  every time React renders"
-  // From: https://mui.com/material-ui/guides/composition/
-  const setH = (i: number) => {
-    console.log(i)
-    props.setSelectedPip(i)
-  }
-  const dataIndex = props["data-index"]
-  return dataIndex === 1 ? <CurrentSeekThumb {...props} onMouseDown={() => setH(dataIndex)} /> : <TrimThumb {...props} onMouseDown={() => setH(dataIndex)} />
+interface TrimSliderProps {
+  isTrimming: boolean
 }
+
+const TrimSlider = styled(Slider,
+  {
+    shouldForwardProp: (prop) => prop !== "isTrimming"
+  })<TrimSliderProps>(({ isTrimming }) => ({
+  color: "#3a8589",
+  padding: "13px 0",
+  "pointer-events": "none !important",
+  "& .MuiSlider-track": {
+    height: 10,
+    borderRadius: 0,
+  },
+  "& .MuiSlider-rail": {
+    height: 10,
+    borderRadius: 0,
+  },
+  '& .MuiSlider-thumb': {
+    "pointer-events": "all !important",
+    color: "#175f63",
+    height: 24,
+    width: 5,
+    borderRadius: 0,
+    display: isTrimming ? "flex" : "none",
+  }
+}));
 
 interface VideoControllerProps {
   isPlaying: boolean,
   isTrimming: boolean,
-  sliderPips: number[],
-  duration: number,
-  handleSliderChange: (e: Event, newValue: number | number[], activeThumb: number) => void,
+  currentSeek: number,
+  trimPips: number[],
+  maxDuration: number,
+  volume: number,
+  handleSeekChange: (e: Event, newValue: number | number[]) => void,
+  handleTrimChange: (e: Event, newValue: number | number[], activeThumb: number) => void,
+  handleVolumeChange: (e: Event, newValue: number | number[]) => void,
   handlePlayPause: () => void,
   setIsTrimming: (isTrimming: boolean) => void,
-  setSelectedPip: (i: number) => void
 }
 
 function VideoController(props: VideoControllerProps) {
-  const [trimmedStart, currentSeek, trimmedEnd] = props.sliderPips
-  const thumbProps = {isTrimming: props.isTrimming, setSelectedPip: props.setSelectedPip}
-
-  function valueLabelFormat(value: number) {
-    const seconds = Math.trunc(value / 10) / 100
-    return `${seconds}s`;
+  function formatTime(value: number) {
+    // const seconds = Math.trunc(value / 10) / 100
+    return new Date(value).toISOString().slice(14, 19);
   }
 
   return (
-    <div>
-      <button onClick={props.handlePlayPause}>Play/Pause</button>
-      <button onClick={() => props.setIsTrimming(!props.isTrimming)} style={props.isTrimming ? {backgroundColor: "#7774a1"} : {}}>Trim clip</button>
-      <div>{`${Math.ceil(currentSeek / 1000).toString()}s`}</div>
-      <TrimSlider
-        id="seeker"
-        slots={{ thumb: CustomThumb }}
-        slotProps={{ thumb: () => thumbProps}}
-        max={props.duration}
-        value={props.sliderPips}
-        onChange={props.handleSliderChange}
-        valueLabelFormat={valueLabelFormat}
-        valueLabelDisplay="auto"
-        disableSwap
-        onMouseUp={() => props.setSelectedPip(-1)}
-      />
+    <div id="controller">
+      <Stack id="controller-stack" direction="row" spacing={2} alignItems="center">
+        <Stack id="slider-stack" direction="row" spacing={2} alignItems="center">
+          <IconButton onClick={props.handlePlayPause} >
+            {props.isPlaying ? <PauseIcon/> : <PlayArrowIcon/>}
+          </IconButton>
+          <div id="slider-container">
+            <SeekSlider
+              id="seeker"
+              max={props.maxDuration}
+              value={props.currentSeek}
+              onChange={props.handleSeekChange}
+              valueLabelFormat={formatTime}
+              valueLabelDisplay="auto"
+              disableSwap
+            />
+            <TrimSlider
+              id="trimmer"
+              max={props.maxDuration}
+              value={props.trimPips}
+              onChange={props.handleTrimChange}
+              valueLabelFormat={formatTime}
+              valueLabelDisplay="auto"
+              disableSwap
+              isTrimming={props.isTrimming}
+            />
+          </div>
+          
+          <div>{formatTime(props.currentSeek)} / {formatTime(props.maxDuration)}</div>
+        </Stack>
+
+        <Stack direction="row" spacing={1}>
+          <VolumeDown />
+          <Slider
+            id="volume-slider"
+            size="small"
+            max={1}
+            step={0.05}
+            value={props.volume}
+            onChange={props.handleVolumeChange}
+          />
+          <VolumeUp />
+        </Stack>
+      </Stack>
     </div>
   )
 }
