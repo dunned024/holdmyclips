@@ -49,6 +49,11 @@
     grid-row: 1;
 }
 
+#trim-inputs-container {
+    padding: 10px;
+    height: 40px;
+}
+
 #volume-slider{
     width: 50px
 }

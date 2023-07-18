@@ -114,6 +114,7 @@ export function Previewer(props: {source: File, sourceUrl: string, uploadClip: (
     } else if (value > currentSeek) {
       setCurrentSeek(value)
       setTrimPips([value, trimPips[1]])
+      playerRef.current?.seekTo(value / 1000)
       setTrimStartError('')
     } else {
       setTrimPips([value, trimPips[1]])
@@ -131,6 +132,7 @@ export function Previewer(props: {source: File, sourceUrl: string, uploadClip: (
     } else if (value < currentSeek) {
       setCurrentSeek(value)
       setTrimPips([trimPips[0], value])
+      playerRef.current?.seekTo(value / 1000)
       setTrimEndError('')
     } else {
       setTrimPips([trimPips[0], value])
@@ -180,15 +182,18 @@ export function Previewer(props: {source: File, sourceUrl: string, uploadClip: (
           setIsTrimming={setIsTrimming}
           handleVolumeChange={handleVolumeChange}
         />
-        <Stack direction="row" >
-          <button onClick={() => setIsTrimming(!isTrimming)} style={isTrimming ? {backgroundColor: "#7774a1"} : {}}>Trim clip</button>
+        <Stack id="trim-inputs-container" direction="row" spacing={2}>
+          <button id="trim-clip-button" onClick={() => setIsTrimming(!isTrimming)} style={isTrimming ? {backgroundColor: "#7774a1"} : {}}>Trim clip</button>
           
           <TextField
             id="trim-start-field"
             label="Start"
             type="number"
+            color="secondary"
+            size="small"
             error={trimStartError !== ''}
             helperText={trimStartError}
+            InputLabelProps={{ shrink: true }} 
             onChange={handleTrimStartInput}
             onBlur={(e) => {
               e.target.value = (trimPips[0] / 1000).toString()
@@ -200,8 +205,11 @@ export function Previewer(props: {source: File, sourceUrl: string, uploadClip: (
             id="trim-end-field"
             label="End"
             type="number"
+            color="secondary"
+            size="small"
             error={trimEndError !== ''}
             helperText={trimEndError}
+            InputLabelProps={{ shrink: true }} 
             onChange={handleTrimEndInput}
             onBlur={(e) => {
               e.target.value = (trimPips[1] / 1000).toString()
@@ -317,6 +325,7 @@ function VideoController(props: VideoControllerProps) {
           <Slider
             id="volume-slider"
             size="small"
+            color="secondary"
             max={1}
             step={0.05}
             value={props.volume}
@@ -418,7 +427,6 @@ function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) 
                     label="Description"
                     color="secondary"
                     fullWidth
-                    // type="textarea"
                     multiline
                     rows={2}
                     InputLabelProps={{ shrink: true }}
