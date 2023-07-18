@@ -284,7 +284,6 @@ interface VideoControllerProps {
 
 function VideoController(props: VideoControllerProps) {
   function formatTime(value: number) {
-    // const seconds = Math.trunc(value / 10) / 100
     return new Date(value).toISOString().slice(14, 19);
   }
 
@@ -747,42 +746,34 @@ function ThumbnailSetter(props: {playerRef: MutableRefObject<ReactPlayer | null>
         </div>
       </div>
       <canvas id="thumbnail-canvas" width="400" height="400" ref={canvasRef} />
-      <Grid id="thumbnail-button-grid" container direction="column" spacing={1}>
-        <Grid id="thumbnail-button-grid2" container spacing={1}>
-          <Grid xs={6} container direction="column">
-            <Grid style={{height: "100%"}}>
-              <button type="button" onClick={handleCaptureFrame}>Capture frame</button>
-            </Grid>
+      <Stack id="thumbnail-button-container" direction="column" spacing={1}>
+        <Grid container spacing={1}>
+          <Grid xs={6}>
+            <button id="capture-frame-button" type="button" onClick={handleCaptureFrame}>Capture frame</button>
           </Grid>
-          <Grid xs={6} container direction="column" spacing={1}>
-            <Grid xs>
+          <Grid xs={6}>
+            <Stack id="file-crop-button-container" direction="column">
               <input ref={inputRef} type="file" accept=".jpg,.png" id="file-selector-input" multiple={false} onChange={handleUpload} />
               <button type="button" onClick={onButtonClick}>Upload from file...</button>
-            </Grid>
-            <Grid xs>
               <TextField
                 id="thumbnail-filename-field"
-                style={{height: '100%'}}
+                size="small"
+                style={{margin: 0}}
                 fullWidth
                 hiddenLabel
                 color="primary"
                 type="text"
                 disabled
-                // InputProps={{}}
                 InputLabelProps={{ shrink: true }}
                 placeholder="Filename"
                 value={thumbnailFilename}
               />
-            </Grid>
-            <Grid xs>
               <button type="button" disabled={!uploadedImage} onClick={handleCropUploadedImage}>Crop uploaded image</button>
-            </Grid>
+            </Stack>
           </Grid>
         </Grid>
-        <Grid xs>
-          <button type="button" disabled={!canClear} onClick={clear}>Clear</button>
-        </Grid>
-      </Grid>
+        <button type="button" disabled={!canClear} onClick={clear}>Clear</button>
+      </Stack>
     </div>
   )
 }

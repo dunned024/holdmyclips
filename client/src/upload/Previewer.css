@@ -83,6 +83,7 @@
     max-width: 100%;
 }
 
+
 #thumbnail-container {
     background-color: #1f2531;
     margin: 10px 10px;
@@ -90,23 +91,27 @@
     padding: 10px
 }
 
-#thumbnail-container button {
-    width: 100%;
-}
-
-#thumbnail-button-grid button {
-    height: 100%;
-}
-
 #thumbnail-canvas {
-    margin: 10px 10px;
     height: 360px;
     width: 360px;
 }
 
+#thumbnail-container button {
+    width: 100%;
+    padding: 4px;
+}
+
+#thumbnail-button-container {
+    margin: 5px 0 0 0;
+}
+#capture-frame-button {
+    height: 100%;
+}
+
 #thumbnail-filename-field {
     background-color: #949494;
-    padding: 10px;
+    padding: 2px;
+    margin: 5px 0;
 }
 
 #thumbnail-filename-field::placeholder {
