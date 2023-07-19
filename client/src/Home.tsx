@@ -11,12 +11,6 @@ export function Home() {
       const res = await fetch('/clips');
       const data = await res.json();
       setClips(JSON.parse(data).clips)
-
-      // const promises = data.Items.map(async (id: string) => {
-      //   const res = await fetch(`https://clips.dunned024.com/clips/${id}/${id}.json`);
-      //   return await res.json();
-      // })
-
     }
 
     if (!clips.length) {
@@ -32,7 +26,7 @@ export function Home() {
         </Link>
       </div>
       <div className="clip-rows">
-        {clips.map((clip) => <ClipCard clip={clip} />)}
+        {clips.map((clip) => <ClipCard key={clip.id} clip={clip} />)}
       </div>
     </div>
   );
