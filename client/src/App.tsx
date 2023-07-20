@@ -8,6 +8,7 @@ import './App.css';
 import { Home } from './Home';
 import { Player } from './Player';
 import { Uploader } from "./upload/Uploader";
+import { Stack } from "@mui/material";
 
 function App() {
   return (
@@ -19,8 +20,10 @@ function App() {
           </a>
         </div>
         <a className="link" id="github-link" href="https://github.com/dunned024" rel="noreferrer">
-          <AiFillGithub />
-          dunned024
+          <Stack direction='row' spacing={2}>
+            <AiFillGithub />
+            dunned024
+          </Stack>
         </a>
       </div>
       <div className="app">

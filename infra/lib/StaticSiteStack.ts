@@ -72,14 +72,6 @@ export class StaticSiteStack extends Stack {
       }
     })
   
-    const defaultBehavior: AddBehaviorOptions = {
-      allowedMethods: AllowedMethods.ALLOW_ALL,
-      cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
-      originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
-      responseHeadersPolicy,
-      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-    }
-
     const errorResponses: ErrorResponse[] = [403, 404].map((status) => {
       return {
         httpStatus: status,
@@ -101,14 +93,31 @@ export class StaticSiteStack extends Stack {
     });
 
     const s3Origin = new S3Origin(bucket, {originAccessIdentity})
+    const defaultBehavior: BehaviorOptions = {
+      origin: s3Origin,
+      allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+      cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
+      originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
+      responseHeadersPolicy,
+      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    }
+
+    const uploadBehavior: AddBehaviorOptions = {
+      allowedMethods: AllowedMethods.ALLOW_ALL,
+      cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
+      originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
+      responseHeadersPolicy,
+      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    }
     const auth = props.cloudFrontAuth;
     const distribution = new Distribution(this, 'Distribution', {
       additionalBehaviors: {
         ...auth.createAuthPagesBehaviors(s3Origin),
+        'upload': auth.createProtectedBehavior(s3Origin, uploadBehavior),
         'clips': clipdexBehavior, // pathPattern matches API endpoint
       },
       certificate: props.hostedDomain.cert,
-      defaultBehavior: auth.createProtectedBehavior(s3Origin, defaultBehavior),
+      defaultBehavior: defaultBehavior,
       defaultRootObject: 'index.html',
       domainNames: [props.fqdn],
       errorResponses: errorResponses,

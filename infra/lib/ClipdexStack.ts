@@ -80,8 +80,7 @@ export class ClipdexStack extends Stack {
     new CfnOutput(this, 'ClipdexTableName', { value: clipdexTable.tableName });
 
     // Create 'users' resource for querying user details
-    const usersResource = this.apiGateway.root.addResource('users');
-  
+    // const usersResource = this.apiGateway.root.addResource('users');
   }
 }
 

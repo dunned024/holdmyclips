@@ -21,9 +21,9 @@ export function Home() {
   return (
     <div className="home">
       <div className="upload-button-row">
-        <Link to={`/upload`} className="upload-link">
+        <a className="link" id="upload-link" href="/upload" rel="noreferrer">
           <button>Upload clip</button>
-        </Link>
+        </a>
       </div>
       <div className="clip-rows">
         {clips.map((clip) => <ClipCard key={clip.id} clip={clip} />)}
