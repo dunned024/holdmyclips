@@ -40,23 +40,6 @@ export class StaticSiteStack extends Stack {
       versioned: true,
     });
 
-    const apiOrigin = new RestApiOrigin(props.apiGateway, {originPath: '/prod'}) // originPath points to the Stage
-    const clipdexBehavior: BehaviorOptions = {
-      allowedMethods: AllowedMethods.ALLOW_ALL,
-      origin: apiOrigin,
-      originRequestPolicy: OriginRequestPolicy.CORS_CUSTOM_ORIGIN,
-      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-    }
-
-    const originAccessIdentity = new OriginAccessIdentity(this, 'OAI');
-
-    // const cachePolicy = new CachePolicy(this, 'DistributionCachePolicy', {
-    //   defaultTtl: Duration.days(7),
-    //   headerBehavior: CacheHeaderBehavior.allowList('Origin', "Content-Security-Policy"),
-    //   maxTtl: Duration.days(30),
-    //   minTtl: Duration.days(1),
-    // })
-
     const responseHeadersPolicy = new ResponseHeadersPolicy(this, 'ResponseHeadersPolicy', {
       responseHeadersPolicyName: 'CorsAndCsp',
       comment: 'Policy to allow CORS and CSP for media streaming',
@@ -81,17 +64,8 @@ export class StaticSiteStack extends Stack {
       }}
     )
 
-    // Re-evaluate whether or not this is needed, based on how much it
-    // costs to store these logs vs. their usefulness.
-    // They're also not easy to use, since I'm not spending money on
-    // Athena.
-    const logBucket = new Bucket(this, 'LogBucket', {
-      accessControl: BucketAccessControl.BUCKET_OWNER_FULL_CONTROL,
-      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
-      bucketName: 'hold-my-clips-distribution-logs',
-      objectOwnership: ObjectOwnership.OBJECT_WRITER,
-    });
-
+    // Define distribution behaviors
+    const originAccessIdentity = new OriginAccessIdentity(this, 'OAI');
     const s3Origin = new S3Origin(bucket, {originAccessIdentity})
     const defaultBehavior: BehaviorOptions = {
       origin: s3Origin,
@@ -109,12 +83,31 @@ export class StaticSiteStack extends Stack {
       responseHeadersPolicy,
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     }
+
+    const apiOrigin = new RestApiOrigin(props.apiGateway, {originPath: '/prod'}) // originPath points to the Stage
+    const clipdexBehavior: AddBehaviorOptions = {
+      allowedMethods: AllowedMethods.ALLOW_ALL,
+      originRequestPolicy: OriginRequestPolicy.CORS_CUSTOM_ORIGIN,
+      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    }
+
+    // Re-evaluate whether or not this is needed, based on how much it
+    // costs to store these logs vs. their usefulness.
+    // They're also not easy to use, since I'm not spending money on
+    // Athena.
+    const logBucket = new Bucket(this, 'LogBucket', {
+      accessControl: BucketAccessControl.BUCKET_OWNER_FULL_CONTROL,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+      bucketName: 'hold-my-clips-distribution-logs',
+      objectOwnership: ObjectOwnership.OBJECT_WRITER,
+    });
+
     const auth = props.cloudFrontAuth;
     const distribution = new Distribution(this, 'Distribution', {
       additionalBehaviors: {
         ...auth.createAuthPagesBehaviors(s3Origin),
         'upload': auth.createProtectedBehavior(s3Origin, uploadBehavior),
-        'clips': clipdexBehavior, // pathPattern matches API endpoint
+        'clips': auth.createProtectedBehavior(apiOrigin, clipdexBehavior), // pathPattern matches API endpoint
       },
       certificate: props.hostedDomain.cert,
       defaultBehavior: defaultBehavior,
