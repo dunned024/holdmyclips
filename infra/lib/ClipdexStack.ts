@@ -1,21 +1,46 @@
 import { CfnOutput, Stack, StackProps } from 'aws-cdk-lib';
-import { AwsIntegration, LambdaIntegration, LambdaRestApi, PassthroughBehavior, RestApi } from 'aws-cdk-lib/aws-apigateway';
+import { AccessLogFormat, AuthorizationType, AwsIntegration, CognitoUserPoolsAuthorizer, LambdaIntegration, LambdaRestApi, LogGroupLogDestination, PassthroughBehavior, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb';
 import { ManagedPolicy, PolicyDocument, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 import path from 'path';
 import { ConfiguredStackProps } from './config';
+import { UserPool, UserPoolClient } from 'aws-cdk-lib/aws-cognito';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { LogGroup } from 'aws-cdk-lib/aws-logs';
+
+export interface ClipdexStackProps extends ConfiguredStackProps {
+  authUserPool: UserPool
+  authUserPoolClient: UserPoolClient
+}
 
 export class ClipdexStack extends Stack {
   public readonly apiGateway: LambdaRestApi;
 
-  constructor(scope: Construct, id: string, props: ConfiguredStackProps) {
+  constructor(scope: Construct, id: string, props: ClipdexStackProps) {
     super(scope, id, props);
+
+    const logGroup = new LogGroup(this, "APILogs");
     this.apiGateway = new RestApi(this, "RestApi", {
+      cloudWatchRole: true,
       defaultCorsPreflightOptions: {
         allowOrigins: ['*'],
-      }
+      },
+      deployOptions: {
+        accessLogDestination: new LogGroupLogDestination(logGroup),
+        accessLogFormat: AccessLogFormat.jsonWithStandardFields({
+          caller: true,
+          httpMethod: true,
+          ip: true,
+          protocol: true,
+          requestTime: true,
+          resourcePath: true,
+          responseLength: true,
+          status: true,
+          user: true,
+        }),
+      },
     });
 
     const integrationRole = new Role(this, 'IntegrationRole', {
@@ -71,16 +96,30 @@ export class ClipdexStack extends Stack {
 
     clipdexTable.grantReadData(integrationRole);
 
+    
+    const auth = new CognitoUserPoolsAuthorizer(this, 'uploadAuthorizer', {
+      cognitoUserPools: [props.authUserPool]
+    });
+
     // Add Lambda integration for uploading clips
     const uploadLambda = new UploadLambda(this, 'Lambda');
     const uploadIntegration = new LambdaIntegration(uploadLambda.handler)
-    clipsResource.addMethod('PUT', uploadIntegration);  // PUT /clips
+    clipsResource.addMethod('PUT', uploadIntegration, {  // PUT /clips
+      authorizer: auth,
+      authorizationType: AuthorizationType.COGNITO,
+    });
     clipdexTable.grantReadWriteData(uploadLambda.handler);
 
     new CfnOutput(this, 'ClipdexTableName', { value: clipdexTable.tableName });
 
+
+
+
     // Create 'users' resource for querying user details
-    // const usersResource = this.apiGateway.root.addResource('users');
+    const userResource = this.apiGateway.root.addResource('user');
+    const userLambda = new UserLambda(this, 'UserLambda', {userPoolClientId: props.authUserPoolClient.userPoolClientId});
+    const userIntegration = new LambdaIntegration(userLambda.handler)
+    userResource.addMethod('GET', userIntegration);
   }
 }
 
@@ -138,3 +177,28 @@ class UploadLambda extends Construct {
     });
   }
 }
+
+class UserLambda extends Construct {
+  public readonly handler: Function;
+
+  constructor(scope: Construct, id: string, props: {userPoolClientId: string}) {
+    super(scope, id);
+    
+    const cognitoRole = new Role(this, 'Role', {
+      roleName: 'hold-my-clips-lambda-cognito-role',
+      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName('AmazonCognitoReadOnly'),
+      ],
+    });
+
+    this.handler = new Function(this, 'Function', {
+      runtime: Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: Code.fromAsset(path.join(__dirname, '../services/cognito/')),
+      role: cognitoRole,
+      environment: {
+        COGNITO_CLIENT_ID: props.userPoolClientId
+      }
+    });
+}}

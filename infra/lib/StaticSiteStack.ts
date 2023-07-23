@@ -85,7 +85,7 @@ export class StaticSiteStack extends Stack {
     }
 
     const apiOrigin = new RestApiOrigin(props.apiGateway, {originPath: '/prod'}) // originPath points to the Stage
-    const clipdexBehavior: AddBehaviorOptions = {
+    const apiBehavior: AddBehaviorOptions = {
       allowedMethods: AllowedMethods.ALLOW_ALL,
       originRequestPolicy: OriginRequestPolicy.CORS_CUSTOM_ORIGIN,
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -107,7 +107,7 @@ export class StaticSiteStack extends Stack {
       additionalBehaviors: {
         ...auth.createAuthPagesBehaviors(s3Origin),
         'upload': auth.createProtectedBehavior(s3Origin, uploadBehavior),
-        'clips': auth.createProtectedBehavior(apiOrigin, clipdexBehavior), // pathPattern matches API endpoint
+        // 'user': auth.createProtectedBehavior(apiOrigin, apiBehavior), // pathPattern matches API endpoint
       },
       certificate: props.hostedDomain.cert,
       defaultBehavior: defaultBehavior,
@@ -116,6 +116,9 @@ export class StaticSiteStack extends Stack {
       errorResponses: errorResponses,
       logBucket: logBucket,
     });
+
+    distribution.addBehavior('clips', apiOrigin, apiBehavior) // pathPattern matches API endpoint
+    distribution.addBehavior('user', apiOrigin, apiBehavior) // pathPattern matches API endpoint
 
     new ARecord(this, 'DnsRecord', {
       recordName: props.fqdn,

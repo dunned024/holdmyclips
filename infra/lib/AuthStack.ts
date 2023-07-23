@@ -15,7 +15,7 @@ import {
 import { CloudFrontTarget, UserPoolDomainTarget } from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
 import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
-import { OAuthScope, UserPool, UserPoolClientIdentityProvider, VerificationEmailStyle } from 'aws-cdk-lib/aws-cognito';
+import { OAuthScope, UserPool, UserPoolClient, VerificationEmailStyle } from 'aws-cdk-lib/aws-cognito';
 import { HostedDomain } from './HostedDomainStack';
 import { ConfiguredStackProps } from './config';
 import { AuthLambdas, CloudFrontAuth } from '@henrist/cdk-cloudfront-auth';
@@ -27,11 +27,12 @@ export interface AuthStackProps extends ConfiguredStackProps {
 
 export class AuthStack extends Stack {
   public readonly cloudFrontAuth: CloudFrontAuth;
+  public readonly userPool: UserPool;
 
   constructor(scope: Construct, id: string, props: AuthStackProps) {
     super(scope, id, props);
 
-    const userPool = new UserPool(this, 'UserPool', {
+    this.userPool = new UserPool(this, 'UserPool', {
       autoVerify: { email: true },
       userPoolName: 'hold-my-clips-user-pool',
       selfSignUpEnabled: true,
@@ -75,7 +76,7 @@ export class AuthStack extends Stack {
     // });
 
     const authDomainName = `auth.${props.fqdn}`
-    const domain = userPool.addDomain('Domain', {
+    const domain = this.userPool.addDomain('Domain', {
       customDomain: {
         domainName: authDomainName,
         certificate: props.hostedDomain.cert,
@@ -103,7 +104,7 @@ export class AuthStack extends Stack {
     this.cloudFrontAuth = new CloudFrontAuth(this, 'Auth', {
       cognitoAuthDomain: authDomainName,
       authLambdas,
-      userPool,
+      userPool: this.userPool,
     })
   }
 }
