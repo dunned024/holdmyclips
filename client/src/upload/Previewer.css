@@ -8,8 +8,6 @@
     width: 75%;
 
     margin: 10px 10px;
-    padding: 10px;
-    background-color: #7774a1;
     border-radius: 4px;
 
     display: flex;
@@ -24,7 +22,6 @@
 
 #controller {
     width: 100%;
-    background-color: #8dc7e8;
     border-radius: 0 0 4px 4px;
 }
 
@@ -49,11 +46,6 @@
     grid-row: 1;
 }
 
-#trim-inputs-container {
-    padding: 10px;
-    height: 40px;
-}
-
 #volume-slider{
     width: 50px
 }
@@ -73,20 +65,14 @@
 #form-container {
     max-width: 100%;
     height: calc(85% - 26px);
-    padding: 10px 10px;
-    background-color: #7774a1;
-    border-radius: 4px;
 }
 
 #form-fields-container {
-    background-color: #8dc7e8;
     max-width: 100%;
 }
 
 
 #thumbnail-container {
-    background-color: #1f2531;
-    margin: 10px 10px;
     border-radius: 4px;
     padding: 10px
 }
@@ -104,6 +90,7 @@
 #thumbnail-button-container {
     margin: 5px 0 0 0;
 }
+
 #capture-frame-button {
     height: 100%;
 }
@@ -187,19 +174,8 @@
 /* VVVV Wild CSS for animated submit button VVVV */
 
 
-#submit-button-container {
-    width: 100%;
-    padding: 10px 0;
-    height: calc(15% - 10px);
-    /* margin: 10px; */
-    box-sizing: border-box;
-    display: flex;
-    flex-grow: 1;
-    /* margin-top: auto; */
-    /* background-color:  #1f2531; */
-}
-
 #submit-button {
+    height: calc(15% - 10px);
     width: 100%;
     font-size: 32px;
 }

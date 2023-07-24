@@ -21,6 +21,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import VolumeDown from '@mui/icons-material/VolumeDown';
 import VolumeUp from '@mui/icons-material/VolumeUp';
+import { palette } from '../assets/themes/theme';
 
 
 // const defaultThumbnailBlob = new Blob([ defaultThumbnail ], { type: 'image/jpg' });
@@ -150,9 +151,21 @@ export function Previewer(props: {source: File, sourceUrl: string, uploadClip: (
     setVolume(newValue)
   }
 
+  const trimSetterProps: TrimSetterProps = {
+    trimPips,
+    isTrimming,
+    setIsTrimming,
+    trimStartError,
+    setTrimStartError,
+    handleTrimStartInput,
+    trimEndError,
+    setTrimEndError,
+    handleTrimEndInput,
+  }
+
   return (
-    <div id="previewer">
-      <div id="video-preview-container">
+    <Stack id="previewer" direction="row">
+      <Stack id="video-preview-container">
         <div id="player-box">
           <ReactPlayer
             id="video"
@@ -182,50 +195,20 @@ export function Previewer(props: {source: File, sourceUrl: string, uploadClip: (
           setIsTrimming={setIsTrimming}
           handleVolumeChange={handleVolumeChange}
         />
-        <Stack id="trim-inputs-container" direction="row" spacing={2}>
-          <button id="trim-clip-button" onClick={() => setIsTrimming(!isTrimming)} style={isTrimming ? {backgroundColor: "#7774a1"} : {}}>Trim clip</button>
-          
-          <TextField
-            id="trim-start-field"
-            label="Start"
-            type="number"
-            color="secondary"
-            size="small"
-            error={trimStartError !== ''}
-            helperText={trimStartError}
-            InputLabelProps={{ shrink: true }} 
-            onChange={handleTrimStartInput}
-            onBlur={(e) => {
-              e.target.value = (trimPips[0] / 1000).toString()
-              setTrimStartError('')
-            }}
-          />
-
-          <TextField
-            id="trim-end-field"
-            label="End"
-            type="number"
-            color="secondary"
-            size="small"
-            error={trimEndError !== ''}
-            helperText={trimEndError}
-            InputLabelProps={{ shrink: true }} 
-            onChange={handleTrimEndInput}
-            onBlur={(e) => {
-              e.target.value = (trimPips[1] / 1000).toString()
-              setTrimEndError('')
-            }}
-          />
-
-        </Stack>
-      </div>
-      <FormAccordian source={props.source} uploadClip={props.uploadClip} clipDuration={clipDuration} playerRef={playerRef}/>
-    </div>
+      </Stack>
+      <FormAccordian
+        source={props.source}
+        uploadClip={props.uploadClip}
+        clipDuration={clipDuration}
+        playerRef={playerRef}
+        trimSetterProps={trimSetterProps}
+      />
+    </Stack>
   );
 };
 
 const SeekSlider = styled(Slider)(({ theme }) => ({
-  color: "#175f63",
+  color: palette.secondary.dark,
   "& .MuiSlider-track": {
     opacity : 0,
   },
@@ -247,7 +230,7 @@ const TrimSlider = styled(Slider,
   {
     shouldForwardProp: (prop) => prop !== "isTrimming"
   })<TrimSliderProps>(({ isTrimming }) => ({
-  color: "#3a8589",
+  color: palette.secondary.main,
   padding: "13px 0",
   "pointer-events": "none !important",
   "& .MuiSlider-track": {
@@ -260,7 +243,7 @@ const TrimSlider = styled(Slider,
   },
   '& .MuiSlider-thumb': {
     "pointer-events": "all !important",
-    color: "#175f63",
+    color: palette.secondary.dark,
     height: 24,
     width: 5,
     borderRadius: 0,
@@ -288,7 +271,7 @@ function VideoController(props: VideoControllerProps) {
   }
 
   return (
-    <div id="controller">
+    <div id="controller" style={{backgroundColor: palette.secondary.light, color: palette.secondary.contrastText}}>
       <Stack id="controller-stack" direction="row" spacing={2} alignItems="center">
         <Stack id="slider-stack" direction="row" spacing={2} alignItems="center">
           <IconButton onClick={props.handlePlayPause} >
@@ -337,22 +320,31 @@ function VideoController(props: VideoControllerProps) {
   )
 }
 
+interface FormAccordianProps {
+  source: File
+  uploadClip: (formData: UploadForm) => void
+  clipDuration: number
+  playerRef: MutableRefObject<ReactPlayer | null>
+  trimSetterProps: TrimSetterProps
+}
+
 const StyledAccordion = styled((props: AccordionProps) => (
   <Accordion disableGutters {...props} />
 ))(({ theme }) => ({
-  'backgroundColor': '#8dc7e8',
+  backgroundColor: palette.secondary.light,
   border: `1px solid ${theme.palette.divider}`,
   '&:not(:last-child)': {
     borderBottom: 0,
   },
 }));
 
-function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) => void, clipDuration: number, playerRef: MutableRefObject<ReactPlayer | null>}) {
+function FormAccordian(props: FormAccordianProps) {
   const [expanded, setExpanded] = useState<string | false>('panel1');
   const duration = `${Math.ceil(props.clipDuration).toString()}s`
+  // console.log(props.trimSetterProps.trimPips)
 
-  const handleChange = (panel: string) => (event: SyntheticEvent, isExpanded: boolean) => {
-    setExpanded(isExpanded ? panel : false);
+  const handleChange = (panel: string) => (event: SyntheticEvent) => {
+    setExpanded(panel);
   };
 
   const handleSubmit = function(e: FormEvent) {
@@ -380,59 +372,57 @@ function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) 
   }
   return (
     <form id="clip-details-form" method='put' onSubmit={handleSubmit}>
-      <div id="form-container">
+      <Stack id="form-container">
         <StyledAccordion
           expanded={expanded === 'panel1'}
           onChange={handleChange('panel1')}
           defaultExpanded={true}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>Details</AccordionSummary>
-          <AccordionDetails>
-            <div id="form-fields-container">
-              <Grid id="form-grid" container spacing={2}>
-                <Grid xs={12} className="field">
-                  <TextField 
-                    label="Title"
-                    color="secondary"
-                    fullWidth
-                    type="text"
-                    InputLabelProps={{ shrink: true }}
-                    defaultValue={props.source.name}
-                    required
-                  />
-                </Grid>
-                <Grid xs={4} className="field">
-                  <TextField
-                    label="Duration"
-                    color="secondary"
-                    disabled
-                    InputLabelProps={{ shrink: true }}
-                    value={duration}
-                  />
-                </Grid>
-                <Grid xs={8} className="field">
-                  <TextField 
-                    label="Uploader"
-                    fullWidth
-                    color="secondary"
-                    type="text"
-                    disabled
-                    InputLabelProps={{ shrink: true }}
-                    defaultValue={props.source.name || ''}
-                  />
-                </Grid>
-                <Grid xs={12} className="field">
-                  <TextField 
-                    label="Description"
-                    color="secondary"
-                    fullWidth
-                    multiline
-                    rows={2}
-                    InputLabelProps={{ shrink: true }}
-                  />
-                </Grid>
+          <AccordionDetails sx={{flexGrow: 1}}>
+            <Grid id="form-grid" container spacing={2}>
+              <Grid xs={12} className="field">
+                <TextField 
+                  label="Title"
+                  color="primary"
+                  fullWidth
+                  type="text"
+                  InputLabelProps={{ shrink: true }}
+                  defaultValue={props.source.name}
+                  required
+                />
               </Grid>
-            </div>
+              <Grid xs={4} className="field">
+                <TextField
+                  label="Duration"
+                  color="primary"
+                  disabled
+                  InputLabelProps={{ shrink: true }}
+                  value={duration}
+                />
+              </Grid>
+              <Grid xs={8} className="field">
+                <TextField 
+                  label="Uploader"
+                  fullWidth
+                  color="primary"
+                  type="text"
+                  disabled
+                  InputLabelProps={{ shrink: true }}
+                  defaultValue={props.source.name || ''}
+                />
+              </Grid>
+              <Grid xs={12} className="field">
+                <TextField 
+                  label="Description"
+                  color="primary"
+                  fullWidth
+                  multiline
+                  rows={2}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+            </Grid>
           </AccordionDetails>
         </StyledAccordion>
         <StyledAccordion
@@ -444,11 +434,81 @@ function FormAccordian(props: {source: File, uploadClip: (formData: UploadForm) 
             <ThumbnailSetter playerRef={props.playerRef} />
           </ AccordionDetails>
         </StyledAccordion>
-      </div>
-      <div id="submit-button-container">
-        <button id="submit-button" type="submit">Upload!</button>
-      </div>
+        <StyledAccordion
+          expanded={expanded === 'panel3'}
+          onChange={handleChange('panel3')}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>Trimming</AccordionSummary>
+          <AccordionDetails>
+            <TrimSetter {...props.trimSetterProps}/>
+          </ AccordionDetails>
+        </StyledAccordion>
+      </Stack>
+      <button id="submit-button" type="submit">Upload!</button>
     </form>
+  )
+}
+
+interface TrimSetterProps {
+  trimPips: number[],
+  isTrimming: boolean,
+  setIsTrimming: (isTrimming: boolean) => void,
+
+  trimStartError: string,
+  setTrimStartError: (e: string) => void,
+  handleTrimStartInput: (e: ChangeEvent<HTMLInputElement>) => void,
+
+  trimEndError: string,
+  setTrimEndError: (e: string) => void,
+  handleTrimEndInput: (e: ChangeEvent<HTMLInputElement>) => void,
+}
+
+function TrimSetter(props: TrimSetterProps) {
+  console.log(props.trimPips)
+  return (
+    <Stack id="trim-inputs-container" spacing={2}>
+      <button
+        id="trim-clip-button"
+        onClick={() => props.setIsTrimming(!props.isTrimming)}
+        style={props.isTrimming ? {backgroundColor: palette.secondary.dark} : {}}
+      >
+        Show trim sliders
+      </button>
+
+      <TextField
+        id="trim-start-field"
+        label="Start"
+        type="number"
+        color="secondary"
+        size="small"
+        error={props.trimStartError !== ''}
+        helperText={props.trimStartError}
+        InputLabelProps={{ shrink: true }} 
+        onChange={props.handleTrimStartInput}
+        defaultValue={props.trimPips[0]}
+        onBlur={(e) => {
+          e.target.value = (props.trimPips[0] / 1000).toString()
+          props.setTrimStartError('')
+        }}
+      />
+
+      <TextField
+        id="trim-end-field"
+        label="End"
+        type="number"
+        color="secondary"
+        size="small"
+        error={props.trimEndError !== ''}
+        helperText={props.trimEndError}
+        InputLabelProps={{ shrink: true }} 
+        onChange={props.handleTrimEndInput}
+        defaultValue={props.trimPips[1]}
+        onBlur={(e) => {
+          e.target.value = (props.trimPips[1] / 1000).toString()
+          props.setTrimEndError('')
+        }}
+      />
+    </Stack>
   )
 }
 
@@ -719,7 +779,7 @@ function ThumbnailSetter(props: {playerRef: MutableRefObject<ReactPlayer | null>
   };
   
   return (
-    <div id="thumbnail-container">
+    <Stack id="thumbnail-container" sx={{backgroundColor: palette.secondary.dark}}>
       <div id="cropping-overlay" style={{display: cropping ? 'block' : 'none'}}>
         <div id="cropping-overlay-element-container">
           <button id="cropping-close-button" onClick={closeCrop}><CloseIcon /></button>
@@ -774,6 +834,6 @@ function ThumbnailSetter(props: {playerRef: MutableRefObject<ReactPlayer | null>
         </Grid>
         <button type="button" disabled={!canClear} onClick={clear}>Clear</button>
       </Stack>
-    </div>
+    </Stack>
   )
 }

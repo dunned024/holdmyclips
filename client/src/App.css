@@ -7,7 +7,6 @@
   align-items: center;
   justify-content: space-between;
 
-  background-color: #282c34;
   color: white;
   text-align: center;
   font-size: 16px;
@@ -29,7 +28,6 @@
 .app {
   height: calc(100vh - 48px);
   padding: 10px;
-  background: linear-gradient(180deg, #374153 0%, #374153 75%, #282c34 100%);
 
   color: white;
   text-align: center;
