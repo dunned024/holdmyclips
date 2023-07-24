@@ -341,7 +341,6 @@ const StyledAccordion = styled((props: AccordionProps) => (
 function FormAccordian(props: FormAccordianProps) {
   const [expanded, setExpanded] = useState<string | false>('panel1');
   const duration = `${Math.ceil(props.clipDuration).toString()}s`
-  // console.log(props.trimSetterProps.trimPips)
 
   const handleChange = (panel: string) => (event: SyntheticEvent) => {
     setExpanded(panel);
@@ -349,7 +348,6 @@ function FormAccordian(props: FormAccordianProps) {
 
   const handleSubmit = function(e: FormEvent) {
     e.preventDefault()
-    console.log('here')
 
     const form = (e.target as HTMLFormElement);
     const formData = new FormData(form) as UploadForm; // TODO: strongly type this so it throws if any fields are missing
@@ -464,7 +462,6 @@ interface TrimSetterProps {
 }
 
 function TrimSetter(props: TrimSetterProps) {
-  console.log(props.trimPips)
   return (
     <Stack id="trim-inputs-container" spacing={2}>
       <button
