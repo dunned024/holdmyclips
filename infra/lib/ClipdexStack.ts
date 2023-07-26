@@ -184,19 +184,19 @@ class UserLambda extends Construct {
   constructor(scope: Construct, id: string, props: {userPoolClientId: string}) {
     super(scope, id);
     
-    const cognitoRole = new Role(this, 'Role', {
-      roleName: 'hold-my-clips-lambda-cognito-role',
+    const userRole = new Role(this, 'Role', {
+      roleName: 'hold-my-clips-lambda-user-role',
       assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
       managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName('AmazonCognitoReadOnly'),
+        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
       ],
     });
 
     this.handler = new Function(this, 'Function', {
       runtime: Runtime.NODEJS_18_X,
       handler: 'index.handler',
-      code: Code.fromAsset(path.join(__dirname, '../services/cognito/')),
-      role: cognitoRole,
+      code: Code.fromAsset(path.join(__dirname, '../services/user/')),
+      role: userRole,
       environment: {
         COGNITO_CLIENT_ID: props.userPoolClientId
       }

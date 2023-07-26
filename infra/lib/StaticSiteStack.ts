@@ -87,7 +87,7 @@ export class StaticSiteStack extends Stack {
     const apiOrigin = new RestApiOrigin(props.apiGateway, {originPath: '/prod'}) // originPath points to the Stage
     const apiBehavior: AddBehaviorOptions = {
       allowedMethods: AllowedMethods.ALLOW_ALL,
-      originRequestPolicy: OriginRequestPolicy.CORS_CUSTOM_ORIGIN,
+      originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     }
 
