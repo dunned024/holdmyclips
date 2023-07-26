@@ -1,10 +1,6 @@
-import { parse } from "cookie"
+const clientId = process.env.COGNITO_CLIENT_ID
 
-console.log("init")
-let clientId = process.env.COGNITO_CLIENT_ID
-console.log("clientId loaded")
-
-export const handler = async (event, context, callback) => {
+export const handler = async (event, _, _) => {
   console.log("function start")
   const headers = event.headers ?? {}
   if (!headers) {
