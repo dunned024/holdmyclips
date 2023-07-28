@@ -1,0 +1,35 @@
+{
+    "root": true,
+    "env": {
+      "browser": true,
+      "es6": true,
+      "jest": true
+    },
+    "parser": "prettier/@typescript-eslint",
+    "parserOptions": {
+        "ecmaFeatures": {
+          "jsx": true 
+        }
+    },
+    "settings": {
+      "react": {
+        "version": "detect"
+      }
+    },
+    "plugins": [
+      "@typescript-eslint",
+      "prettier",
+      "react"
+    ],
+    "extends": [
+      "eslint:recommended",
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:react/recommended",
+      "prettier"
+    ],
+    "rules": {
+      "no-console": 1,       // Means warning
+      "prettier/prettier": 2 // Means error
+    }
+  }

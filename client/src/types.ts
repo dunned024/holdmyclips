@@ -1,19 +1,18 @@
-
 export interface Clip {
-  id: string,
-  title: string,
-  uploader: string,
+  id: string;
+  title: string;
+  uploader: string;
   // uploadedAt: Date
-  description: string,
-  duration: number,
-  views: number,
-  comments: Comment[]
+  description: string;
+  duration: number;
+  views: number;
+  comments: Comment[];
 }
 
 export interface Comment {
-  author: string,
-  text: string,
-  postedAt: Date
+  author: string;
+  text: string;
+  postedAt: Date;
 }
 
 export function parseClip(rawClip: Record<string, string>): Clip {
@@ -25,13 +24,13 @@ export function parseClip(rawClip: Record<string, string>): Clip {
     duration: parseInt(rawClip.duration),
     views: parseInt(rawClip.views),
     comments: JSON.parse(rawClip.comments)
-  }
+  };
 }
 
 export interface UploadForm extends FormData {
-  id: string,
-  title: string,
-  duration: number,
-  uploader: string,
-  description: string,
+  id: string;
+  title: string;
+  duration: number;
+  uploader: string;
+  description: string;
 }

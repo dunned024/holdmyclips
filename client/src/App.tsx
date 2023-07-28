@@ -1,49 +1,70 @@
-import {
-  Route,
-  BrowserRouter as Router,
-  Routes,
-} from "react-router-dom";
+import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import { AiFillGithub } from 'react-icons/ai';
 import './App.css';
 import { Home } from './Home';
 import { Player } from './Player';
-import { Uploader } from "./upload/Uploader";
-import { SignedIn, SignedOut } from "./Auth"
-import { Stack, ThemeProvider } from "@mui/material";
-import { THEME, palette } from "./assets/themes/theme";
-import { getCookie } from 'typescript-cookie'
-
+import { Uploader } from './upload/Uploader';
+import { SignedIn, SignedOut } from './Auth';
+import { Stack, ThemeProvider } from '@mui/material';
+import { THEME, palette } from './assets/themes/theme';
+import { getCookie } from 'typescript-cookie';
 
 function App() {
-  const username = getCookie("username");
+  const username = getCookie('username');
 
   return (
     <div>
       <ThemeProvider theme={THEME}>
-        <Stack className="app-header" direction="row" sx={{backgroundColor: palette.primary.dark}}>
-          <div className="header-container" id="header-container-ghlink">
-            <a className="link" id="github-link" href="https://github.com/dunned024" rel="noreferrer">
-                <AiFillGithub />
-                dunned024
+        <Stack
+          className='app-header'
+          direction='row'
+          sx={{ backgroundColor: palette.primary.dark }}
+        >
+          <div className='header-container' id='header-container-ghlink'>
+            <a
+              className='link'
+              id='github-link'
+              href='https://github.com/dunned024'
+              rel='noreferrer'
+            >
+              <AiFillGithub />
+              dunned024
             </a>
           </div>
-          <div className="header-container" id="header-container-homelink">
-            <a className="link" href="/" rel="noreferrer">hold my clips</a>
+          <div className='header-container' id='header-container-homelink'>
+            <a className='link' href='/' rel='noreferrer'>
+              hold my clips
+            </a>
           </div>
-          <div className="header-container" id="header-container-user">
-            {!username && <a className="link" href="/signedin" rel="noreferrer">Sign in</a>}
-            {username && <Stack id="username-container" direction="row">Signed in as: {username} |&nbsp;<a className="link" href="/auth/sign-out" rel="noreferrer">Sign out</a></Stack>}
+          <div className='header-container' id='header-container-user'>
+            {username ? (
+              <a className='link' href='/signedin' rel='noreferrer'>
+                Sign in
+              </a>
+            ) : (
+              <Stack id='username-container' direction='row'>
+                Signed in as: {username} |&nbsp;
+                <a className='link' href='/auth/sign-out' rel='noreferrer'>
+                  Sign out
+                </a>
+              </Stack>
+            )}
           </div>
-          <span id="stretch"></span>
+          <span id='stretch'></span>
         </Stack>
-        <Stack className="app" sx={{background: `linear-gradient(180deg, ${palette.primary.main} 0%, ${palette.primary.main} 75%, ${palette.primary.dark} 100%)`}}>
+        <Stack
+          className='app'
+          sx={{
+            background: `linear-gradient(180deg, ${palette.primary.main} 0%, ${palette.primary.main} 75%, ${palette.primary.dark} 100%)`
+          }}
+        >
           <Router>
             <Routes>
-              <Route path="/" element={<Home />}></Route>
-              <Route path="/player/:clipId" element={<Player />}></Route>
-              <Route path="/upload" element={<Uploader />}></Route>
-              <Route path="/signedin" element={<SignedIn />}></Route>
-              <Route path="/signedout" element={<SignedOut />}></Route>
+              <Route path='/' element={<Home />}></Route>
+              <Route path='/player/:clipId' element={<Player />}></Route>
+              <Route path='/upload' element={<Uploader />}></Route>
+              <Route path='/signedin' element={<SignedIn />}></Route>
+              <Route path='/signedout' element={<SignedOut />}></Route>
             </Routes>
           </Router>
         </Stack>
@@ -52,4 +73,4 @@ function App() {
   );
 }
 
-export default App
+export default App;
