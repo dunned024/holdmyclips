@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import './Home.css';
 import { Link } from 'react-router-dom';
 import { Clip } from './types';
+import { getCookie } from 'typescript-cookie';
 
 export function Home() {
+  const signedInAt = getCookie("signedInAt")
   const [clips, setClips] = useState<Clip[]>([]);
 
   useEffect(() => {
@@ -21,9 +23,14 @@ export function Home() {
   return (
     <div className="home">
       <div className="upload-button-row">
-        <a className="link" id="upload-link" href="/upload" rel="noreferrer">
-          <button>Upload clip</button>
-        </a>
+        {signedInAt
+          ? <a className="link" id="upload-link" href="/upload" rel="noreferrer">
+            <button>Upload clip</button>
+          </a>
+          : <a className="link" id="signin-link" href="/signedin" rel="noreferrer">
+              <button>Sign in</button>
+            </a>
+        }
       </div>
       <div className="clip-rows">
         {clips.map((clip) => <ClipCard key={clip.id} clip={clip} />)}

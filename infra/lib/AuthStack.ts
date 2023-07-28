@@ -105,6 +105,7 @@ export class AuthStack extends Stack {
       cognitoAuthDomain: authDomainName,
       authLambdas,
       userPool: this.userPool,
+      signOutRedirectTo: "/signedout"
     })
   }
 }

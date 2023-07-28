@@ -1,4 +1,6 @@
-const clientId = process.env.COGNITO_CLIENT_ID
+console.log("function init")
+let clientId = process.env.COGNITO_CLIENT_ID
+console.log({ clientId })
 
 export const handler = async (event, _, _) => {
   console.log("function start")
@@ -10,7 +12,7 @@ export const handler = async (event, _, _) => {
     })
     return JSON.stringify({
       statusCode: 400,
-      body: JSON.stringify({ error: "headers not found" })
+      body: JSON.stringify({ error: "headers not found", username: "" })
     })
   }
   console.log({ headers })
@@ -21,7 +23,7 @@ export const handler = async (event, _, _) => {
     
     return JSON.stringify({
       statusCode: 400,
-      body: JSON.stringify({ error: "cookies not found in headers" })
+      body: JSON.stringify({ error: "cookies not found in headers", username: "" })
     })
   }
   console.log({ cookies })

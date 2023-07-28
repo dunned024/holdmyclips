@@ -107,6 +107,7 @@ export class StaticSiteStack extends Stack {
       additionalBehaviors: {
         ...auth.createAuthPagesBehaviors(s3Origin),
         'upload': auth.createProtectedBehavior(s3Origin, uploadBehavior),
+        'signedin': auth.createProtectedBehavior(s3Origin, uploadBehavior),
         // 'user': auth.createProtectedBehavior(apiOrigin, apiBehavior), // pathPattern matches API endpoint
       },
       certificate: props.hostedDomain.cert,
