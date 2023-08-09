@@ -18,7 +18,8 @@ import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
 import { OAuthScope, UserPool, UserPoolClient, VerificationEmailStyle } from 'aws-cdk-lib/aws-cognito';
 import { HostedDomain } from './HostedDomainStack';
 import { ConfiguredStackProps } from './config';
-import { AuthLambdas, CloudFrontAuth } from '@henrist/cdk-cloudfront-auth';
+import { CloudFrontAuth } from './constructs/CloudfrontAuth';
+import { AuthLambdas } from './constructs/AuthLambdas';
 
 
 export interface AuthStackProps extends ConfiguredStackProps {
@@ -97,13 +98,12 @@ export class AuthStack extends Stack {
     });
 
     // From https://github.com/henrist/cdk-cloudfront-auth
-    const authLambdas = new AuthLambdas(this, 'AuthLambdas', {
-      regions: ["us-east-1"],
-    })
+    const authLambdas = new AuthLambdas(this, 'AuthLambdas')
 
     this.cloudFrontAuth = new CloudFrontAuth(this, 'Auth', {
       cognitoAuthDomain: authDomainName,
       authLambdas,
+      fqdn: props.fqdn,
       userPool: this.userPool,
       signOutRedirectTo: "/signedout"
     })

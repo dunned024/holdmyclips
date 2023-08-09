@@ -15,7 +15,7 @@ import { Construct } from 'constructs';
 import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
 import { HostedDomain } from './HostedDomainStack'
 import { ConfiguredStackProps } from './config';
-import { CloudFrontAuth } from '@henrist/cdk-cloudfront-auth';
+import { CloudFrontAuth } from './constructs/CloudfrontAuth';
 
 
 export interface StaticSiteStackProps extends ConfiguredStackProps {
@@ -125,11 +125,6 @@ export class StaticSiteStack extends Stack {
       recordName: props.fqdn,
       target: RecordTarget.fromAlias(new CloudFrontTarget(distribution)),
       zone: props.hostedDomain.hostedZone
-    });
-
-    auth.updateClient("ClientUpdate", {
-      signOutUrl: `https://${props.fqdn}${auth.signOutRedirectTo}`,
-      callbackUrl: `https://${props.fqdn}${auth.callbackPath}`,
     })
 
     const policyOverride = bucket.node.findChild("Policy").node.defaultChild as CfnBucket;
