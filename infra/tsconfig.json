@@ -21,16 +21,16 @@
     "inlineSources": true,
     "experimentalDecorators": true,
     "strictPropertyInitialization": false,
-    "outDir": "./lib",
     "typeRoots": [
       "./node_modules/@types"
     ]
   },
-  "include": ["src"],
+  "include": ["lib", "lib/constructs"],
   "exclude": [
     "node_modules",
     "cdk.out",
-    "src/lambdas/*.ts",
-    "src/lambdas/bak/*.ts"
+    "lib/services",
+    "lib/lambdas/*.ts",
+    "lib/lambdas/bak/*.ts"
   ]
 }

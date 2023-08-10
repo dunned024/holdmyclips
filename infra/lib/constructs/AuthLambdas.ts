@@ -36,7 +36,7 @@ export class AuthLambdas extends Construct {
 
   private addFunction(id: string, assetName: string, role: iam.IRole) {
     return new lambda.Function(this, id, {
-      code: lambda.Code.fromAsset(path.join(__dirname, `../dist/${assetName}`)),
+      code: lambda.Code.fromAsset(path.join(__dirname, `../lambdas/${assetName}`)),
       handler: "index.handler",
       runtime: lambda.Runtime.NODEJS_18_X,
       timeout: Duration.seconds(5),
