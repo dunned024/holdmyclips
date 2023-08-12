@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { App, Environment } from 'aws-cdk-lib';
-import createStacks from "../src/createStacks";
+import createStacks from "../lib/createStacks";
 
 
 const env: Environment = {

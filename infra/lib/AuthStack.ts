@@ -19,7 +19,7 @@ import { OAuthScope, UserPool, UserPoolClient, VerificationEmailStyle } from 'aw
 import { HostedDomain } from './HostedDomainStack';
 import { ConfiguredStackProps } from './config';
 import { CloudFrontAuth } from './constructs/CloudfrontAuth';
-import { AuthLambdas } from './constructs/AuthLambdas';
+import { AuthLambdas } from './auth/AuthLambdas';
 
 
 export interface AuthStackProps extends ConfiguredStackProps {
@@ -105,7 +105,7 @@ export class AuthStack extends Stack {
       authLambdas,
       fqdn: props.fqdn,
       userPool: this.userPool,
-      signOutRedirectTo: "/signedout"
+      // signOutRedirectTo: "/signedout"
     })
   }
 }

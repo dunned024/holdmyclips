@@ -7,10 +7,32 @@ import {
   CloudFrontResponseHandler,
   CloudFrontResponseResult,
 } from "aws-lambda"
-import html from "../error-page/template.html"
 import { Config, getConfig } from "./config"
 
 export type HttpHeaders = Record<string, string>
+
+const html = `
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, shrink-to-fit=no"
+      />
+    </head>
+    <body>
+      <h1>\${title}</h1>
+      <p>\${message}</p>
+      <p>
+        \${details} [log region: \${region}]
+      </p>
+      <p>
+        <a href="\${linkHref}">\${linkText}</a>
+      </p>
+    </body>
+  </html>
+`
 
 function asCloudFrontHeaders(headers: HttpHeaders): CloudFrontHeaders {
   return Object.entries(headers).reduce(
@@ -88,7 +110,7 @@ function createErrorHtml(props: {
 }): string {
   const params = { ...props, region: process.env.AWS_REGION }
   return html.replace(
-    /\${([^}]*)}/g,
+    /\\\${([^}]*)}/g,
     (_, v: keyof typeof params) => params[v] || "",
   )
 }

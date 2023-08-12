@@ -9,12 +9,11 @@ import * as cognito from "aws-cdk-lib/aws-cognito"
 import * as lambda from "aws-cdk-lib/aws-lambda"
 import { IVersion } from "aws-cdk-lib/aws-lambda"
 import { LambdaConfig } from "@henrist/cdk-lambda-config"
-import { StoredConfig } from "../lambdas/util/config"
-import { AuthLambdas } from "./AuthLambdas"
+import { StoredConfig } from "../auth/util/config"
+import { AuthLambdas } from "../auth/AuthLambdas"
 import { Construct } from "constructs"
 
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
-import { SecretValue } from 'aws-cdk-lib'
 
 
 export interface CloudFrontAuthProps {
@@ -128,9 +127,9 @@ export class CloudFrontAuth extends Construct {
         generateSecret: true,
       })
 
-    const nonceSigningSecret = StringParameter.valueForStringParameter(this, 'hold-my-clips-basic-auth')
+    const nonceSigningSecret = StringParameter.valueForStringParameter(this, 'hmc-nonce')
   
-    const clientSecretValue = this.client.userPoolClientSecret.toString()
+    const clientSecretValue = this.client.userPoolClientSecret.unsafeUnwrap().toString()
 
     const config: StoredConfig = {
       httpHeaders: {
