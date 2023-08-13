@@ -11,8 +11,8 @@ import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup } from 'aws-cdk-lib/aws-logs';
 
 export interface ClipdexStackProps extends ConfiguredStackProps {
-  authUserPool: UserPool
-  authUserPoolClient: UserPoolClient
+  // authUserPool: UserPool
+  // authUserPoolClient: UserPoolClient
 }
 
 export class ClipdexStack extends Stack {
@@ -97,16 +97,16 @@ export class ClipdexStack extends Stack {
     clipdexTable.grantReadData(integrationRole);
 
     
-    const auth = new CognitoUserPoolsAuthorizer(this, 'uploadAuthorizer', {
-      cognitoUserPools: [props.authUserPool]
-    });
+    // const auth = new CognitoUserPoolsAuthorizer(this, 'uploadAuthorizer', {
+    //   cognitoUserPools: [props.authUserPool]
+    // });
 
     // Add Lambda integration for uploading clips
     const uploadLambda = new UploadLambda(this, 'Lambda');
     const uploadIntegration = new LambdaIntegration(uploadLambda.handler)
     clipsResource.addMethod('PUT', uploadIntegration, {  // PUT /clips
-      authorizer: auth,
-      authorizationType: AuthorizationType.COGNITO,
+      // authorizer: auth,
+      // authorizationType: AuthorizationType.COGNITO,
     });
     clipdexTable.grantReadWriteData(uploadLambda.handler);
 
@@ -116,10 +116,10 @@ export class ClipdexStack extends Stack {
 
 
     // Create 'users' resource for querying user details
-    const userResource = this.apiGateway.root.addResource('user');
-    const userLambda = new UserLambda(this, 'UserLambda', {userPoolClientId: props.authUserPoolClient.userPoolClientId});
-    const userIntegration = new LambdaIntegration(userLambda.handler)
-    userResource.addMethod('GET', userIntegration);
+    // const userResource = this.apiGateway.root.addResource('user');
+    // const userLambda = new UserLambda(this, 'UserLambda', {userPoolClientId: props.authUserPoolClient.userPoolClientId});
+    // const userIntegration = new LambdaIntegration(userLambda.handler)
+    // userResource.addMethod('GET', userIntegration);
   }
 }
 

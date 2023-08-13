@@ -17,8 +17,8 @@ export default function createStacks(app: App, env: Environment): Stack[] {
 
   const clipdexStack = new ClipdexStack(app, 'HMCClipdex', {
     ...config,
-    authUserPool: authStack.userPool,
-    authUserPoolClient: authStack.cloudFrontAuth.client
+    // authUserPool: authStack.userPool,
+    // authUserPoolClient: authStack.cloudFrontAuth.client
   });
 
   const staticSiteStack = new StaticSiteStack(app, 'HMCStaticSite', {
@@ -27,6 +27,7 @@ export default function createStacks(app: App, env: Environment): Stack[] {
     cloudFrontAuth: authStack.cloudFrontAuth,
     hostedDomain: hostedDomainStack.hostedDomain
   });
+
 
   return [hostedDomainStack, clipdexStack, authStack, staticSiteStack];
 }

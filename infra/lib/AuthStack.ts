@@ -1,6 +1,6 @@
 import { CfnOutput, Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { Bucket, BlockPublicAccess, CorsRule, HttpMethods, CfnBucket } from 'aws-cdk-lib/aws-s3';
-import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions } from 'aws-cdk-lib/aws-cloudfront';
+import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions, IDistribution } from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
 import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { experimental } from 'aws-cdk-lib/aws-cloudfront';
@@ -64,19 +64,23 @@ export class AuthStack extends Stack {
       },
     });
 
-    // const client = userPool.addClient('Client', {
-    //   preventUserExistenceErrors: true,
-    //   oAuth: {
-    //     flows: {
-    //       authorizationCodeGrant: true,
-    //     },
-    //     scopes: [ OAuthScope.OPENID ],
-    //     callbackUrls: [ `https://${props.fqdn}/welcome` ],
-    //     logoutUrls: [ `https://${props.fqdn}/signin` ],
-    //   },
-    // });
+    const userPoolClient = this.userPool.addClient("UserPoolClient", {
+      authFlows: {
+        userPassword: true,
+        userSrp: true,
+      },
+      oAuth: {
+        flows: {
+          authorizationCodeGrant: true,
+        },
+        callbackUrls: [`https://${props.fqdn}${props.authPaths.callbackPath}`],
+        logoutUrls: [`https://${props.fqdn}${props.authPaths.signOutRedirectTo}`]
+      },
+      preventUserExistenceErrors: true,
+      generateSecret: true,
+    })
 
-    const authDomainName = `auth.${props.fqdn}`
+    const authDomainName = `oauth.${props.fqdn}`
     const domain = this.userPool.addDomain('Domain', {
       customDomain: {
         domainName: authDomainName,
@@ -97,15 +101,13 @@ export class AuthStack extends Stack {
       zone: props.hostedDomain.hostedZone
     });
 
-    // From https://github.com/henrist/cdk-cloudfront-auth
-    const authLambdas = new AuthLambdas(this, 'AuthLambdas')
-
     this.cloudFrontAuth = new CloudFrontAuth(this, 'Auth', {
       cognitoAuthDomain: authDomainName,
-      authLambdas,
+      authLambdas: new AuthLambdas(this, 'AuthLambdas'),
       fqdn: props.fqdn,
       userPool: this.userPool,
-      // signOutRedirectTo: "/signedout"
+      client: userPoolClient,
+      ...props.authPaths
     })
   }
 }

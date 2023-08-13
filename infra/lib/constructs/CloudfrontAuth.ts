@@ -14,6 +14,7 @@ import { AuthLambdas } from "../auth/AuthLambdas"
 import { Construct } from "constructs"
 
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { ConfigureNatOptions } from "aws-cdk-lib/aws-ec2"
 
 
 export interface CloudFrontAuthProps {
@@ -33,6 +34,7 @@ export interface CloudFrontAuthProps {
    *
    * @example `${domain.domainName}.auth.${region}.amazoncognito.com`
    */
+  client: cognito.IUserPoolClient
   cognitoAuthDomain: string
   authLambdas: AuthLambdas
   /**
@@ -81,9 +83,6 @@ export class CloudFrontAuth extends Construct {
   public readonly signOutPath: string
   public readonly refreshAuthPath: string
 
-  private readonly userPool: cognito.IUserPool
-  public readonly client: cognito.UserPoolClient
-
   private readonly checkAuthFn: lambda.IVersion
   private readonly httpHeadersFn: lambda.IVersion
   private readonly parseAuthFn: lambda.IVersion
@@ -108,28 +107,9 @@ export class CloudFrontAuth extends Construct {
       "aws.cognito.signin.user.admin",
     ]
 
-    this.userPool = props.userPool
-
-    this.client =
-      props.userPool.addClient("UserPoolClient", {
-        authFlows: {
-          userPassword: true,
-          userSrp: true,
-        },
-        oAuth: {
-          flows: {
-            authorizationCodeGrant: true,
-          },
-          callbackUrls: [`https://${props.fqdn}${this.callbackPath}`],
-          logoutUrls: [`https://${props.fqdn}${this.signOutRedirectTo}`]
-        },
-        preventUserExistenceErrors: true,
-        generateSecret: true,
-      })
-
     const nonceSigningSecret = StringParameter.valueForStringParameter(this, 'hmc-nonce')
   
-    const clientSecretValue = this.client.userPoolClientSecret.unsafeUnwrap().toString()
+    const clientSecretValue = props.client.userPoolClientSecret.unsafeUnwrap().toString()
 
     const config: StoredConfig = {
       httpHeaders: {
@@ -144,8 +124,8 @@ export class CloudFrontAuth extends Construct {
         "Cache-Control": "no-cache",
       },
       logLevel: props.logLevel ?? "warn",
-      userPoolId: this.userPool.userPoolId,
-      clientId: this.client.userPoolClientId,
+      userPoolId: props.userPool.userPoolId,
+      clientId: props.client.userPoolClientId,
       clientSecret: clientSecretValue,
       oauthScopes: this.oauthScopes,
       cognitoAuthDomain: props.cognitoAuthDomain,
@@ -162,7 +142,7 @@ export class CloudFrontAuth extends Construct {
         refreshToken: "Path=/; Secure; SameSite=Lax",
         nonce: "Path=/; Secure; HttpOnly; SameSite=Lax",
         */
-        idToken: "Path=/; Secure; HttpOnly; SameSite=Lax",
+        idToken: "Path=/; Secure; SameSite=Lax",
         accessToken: "Path=/; Secure; HttpOnly; SameSite=Lax",
         refreshToken: "Path=/; Secure; HttpOnly; SameSite=Lax",
         nonce: "Path=/; Secure; HttpOnly; SameSite=Lax",
@@ -202,12 +182,9 @@ export class CloudFrontAuth extends Construct {
    * - callback page
    * - refresh page
    * - sign out page
-   *
-   * This is to be used with Distribution.
    */
   public createAuthPagesBehaviors(
     origin: IOrigin,
-    options?: AddBehaviorOptions,
   ): Record<string, BehaviorOptions> {
     function path(path: string, fn: IVersion): Record<string, BehaviorOptions> {
       return {
@@ -221,7 +198,6 @@ export class CloudFrontAuth extends Construct {
               functionVersion: fn,
             },
           ],
-          ...options,
         },
       }
     }
@@ -235,17 +211,11 @@ export class CloudFrontAuth extends Construct {
 
   /**
    * Create behavior that includes authorization check.
-   *
-   * This is to be used with Distribution.
    */
   public createProtectedBehavior(
     origin: IOrigin,
     options?: AddBehaviorOptions,
   ): BehaviorOptions {
-    if (options?.edgeLambdas != null) {
-      throw Error("User-defined edgeLambdas is currently not supported")
-    }
-
     return {
       origin,
       compress: true,
