@@ -1,16 +1,19 @@
-import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import React, {
+  Route,
+  BrowserRouter as Router,
+  Routes
+} from 'react-router-dom';
 import { AiFillGithub } from 'react-icons/ai';
 import './App.css';
 import { Home } from './Home';
 import { Player } from './Player';
 import { Uploader } from './upload/Uploader';
-import { SignedIn, SignedOut } from './Auth';
 import { Stack, ThemeProvider } from '@mui/material';
 import { THEME, palette } from './assets/themes/theme';
-import { getCookie } from 'typescript-cookie';
+import { getUsername } from './services/cognito';
 
 function App() {
-  const username = getCookie('username');
+  const username = getUsername();
 
   return (
     <div>
@@ -38,16 +41,16 @@ function App() {
           </div>
           <div className='header-container' id='header-container-user'>
             {username ? (
-              <a className='link' href='/signedin' rel='noreferrer'>
-                Sign in
-              </a>
-            ) : (
               <Stack id='username-container' direction='row'>
                 Signed in as: {username} |&nbsp;
                 <a className='link' href='/auth/sign-out' rel='noreferrer'>
                   Sign out
                 </a>
               </Stack>
+            ) : (
+              <a className='link' href='/signedin' rel='noreferrer'>
+                Sign in
+              </a>
             )}
           </div>
           <span id='stretch'></span>
@@ -63,8 +66,6 @@ function App() {
               <Route path='/' element={<Home />}></Route>
               <Route path='/player/:clipId' element={<Player />}></Route>
               <Route path='/upload' element={<Uploader />}></Route>
-              <Route path='/signedin' element={<SignedIn />}></Route>
-              <Route path='/signedout' element={<SignedOut />}></Route>
             </Routes>
           </Router>
         </Stack>

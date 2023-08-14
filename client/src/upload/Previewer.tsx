@@ -564,6 +564,7 @@ class Rect {
         ? [s.videoWidth, s.videoHeight]
         : [s.width, s.height];
     [this.x, this.y] =
+      // eslint-disable-next-line no-prototype-builtins
       keepCoords && s.hasOwnProperty('x') ? [s.x, s.y] : [0, 0];
   }
 

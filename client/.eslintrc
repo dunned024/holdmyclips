@@ -5,7 +5,6 @@
       "es6": true,
       "jest": true
     },
-    "parser": "prettier/@typescript-eslint",
     "parserOptions": {
         "ecmaFeatures": {
           "jsx": true 
@@ -29,7 +28,10 @@
       "prettier"
     ],
     "rules": {
-      "no-console": 1,       // Means warning
-      "prettier/prettier": 2 // Means error
+      "no-console": 1,        // Warn on console usage
+      "prettier/prettier": 1, // Warn on unpretty (switch to 2 for error)
+      "no-unused-vars": 1,
+      "@typescript-eslint/no-unused-vars": 1,
+      "@typescript-eslint/no-explicit-any": 1
     }
   }

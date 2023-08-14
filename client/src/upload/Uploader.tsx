@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { FileSelector } from './FileSelector';
 import { Previewer } from './Previewer';
 import './Uploader.css';

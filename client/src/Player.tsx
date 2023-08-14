@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Clip, Comment, parseClip } from './types';
 import './Player.css';
 import { useParams } from 'react-router-dom';
 
 export function Player() {
-  let { clipId } = useParams();
+  const { clipId } = useParams();
 
   const [clip, setClip] = useState<Clip>();
 
@@ -50,7 +50,7 @@ export function Player() {
       <div className='comments-container'>
         Comments
         {clip?.comments.map((comment, index) => (
-          <CommentCard comment={comment} id={index} />
+          <CommentCard comment={comment} id={index} key={index} />
         ))}
       </div>
     </div>

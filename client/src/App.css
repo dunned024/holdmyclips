@@ -23,6 +23,7 @@
   text-align: center;
 }
 #header-container-user {
+  display: flex;
   text-align: right;
   justify-content: right;
   justify-items: right;

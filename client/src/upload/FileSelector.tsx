@@ -1,4 +1,4 @@
-import { ChangeEvent, DragEvent, useRef, useState } from 'react';
+import React, { ChangeEvent, DragEvent, useRef, useState } from 'react';
 import './FileSelector.css';
 
 export function FileSelector(props: { setSource: (source: File) => void }) {

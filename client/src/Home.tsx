@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import './Home.css';
 import { Link } from 'react-router-dom';
 import { Clip } from './types';
-import { getCookie } from 'typescript-cookie';
+import { getUsername } from './services/cognito';
 
 export function Home() {
-  const signedInAt = getCookie('signedInAt');
+  const username = getUsername();
   const [clips, setClips] = useState<Clip[]>([]);
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export function Home() {
   return (
     <div className='home'>
       <div className='upload-button-row'>
-        {signedInAt ? (
+        {username ? (
           <a className='link' id='upload-link' href='/upload' rel='noreferrer'>
             <button>Upload clip</button>
           </a>

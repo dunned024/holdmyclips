@@ -43,7 +43,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "deploy": "react-scripts build; bash utils/deploy.sh",
+    "deploy": "react-scripts build || exit 1; bash utils/deploy.sh",
     "lint": "eslint . --ext .ts*",
     "lint:fix": "prettier --config .prettierrc 'src/**/*.ts*' --write"
   },
