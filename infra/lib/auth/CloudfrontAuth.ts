@@ -9,8 +9,8 @@ import * as cognito from "aws-cdk-lib/aws-cognito"
 import * as lambda from "aws-cdk-lib/aws-lambda"
 import { IVersion } from "aws-cdk-lib/aws-lambda"
 import { LambdaConfig } from "@henrist/cdk-lambda-config"
-import { StoredConfig } from "../auth/util/config"
-import { AuthLambdas } from "../auth/AuthLambdas"
+import { StoredConfig } from "./util/config"
+import { AuthLambdas } from "./AuthLambdas"
 import { Construct } from "constructs"
 
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';

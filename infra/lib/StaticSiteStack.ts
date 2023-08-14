@@ -15,7 +15,7 @@ import { Construct } from 'constructs';
 import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
 import { HostedDomain } from './HostedDomainStack'
 import { ConfiguredStackProps } from './config';
-import { CloudFrontAuth } from './constructs/CloudfrontAuth';
+import { CloudFrontAuth } from './auth/CloudfrontAuth';
 import { AuthLambdas } from './auth/AuthLambdas';
 import { UserPool, UserPoolClient } from 'aws-cdk-lib/aws-cognito';
 
