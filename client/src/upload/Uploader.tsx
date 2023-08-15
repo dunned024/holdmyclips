@@ -2,22 +2,22 @@ import React, { useState } from 'react';
 import { FileSelector } from './FileSelector';
 import { Previewer } from './Previewer';
 import './Uploader.css';
-import { UploadForm } from '../types';
+import { ClipUploadData } from '../types';
 
 export function Uploader() {
   const [source, setSource] = useState<File>();
 
-  async function uploadClip(formData: UploadForm) {
+  async function uploadClip(uploadData: ClipUploadData) {
     if (!source) {
       console.log('how did you get here?');
       return;
     }
 
     try {
-      const id = formData.get('id');
+      const id = uploadData.id;
       const res = await fetch('/clips', {
         method: 'PUT',
-        body: formData
+        body: id
       });
       console.log(res);
 

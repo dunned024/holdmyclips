@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { getUsername } from './services/user';
+import { getUsername } from './services/cognito';
 import { removeCookie, setCookie } from 'typescript-cookie';
 import React, { useEffect, useMemo } from 'react';
 

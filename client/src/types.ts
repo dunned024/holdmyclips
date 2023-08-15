@@ -27,10 +27,12 @@ export function parseClip(rawClip: Record<string, string>): Clip {
   };
 }
 
-export interface UploadForm extends FormData {
+export interface ClipUploadData {
   id: string;
   title: string;
-  duration: number;
+  duration: string;
   uploader: string;
-  description: string;
+  description?: string;
+  views: string;
+  comments: string;
 }

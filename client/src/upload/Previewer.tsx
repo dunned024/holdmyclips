@@ -9,7 +9,7 @@ import React, {
 import './Previewer.css';
 import { randomId } from '../services/clipIdentifiers';
 import { styled } from '@mui/material/styles';
-import { UploadForm } from '../types';
+import { ClipUploadData } from '../types';
 // import * as defaultThumbnail from '../assets/default_thumbnail.jpg';
 import Grid from '@mui/material/Unstable_Grid2';
 import TextField from '@mui/material/TextField';
@@ -29,17 +29,18 @@ import PauseIcon from '@mui/icons-material/Pause';
 import VolumeDown from '@mui/icons-material/VolumeDown';
 import VolumeUp from '@mui/icons-material/VolumeUp';
 import { palette } from '../assets/themes/theme';
+import { getUsername } from '../services/cognito';
 
 // const defaultThumbnailBlob = new Blob([ defaultThumbnail ], { type: 'image/jpg' });
 
 export function Previewer(props: {
   source: File;
   sourceUrl: string;
-  uploadClip: (clipForm: UploadForm) => void;
+  uploadClip: (clipForm: ClipUploadData) => void;
 }) {
+  const playerRef = useRef<ReactPlayer>(null);
   const [clipDuration, setClipDuration] = useState(0);
   const [maxDuration, setMaxDuration] = useState(0);
-  const playerRef = useRef<ReactPlayer>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSeek, setCurrentSeek] = useState(0);
   const [trimPips, setTrimPips] = useState([0, clipDuration]);
@@ -49,6 +50,8 @@ export function Previewer(props: {
 
   const [volume, setVolume] = useState(1);
   const minDistance = 5000;
+
+  const username = getUsername();
 
   const loadClipDuration = function (d: number) {
     setClipDuration(d);
@@ -211,6 +214,7 @@ export function Previewer(props: {
       <FormAccordian
         source={props.source}
         uploadClip={props.uploadClip}
+        username={username}
         clipDuration={clipDuration}
         playerRef={playerRef}
         trimSetterProps={trimSetterProps}
@@ -355,8 +359,9 @@ function VideoController(props: VideoControllerProps) {
 
 interface FormAccordianProps {
   source: File;
-  uploadClip: (formData: UploadForm) => void;
+  uploadClip: (formData: ClipUploadData) => void;
   clipDuration: number;
+  username: string | undefined;
   playerRef: MutableRefObject<ReactPlayer | null>;
   trimSetterProps: TrimSetterProps;
 }
@@ -375,38 +380,60 @@ function FormAccordian(props: FormAccordianProps) {
   const [expanded, setExpanded] = useState<string | false>('panel1');
   const duration = `${Math.ceil(props.clipDuration).toString()}s`;
 
-  const handleChange = (panel: string) => (event: SyntheticEvent) => {
+  const [title, setTitle] = useState<string>(props.source.name);
+  const [description, setDescription] = useState<string | undefined>();
+  const [titleError, setTitleError] = useState<string | undefined>();
+
+  const handleTitleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value === '') {
+      setTitleError('Title cannot be empty');
+    } else {
+      setTitleError(undefined);
+    }
+    setTitle(e.target.value);
+  };
+
+  const handleDescriptionInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setDescription(e.target.value ?? undefined);
+  };
+
+  const handlePanelChange = (panel: string) => () => {
     setExpanded(panel);
   };
 
   const handleSubmit = function (e: FormEvent) {
     e.preventDefault();
 
-    const form = e.target as HTMLFormElement;
-    const formData = new FormData(form) as UploadForm; // TODO: strongly type this so it throws if any fields are missing
-
-    const title = formData.get('title')?.toString();
-    const uploader = formData.get('uploader')?.toString();
-    if (!title || !uploader) {
-      console.log('error: must include title, uploader');
+    if (!title) {
+      console.log('error: must include title');
       return;
     }
 
-    const id = randomId();
-    formData.append('id', id);
+    if (!props.username) {
+      console.log('error: are you logged in??');
+      return;
+    }
 
-    formData.append('duration', duration);
-    formData.append('views', '0');
-    formData.append('comments', '[]');
+    const clipUploadDetails: ClipUploadData = {
+      id: randomId(),
+      title,
+      duration,
+      uploader: props.username,
+      description,
+      views: '0',
+      comments: '[]'
+    };
 
-    props.uploadClip(formData);
+    console.log(clipUploadDetails);
+    props.uploadClip(clipUploadDetails);
   };
+
   return (
     <form id='clip-details-form' method='put' onSubmit={handleSubmit}>
       <Stack id='form-container'>
         <StyledAccordion
           expanded={expanded === 'panel1'}
-          onChange={handleChange('panel1')}
+          onChange={handlePanelChange('panel1')}
           defaultExpanded={true}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
@@ -421,7 +448,10 @@ function FormAccordian(props: FormAccordianProps) {
                   fullWidth
                   type='text'
                   InputLabelProps={{ shrink: true }}
-                  defaultValue={props.source.name}
+                  value={title}
+                  onChange={handleTitleInputChange}
+                  error={titleError !== undefined}
+                  helperText={titleError}
                   required
                 />
               </Grid>
@@ -442,7 +472,7 @@ function FormAccordian(props: FormAccordianProps) {
                   type='text'
                   disabled
                   InputLabelProps={{ shrink: true }}
-                  defaultValue={props.source.name || ''}
+                  defaultValue={props.username || ''}
                 />
               </Grid>
               <Grid xs={12} className='field'>
@@ -452,6 +482,8 @@ function FormAccordian(props: FormAccordianProps) {
                   fullWidth
                   multiline
                   rows={2}
+                  value={description}
+                  onChange={handleDescriptionInputChange}
                   InputLabelProps={{ shrink: true }}
                 />
               </Grid>
@@ -460,7 +492,7 @@ function FormAccordian(props: FormAccordianProps) {
         </StyledAccordion>
         <StyledAccordion
           expanded={expanded === 'panel2'}
-          onChange={handleChange('panel2')}
+          onChange={handlePanelChange('panel2')}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             Thumbnail
@@ -471,7 +503,7 @@ function FormAccordian(props: FormAccordianProps) {
         </StyledAccordion>
         <StyledAccordion
           expanded={expanded === 'panel3'}
-          onChange={handleChange('panel3')}
+          onChange={handlePanelChange('panel3')}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             Trimming
