@@ -429,7 +429,7 @@ function FormAccordian(props: FormAccordianProps) {
   };
 
   return (
-    <form id='clip-details-form' method='put' onSubmit={handleSubmit}>
+    <div id='clip-details-form'>
       <Stack id='form-container'>
         <StyledAccordion
           expanded={expanded === 'panel1'}
@@ -513,10 +513,10 @@ function FormAccordian(props: FormAccordianProps) {
           </AccordionDetails>
         </StyledAccordion>
       </Stack>
-      <button id='submit-button' type='submit'>
+      <button id='submit-button' onClick={handleSubmit}>
         Upload!
       </button>
-    </form>
+    </div>
   );
 }
 
@@ -557,7 +557,7 @@ function TrimSetter(props: TrimSetterProps) {
         helperText={props.trimStartError}
         InputLabelProps={{ shrink: true }}
         onChange={props.handleTrimStartInput}
-        defaultValue={props.trimPips[0]}
+        value={props.trimPips[0] / 1000}
         onBlur={(e) => {
           e.target.value = (props.trimPips[0] / 1000).toString();
           props.setTrimStartError('');
@@ -574,7 +574,7 @@ function TrimSetter(props: TrimSetterProps) {
         helperText={props.trimEndError}
         InputLabelProps={{ shrink: true }}
         onChange={props.handleTrimEndInput}
-        defaultValue={props.trimPips[1]}
+        value={props.trimPips[1] / 1000}
         onBlur={(e) => {
           e.target.value = (props.trimPips[1] / 1000).toString();
           props.setTrimEndError('');
@@ -962,6 +962,7 @@ function ThumbnailSetter(props: {
             className='react-crop'
             maxHeight={croppingCanvasRef.current?.height}
           >
+            {!crop && <div id='crop-instruct'>Click and drag to crop image</div>}
             <canvas id='cropping-canvas' ref={croppingCanvasRef} />
           </ReactCrop>
           <div id='cropping-dimensions'>

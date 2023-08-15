@@ -74,12 +74,9 @@
 
 #thumbnail-container {
     border-radius: 4px;
-    padding: 10px
-}
-
-#thumbnail-canvas {
-    height: 360px;
-    width: 360px;
+    padding: 10px;
+    justify-content: center;
+    align-items: center;
 }
 
 #thumbnail-container button {
@@ -89,6 +86,7 @@
 
 #thumbnail-button-container {
     margin: 5px 0 0 0;
+    width: 100%;
 }
 
 #capture-frame-button {
@@ -164,6 +162,21 @@
 
 .react-crop {
     max-height: 800px;
+}
+
+#crop-instruct {
+    position: absolute;
+    height: 30px;
+
+    left: 0;
+    right: 0;
+    margin-left: auto;
+    margin-right: auto;
+
+    top: calc(50% - 15px);
+
+    background-color: rgba(0, 0, 0, 0.50);
+    color: #fff;
 }
 
 #cropping-canvas {
