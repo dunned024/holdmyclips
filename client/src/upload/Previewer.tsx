@@ -14,6 +14,7 @@ import {
 } from './components/Trimmer';
 import { VideoController } from '../player/VideoController';
 import { formatTime } from '../services/time';
+import { OnProgressProps } from 'react-player/base';
 
 export function Previewer(props: {
   source: File;
@@ -41,7 +42,9 @@ export function Previewer(props: {
     setTrimPips([0, d * 1000]);
   };
 
-  const handleOnProgress = function (e: any) {
+  const handleOnProgress = function (e: OnProgressProps) {
+    console.log(typeof e);
+    console.log(e);
     // Because ReactPlayer updates every 100ms, playedSeconds may exceed
     // trimPips[1], i.e. the trimmed end of the clip, so we re-set it
     // back to the "allowed maximum"
@@ -181,7 +184,6 @@ export function Previewer(props: {
         <div id='player-box'>
           <ReactPlayer
             id='video'
-            // controls={false}
             width='100%'
             height='100%'
             volume={volume}

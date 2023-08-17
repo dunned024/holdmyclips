@@ -12,7 +12,7 @@ import VolumeUp from '@mui/icons-material/VolumeUp';
 import { palette } from '../assets/themes/theme';
 import { formatTime } from '../services/time';
 
-const SeekSlider = styled(Slider)(({ theme }) => ({
+const SeekSlider = styled(Slider)(() => ({
   color: palette.secondary.dark,
   '& .MuiSlider-track': {
     opacity: 0
