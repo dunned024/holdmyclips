@@ -43,8 +43,6 @@ export function Previewer(props: {
   };
 
   const handleOnProgress = function (e: OnProgressProps) {
-    console.log(typeof e);
-    console.log(e);
     // Because ReactPlayer updates every 100ms, playedSeconds may exceed
     // trimPips[1], i.e. the trimmed end of the clip, so we re-set it
     // back to the "allowed maximum"
