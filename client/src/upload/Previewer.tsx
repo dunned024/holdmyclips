@@ -1,24 +1,19 @@
-import React, { ChangeEvent, ReactElement, useRef, useState } from 'react';
+import React, { ChangeEvent, useRef, useState } from 'react';
 import './Previewer.css';
-import { styled } from '@mui/material/styles';
 import { ClipUploadData } from '../types';
-import Slider from '@mui/material/Slider';
 import 'react-image-crop/dist/ReactCrop.css';
 import ReactPlayer from 'react-player';
-import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import PauseIcon from '@mui/icons-material/Pause';
-import VolumeDown from '@mui/icons-material/VolumeDown';
-import VolumeUp from '@mui/icons-material/VolumeUp';
-import { palette } from '../assets/themes/theme';
 import { getUsername } from '../services/cognito';
 import { FormAccordian } from './components/UploadForm';
-import { TrimSetter, TrimSetterProps, TrimSlider } from './components/Trimmer';
-
-function formatTime(value: number) {
-  return new Date(value).toISOString().slice(14, 19);
-}
+import {
+  TrimSetter,
+  TrimSetterProps,
+  TrimSlider,
+  TrimSliderProps
+} from './components/Trimmer';
+import { VideoController } from '../player/VideoController';
+import { formatTime } from '../services/time';
 
 export function Previewer(props: {
   source: File;
@@ -165,20 +160,20 @@ export function Previewer(props: {
     handleTrimEndInput
   };
 
-  const trimSetter: ReactElement = <TrimSetter {...trimSetterProps} />;
+  const trimSetter = <TrimSetter {...trimSetterProps} />;
 
-  const trimSlider = (
-    <TrimSlider
-      id='trimmer'
-      max={maxDuration * 1000}
-      value={trimPips}
-      onChange={handleTrimChange}
-      valueLabelFormat={formatTime}
-      valueLabelDisplay='auto'
-      disableSwap
-      isTrimming={isTrimming}
-    />
-  );
+  const trimSliderProps: TrimSliderProps = {
+    id: 'trimmer',
+    max: maxDuration * 1000,
+    value: trimPips,
+    onChange: handleTrimChange,
+    valueLabelFormat: formatTime,
+    valueLabelDisplay: 'auto',
+    disableSwap: true,
+    isTrimming: isTrimming
+  };
+
+  const trimSlider = <TrimSlider {...trimSliderProps} />;
 
   return (
     <Stack id='previewer' direction='row'>
@@ -202,7 +197,7 @@ export function Previewer(props: {
         <VideoController
           isPlaying={isPlaying}
           currentSeek={currentSeek}
-          maxDuration={maxDuration * 1000}
+          clipDuration={maxDuration * 1000}
           volume={volume}
           handleSeekChange={handleSeekChange}
           handlePlayPause={handlePlayPause}
@@ -219,91 +214,5 @@ export function Previewer(props: {
         TrimComponent={trimSetter}
       />
     </Stack>
-  );
-}
-
-const SeekSlider = styled(Slider)(({ theme }) => ({
-  color: palette.secondary.dark,
-  '& .MuiSlider-track': {
-    opacity: 0
-  },
-  '& .MuiSlider-rail': {
-    opacity: 0
-  },
-  '& .MuiSlider-thumb': {
-    'z-index': 1,
-    width: 20,
-    height: 20
-  }
-}));
-
-interface VideoControllerProps {
-  isPlaying: boolean;
-  currentSeek: number;
-  volume: number;
-  handleSeekChange: (e: Event, newValue: number | number[]) => void;
-  handleVolumeChange: (e: Event, newValue: number | number[]) => void;
-  handlePlayPause: () => void;
-  maxDuration: number;
-  TrimSlider: ReactElement;
-}
-
-function VideoController(props: VideoControllerProps) {
-  return (
-    <div
-      id='controller'
-      style={{
-        backgroundColor: palette.secondary.light,
-        color: palette.secondary.contrastText
-      }}
-    >
-      <Stack
-        id='controller-stack'
-        direction='row'
-        spacing={2}
-        alignItems='center'
-      >
-        <Stack
-          id='slider-stack'
-          direction='row'
-          spacing={2}
-          alignItems='center'
-        >
-          <IconButton onClick={props.handlePlayPause}>
-            {props.isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
-          </IconButton>
-          <div id='slider-container'>
-            <SeekSlider
-              id='seeker'
-              max={props.maxDuration}
-              value={props.currentSeek}
-              onChange={props.handleSeekChange}
-              valueLabelFormat={formatTime}
-              valueLabelDisplay='auto'
-              disableSwap
-            />
-            {props.TrimSlider}
-          </div>
-
-          <div>
-            {formatTime(props.currentSeek)} / {formatTime(props.maxDuration)}
-          </div>
-        </Stack>
-
-        <Stack direction='row' spacing={1}>
-          <VolumeDown />
-          <Slider
-            id='volume-slider'
-            size='small'
-            color='secondary'
-            max={1}
-            step={0.05}
-            value={props.volume}
-            onChange={props.handleVolumeChange}
-          />
-          <VolumeUp />
-        </Stack>
-      </Stack>
-    </div>
   );
 }

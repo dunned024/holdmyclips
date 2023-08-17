@@ -2,7 +2,7 @@ import React, { ChangeEvent } from 'react';
 import '../Previewer.css';
 import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
-import Slider from '@mui/material/Slider';
+import Slider, { SliderProps } from '@mui/material/Slider';
 import 'react-image-crop/dist/ReactCrop.css';
 import Stack from '@mui/material/Stack';
 import { palette } from '../../assets/themes/theme';
@@ -14,7 +14,7 @@ import { palette } from '../../assets/themes/theme';
 //   constructor(props: any) {}
 // }
 
-interface TrimSliderProps {
+export interface TrimSliderProps extends SliderProps {
   isTrimming: boolean;
 }
 

@@ -1,0 +1,29 @@
+#controller {
+    width: 100%;
+    border-radius: 0 0 4px 4px;
+}
+
+#controller-stack {
+    display: flex;
+    margin: 10px;
+}
+
+#slider-stack {
+    flex-grow: 1;
+    display: flex;
+    font-size: 14px;
+}
+
+#slider-container {
+    flex-grow: 1;
+    display: grid
+}
+
+#seeker {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+#volume-slider{
+    width: 50px
+}
