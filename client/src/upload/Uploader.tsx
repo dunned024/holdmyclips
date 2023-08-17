@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileSelector } from './FileSelector';
+import { FileSelector } from './components/FileSelector';
 import { Previewer } from './Previewer';
 import './Uploader.css';
 import { ClipUploadData } from '../types';

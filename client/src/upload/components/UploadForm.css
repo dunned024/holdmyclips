@@ -1,0 +1,90 @@
+#clip-details-form {
+    height: calc(100% - 20px);
+    width: 25%;
+
+    margin: 10px 10px;
+
+    display: flex;
+    flex-direction: column;
+    
+    font-size: 20px;
+}
+
+#form-container {
+    max-width: 100%;
+    height: calc(85% - 26px);
+}
+
+#form-fields-container {
+    max-width: 100%;
+}
+
+
+/* VVVV Wild CSS for animated submit button VVVV */
+
+
+#submit-button {
+    height: calc(15% - 10px);
+    width: 100%;
+    font-size: 32px;
+}
+
+#submit-button {
+    width: 100%;
+    font-size: 32px;
+    border: none;
+    outline: none;
+    color: #fff;
+    background: #111;
+    cursor: pointer;
+    position: relative;
+    z-index: 0;
+    border-radius: 10px;
+}
+
+#submit-button:before {
+    content: '';
+    background: linear-gradient(45deg, #40ff50, #40f1d4, #00b7ff, #3844eb, #d400ff, #3844eb, #00b7ff, #40f1d4);
+    position: absolute;
+    top: -2px;
+    left:-2px;
+    background-size: 400%;
+    z-index: -1;
+    filter: blur(5px);
+    width: calc(100% + 4px);
+    height: calc(100% + 4px);
+    animation: glowing 20s linear infinite;
+    opacity: 0;
+    transition: opacity .3s ease-in-out;
+    border-radius: 10px;
+}
+
+#submit-button:active {
+    color: #000
+}
+
+#submit-button:active:after {
+    background: transparent;
+}
+
+#submit-button:hover:before {
+    opacity: 1;
+}
+
+#submit-button:after {
+    z-index: -1;
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #111;
+    left: 0;
+    top: 0;
+    border-radius: 10px;
+}
+
+@keyframes glowing {
+    0% { background-position: 0 0; }
+    50% { background-position: 400% 0; }
+    100% { background-position: 0 0; }
+}

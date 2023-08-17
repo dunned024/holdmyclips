@@ -36,7 +36,7 @@ export function FileSelector(props: { setSource: (source: File) => void }) {
 
   const onButtonClick = () => {
     if (inputRef.current) {
-      (inputRef.current as any).click();
+      (inputRef.current as HTMLInputElement).click();
     }
   };
 

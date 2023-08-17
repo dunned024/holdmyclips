@@ -1,27 +1,10 @@
-import React, {
-  ChangeEvent,
-  FormEvent,
-  MutableRefObject,
-  SyntheticEvent,
-  useRef,
-  useState
-} from 'react';
+import React, { ChangeEvent, ReactElement, useRef, useState } from 'react';
 import './Previewer.css';
-import { randomId } from '../services/clipIdentifiers';
 import { styled } from '@mui/material/styles';
 import { ClipUploadData } from '../types';
-// import * as defaultThumbnail from '../assets/default_thumbnail.jpg';
-import Grid from '@mui/material/Unstable_Grid2';
-import TextField from '@mui/material/TextField';
 import Slider from '@mui/material/Slider';
-import ReactCrop, { type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import ReactPlayer from 'react-player';
-import Accordion, { AccordionProps } from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import CloseIcon from '@mui/icons-material/Close';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -30,8 +13,12 @@ import VolumeDown from '@mui/icons-material/VolumeDown';
 import VolumeUp from '@mui/icons-material/VolumeUp';
 import { palette } from '../assets/themes/theme';
 import { getUsername } from '../services/cognito';
+import { FormAccordian } from './components/UploadForm';
+import { TrimSetter, TrimSetterProps, TrimSlider } from './components/Trimmer';
 
-// const defaultThumbnailBlob = new Blob([ defaultThumbnail ], { type: 'image/jpg' });
+function formatTime(value: number) {
+  return new Date(value).toISOString().slice(14, 19);
+}
 
 export function Previewer(props: {
   source: File;
@@ -178,6 +165,21 @@ export function Previewer(props: {
     handleTrimEndInput
   };
 
+  const trimSetter: ReactElement = <TrimSetter {...trimSetterProps} />;
+
+  const trimSlider = (
+    <TrimSlider
+      id='trimmer'
+      max={maxDuration * 1000}
+      value={trimPips}
+      onChange={handleTrimChange}
+      valueLabelFormat={formatTime}
+      valueLabelDisplay='auto'
+      disableSwap
+      isTrimming={isTrimming}
+    />
+  );
+
   return (
     <Stack id='previewer' direction='row'>
       <Stack id='video-preview-container'>
@@ -199,16 +201,13 @@ export function Previewer(props: {
         </div>
         <VideoController
           isPlaying={isPlaying}
-          isTrimming={isTrimming}
           currentSeek={currentSeek}
-          trimPips={trimPips}
           maxDuration={maxDuration * 1000}
           volume={volume}
           handleSeekChange={handleSeekChange}
-          handleTrimChange={handleTrimChange}
           handlePlayPause={handlePlayPause}
-          setIsTrimming={setIsTrimming}
           handleVolumeChange={handleVolumeChange}
+          TrimSlider={trimSlider}
         />
       </Stack>
       <FormAccordian
@@ -217,7 +216,7 @@ export function Previewer(props: {
         username={username}
         clipDuration={clipDuration}
         playerRef={playerRef}
-        trimSetterProps={trimSetterProps}
+        TrimComponent={trimSetter}
       />
     </Stack>
   );
@@ -238,57 +237,18 @@ const SeekSlider = styled(Slider)(({ theme }) => ({
   }
 }));
 
-interface TrimSliderProps {
-  isTrimming: boolean;
-}
-
-const TrimSlider = styled(Slider, {
-  shouldForwardProp: (prop) => prop !== 'isTrimming'
-})<TrimSliderProps>(({ isTrimming }) => ({
-  color: palette.secondary.main,
-  padding: '13px 0',
-  'pointer-events': 'none !important',
-  '& .MuiSlider-track': {
-    height: 10,
-    borderRadius: 0
-  },
-  '& .MuiSlider-rail': {
-    height: 10,
-    borderRadius: 0
-  },
-  '& .MuiSlider-thumb': {
-    'pointer-events': 'all !important',
-    color: palette.secondary.dark,
-    height: 24,
-    width: 5,
-    borderRadius: 0,
-    display: isTrimming ? 'flex' : 'none'
-  }
-}));
-
 interface VideoControllerProps {
   isPlaying: boolean;
-  isTrimming: boolean;
   currentSeek: number;
-  trimPips: number[];
-  maxDuration: number;
   volume: number;
   handleSeekChange: (e: Event, newValue: number | number[]) => void;
-  handleTrimChange: (
-    e: Event,
-    newValue: number | number[],
-    activeThumb: number
-  ) => void;
   handleVolumeChange: (e: Event, newValue: number | number[]) => void;
   handlePlayPause: () => void;
-  setIsTrimming: (isTrimming: boolean) => void;
+  maxDuration: number;
+  TrimSlider: ReactElement;
 }
 
 function VideoController(props: VideoControllerProps) {
-  function formatTime(value: number) {
-    return new Date(value).toISOString().slice(14, 19);
-  }
-
   return (
     <div
       id='controller'
@@ -322,16 +282,7 @@ function VideoController(props: VideoControllerProps) {
               valueLabelDisplay='auto'
               disableSwap
             />
-            <TrimSlider
-              id='trimmer'
-              max={props.maxDuration}
-              value={props.trimPips}
-              onChange={props.handleTrimChange}
-              valueLabelFormat={formatTime}
-              valueLabelDisplay='auto'
-              disableSwap
-              isTrimming={props.isTrimming}
-            />
+            {props.TrimSlider}
           </div>
 
           <div>
@@ -354,674 +305,5 @@ function VideoController(props: VideoControllerProps) {
         </Stack>
       </Stack>
     </div>
-  );
-}
-
-interface FormAccordianProps {
-  source: File;
-  uploadClip: (formData: ClipUploadData) => void;
-  clipDuration: number;
-  username: string | undefined;
-  playerRef: MutableRefObject<ReactPlayer | null>;
-  trimSetterProps: TrimSetterProps;
-}
-
-const StyledAccordion = styled((props: AccordionProps) => (
-  <Accordion disableGutters {...props} />
-))(({ theme }) => ({
-  backgroundColor: palette.secondary.light,
-  border: `1px solid ${theme.palette.divider}`,
-  '&:not(:last-child)': {
-    borderBottom: 0
-  }
-}));
-
-function FormAccordian(props: FormAccordianProps) {
-  const [expanded, setExpanded] = useState<string | false>('panel1');
-  const duration = `${Math.ceil(props.clipDuration).toString()}s`;
-
-  const [title, setTitle] = useState<string>(props.source.name);
-  const [description, setDescription] = useState<string | undefined>();
-  const [titleError, setTitleError] = useState<string | undefined>();
-
-  const handleTitleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value === '') {
-      setTitleError('Title cannot be empty');
-    } else {
-      setTitleError(undefined);
-    }
-    setTitle(e.target.value);
-  };
-
-  const handleDescriptionInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setDescription(e.target.value ?? undefined);
-  };
-
-  const handlePanelChange = (panel: string) => () => {
-    setExpanded(panel);
-  };
-
-  const handleSubmit = function (e: FormEvent) {
-    e.preventDefault();
-
-    if (!title) {
-      console.log('error: must include title');
-      return;
-    }
-
-    if (!props.username) {
-      console.log('error: are you logged in??');
-      return;
-    }
-
-    const clipUploadDetails: ClipUploadData = {
-      id: randomId(),
-      title,
-      duration,
-      uploader: props.username,
-      description,
-      views: '0',
-      comments: '[]'
-    };
-
-    console.log(clipUploadDetails);
-    props.uploadClip(clipUploadDetails);
-  };
-
-  return (
-    <div id='clip-details-form'>
-      <Stack id='form-container'>
-        <StyledAccordion
-          expanded={expanded === 'panel1'}
-          onChange={handlePanelChange('panel1')}
-          defaultExpanded={true}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            Details
-          </AccordionSummary>
-          <AccordionDetails sx={{ flexGrow: 1 }}>
-            <Grid id='form-grid' container spacing={2}>
-              <Grid xs={12} className='field'>
-                <TextField
-                  label='Title'
-                  color='primary'
-                  fullWidth
-                  type='text'
-                  InputLabelProps={{ shrink: true }}
-                  value={title}
-                  onChange={handleTitleInputChange}
-                  error={titleError !== undefined}
-                  helperText={titleError}
-                  required
-                />
-              </Grid>
-              <Grid xs={4} className='field'>
-                <TextField
-                  label='Duration'
-                  color='primary'
-                  disabled
-                  InputLabelProps={{ shrink: true }}
-                  value={duration}
-                />
-              </Grid>
-              <Grid xs={8} className='field'>
-                <TextField
-                  label='Uploader'
-                  fullWidth
-                  color='primary'
-                  type='text'
-                  disabled
-                  InputLabelProps={{ shrink: true }}
-                  defaultValue={props.username || ''}
-                />
-              </Grid>
-              <Grid xs={12} className='field'>
-                <TextField
-                  label='Description'
-                  color='primary'
-                  fullWidth
-                  multiline
-                  rows={2}
-                  value={description}
-                  onChange={handleDescriptionInputChange}
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-            </Grid>
-          </AccordionDetails>
-        </StyledAccordion>
-        <StyledAccordion
-          expanded={expanded === 'panel2'}
-          onChange={handlePanelChange('panel2')}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            Thumbnail
-          </AccordionSummary>
-          <AccordionDetails>
-            <ThumbnailSetter playerRef={props.playerRef} />
-          </AccordionDetails>
-        </StyledAccordion>
-        <StyledAccordion
-          expanded={expanded === 'panel3'}
-          onChange={handlePanelChange('panel3')}
-        >
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            Trimming
-          </AccordionSummary>
-          <AccordionDetails>
-            <TrimSetter {...props.trimSetterProps} />
-          </AccordionDetails>
-        </StyledAccordion>
-      </Stack>
-      <button id='submit-button' onClick={handleSubmit}>
-        Upload!
-      </button>
-    </div>
-  );
-}
-
-interface TrimSetterProps {
-  trimPips: number[];
-  isTrimming: boolean;
-  setIsTrimming: (isTrimming: boolean) => void;
-
-  trimStartError: string;
-  setTrimStartError: (e: string) => void;
-  handleTrimStartInput: (e: ChangeEvent<HTMLInputElement>) => void;
-
-  trimEndError: string;
-  setTrimEndError: (e: string) => void;
-  handleTrimEndInput: (e: ChangeEvent<HTMLInputElement>) => void;
-}
-
-function TrimSetter(props: TrimSetterProps) {
-  return (
-    <Stack id='trim-inputs-container' spacing={2}>
-      <button
-        id='trim-clip-button'
-        onClick={() => props.setIsTrimming(!props.isTrimming)}
-        style={
-          props.isTrimming ? { backgroundColor: palette.secondary.dark } : {}
-        }
-      >
-        Show trim sliders
-      </button>
-
-      <TextField
-        id='trim-start-field'
-        label='Start'
-        type='number'
-        color='secondary'
-        size='small'
-        error={props.trimStartError !== ''}
-        helperText={props.trimStartError}
-        InputLabelProps={{ shrink: true }}
-        onChange={props.handleTrimStartInput}
-        value={props.trimPips[0] / 1000}
-        onBlur={(e) => {
-          e.target.value = (props.trimPips[0] / 1000).toString();
-          props.setTrimStartError('');
-        }}
-      />
-
-      <TextField
-        id='trim-end-field'
-        label='End'
-        type='number'
-        color='secondary'
-        size='small'
-        error={props.trimEndError !== ''}
-        helperText={props.trimEndError}
-        InputLabelProps={{ shrink: true }}
-        onChange={props.handleTrimEndInput}
-        value={props.trimPips[1] / 1000}
-        onBlur={(e) => {
-          e.target.value = (props.trimPips[1] / 1000).toString();
-          props.setTrimEndError('');
-        }}
-      />
-    </Stack>
-  );
-}
-
-class Rect {
-  public readonly x: number;
-  public readonly y: number;
-  public readonly width: number;
-  public readonly height: number;
-
-  constructor(s: any, keepCoords: boolean = false) {
-    [this.width, this.height] =
-      s instanceof HTMLVideoElement
-        ? [s.videoWidth, s.videoHeight]
-        : [s.width, s.height];
-    [this.x, this.y] =
-      // eslint-disable-next-line no-prototype-builtins
-      keepCoords && s.hasOwnProperty('x') ? [s.x, s.y] : [0, 0];
-  }
-
-  getScaleValues(
-    dest: Rect,
-    keepAspect: boolean = false
-  ): { wRatio: number; hRatio: number } {
-    let wRatio = dest.width / this.width;
-    let hRatio = dest.height / this.height;
-
-    // If we want the aspect ratio to stay the same, scale by smallest side
-    if (keepAspect) {
-      const ratio = Math.min(wRatio, hRatio);
-      wRatio = ratio;
-      hRatio = ratio;
-    }
-
-    return { wRatio, hRatio };
-  }
-
-  scaleTo(dest: Rect | { wRatio: number; hRatio: number }): Rect {
-    const { wRatio, hRatio } =
-      dest instanceof Rect ? this.getScaleValues(dest, false) : dest;
-    return new Rect(
-      {
-        width: this.width * wRatio,
-        height: this.height * hRatio,
-        x: this.x * wRatio,
-        y: this.y * hRatio
-      },
-      true
-    );
-  }
-
-  fitTo(dest: Rect): Rect {
-    const ratio = Math.min(dest.width / this.width, dest.height / this.height);
-    return new Rect(
-      {
-        width: this.width * ratio,
-        height: this.height * ratio,
-        x: (dest.width - this.width * ratio) / 2,
-        y: (dest.height - this.height * ratio) / 2
-      },
-      true
-    );
-  }
-}
-
-function ThumbnailSetter(props: {
-  playerRef: MutableRefObject<ReactPlayer | null>;
-}) {
-  const [canClear, setCanClear] = useState<boolean>(false);
-  const [uploadedImage, setUploadedImage] = useState<HTMLImageElement | null>(
-    null
-  );
-  const [thumbnailFilename, setThumbnailFilename] = useState<string>('');
-
-  const [cropping, setCropping] = useState<boolean>(false);
-  const [crop, setCrop] = useState<Crop | null>(null);
-  const [acceptedCrop, setAcceptedCrop] = useState<Crop | null>(null);
-  const [fixedAspect, setFixedAspect] = useState<boolean>(true);
-
-  const video =
-    props.playerRef.current?.getInternalPlayer() as HTMLVideoElement;
-  const inputRef = useRef(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const croppingCanvasRef = useRef<HTMLCanvasElement>(null);
-
-  const clear = function () {
-    const canvas = canvasRef.current;
-    if (!canvas) {
-      return;
-    }
-    const context = canvas.getContext('2d');
-    if (!context) {
-      return;
-    }
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    setUploadedImage(null);
-    setThumbnailFilename('');
-    setCrop(null);
-    setAcceptedCrop(null);
-    setCanClear(false);
-    if (inputRef.current) {
-      (inputRef.current as HTMLInputElement).value = '';
-    }
-  };
-
-  const handleToggleAspectClick = function () {
-    const croppingCanvas = croppingCanvasRef.current;
-    if (!croppingCanvas) {
-      return;
-    }
-    if (fixedAspect) {
-      setFixedAspect(false);
-    } else if (croppingCanvas) {
-      setFixedAspect(true);
-      centerCrop();
-    }
-  };
-
-  const centerCrop = function () {
-    const croppingCanvas = croppingCanvasRef.current;
-    if (!croppingCanvas) {
-      return;
-    }
-    const { width, height } = croppingCanvas.getBoundingClientRect();
-    const scale = Math.min.apply(Math, [width, height, 800]);
-    const dx = (width - scale) / 2;
-    const dy = (height - scale) / 2;
-
-    setCrop({ unit: 'px', x: dx, y: dy, width: scale, height: scale });
-  };
-
-  const acceptCrop = function () {
-    const thumbnailCanvas = canvasRef.current;
-    const croppingCanvas = croppingCanvasRef.current;
-    if (!thumbnailCanvas || !croppingCanvas || !crop) {
-      return;
-    }
-    const thumbnailContext = thumbnailCanvas.getContext('2d');
-    if (thumbnailContext === null) {
-      return;
-    }
-
-    // There are a series of transformations that need to occur here to
-    // get the correct scaling. First, we need to find the transformation
-    // from the "visual" dimensions of the cropping canvas (i.e. what's on
-    // screen) to the "actual" dimensions of the croppings canvas (defined
-    // in the element declaration below -- probably 1920 x 1080)
-    const cropCanvasBoundRect = new Rect(
-      croppingCanvas.getBoundingClientRect()
-    );
-    const cropCanvasRect = new Rect(croppingCanvas);
-    const cropScaling = cropCanvasBoundRect.getScaleValues(cropCanvasRect);
-
-    // That ratio is applied to the size of the crop box, as well as its
-    // <x, y> coordinates That to get the true image we want to transpose
-    // from the cropping canvas
-    const cropRect = new Rect(crop, true);
-    const scaledCropRect = cropRect.scaleTo(cropScaling);
-
-    // Once we have the true cropped image, we want to scale it down to the
-    // thumbnailCanvas. Thankfully, this canvas has a fixed size, so we
-    // don't need any more calculations
-    const thumbRect = new Rect(thumbnailCanvas);
-    thumbnailContext.drawImage(
-      croppingCanvas,
-      scaledCropRect.x,
-      scaledCropRect.y,
-      scaledCropRect.width,
-      scaledCropRect.height,
-      thumbRect.x,
-      thumbRect.y,
-      thumbRect.width,
-      thumbRect.height
-    );
-    setAcceptedCrop(crop);
-    setCropping(false);
-    setCanClear(true);
-  };
-
-  const acceptAndFitCrop = function () {
-    const thumbnailCanvas = canvasRef.current;
-    const croppingCanvas = croppingCanvasRef.current;
-    if (!thumbnailCanvas || !croppingCanvas || !crop) {
-      return;
-    }
-    const thumbnailContext = thumbnailCanvas.getContext('2d');
-    if (thumbnailContext === null) {
-      return;
-    }
-
-    // Find "visual" to "actual" canvas scaling values
-    const cropCanvasBoundRect = new Rect(
-      croppingCanvas.getBoundingClientRect()
-    );
-    const cropCanvasRect = new Rect(croppingCanvas);
-    const cropScaling = cropCanvasBoundRect.getScaleValues(cropCanvasRect);
-
-    // Apply scaling values to cropped selection
-    const cropRect = new Rect(crop, true);
-    const scaledCropRect = cropRect.scaleTo(cropScaling);
-
-    // Scale the scaled, cropped selection to the thumbnail canvas
-    const thumbRect = new Rect(thumbnailCanvas);
-    const destRect = scaledCropRect.fitTo(thumbRect);
-
-    // Fill empty space with black and draw the final image on the thumbnail canvas
-    thumbnailContext.fillStyle = 'black';
-    thumbnailContext.fillRect(0, 0, thumbRect.width, thumbRect.height);
-    thumbnailContext.drawImage(
-      croppingCanvas,
-      scaledCropRect.x,
-      scaledCropRect.y,
-      scaledCropRect.width,
-      scaledCropRect.height,
-      destRect.x,
-      destRect.y,
-      destRect.width,
-      destRect.height
-    );
-    setAcceptedCrop(crop);
-    setCropping(false);
-    setCanClear(true);
-  };
-
-  const closeCrop = function () {
-    setCropping(false);
-    if (acceptedCrop) {
-      setCrop(acceptedCrop);
-      if (acceptedCrop.width !== acceptedCrop.height && fixedAspect) {
-        setFixedAspect(false);
-      }
-    } else {
-      setCrop(null);
-    }
-  };
-
-  const openCropOverlay = function (
-    sourceImage: HTMLImageElement | HTMLVideoElement
-  ) {
-    const croppingCanvas = croppingCanvasRef.current;
-    if (!croppingCanvas) {
-      return;
-    }
-    if (sourceImage instanceof HTMLVideoElement) {
-      croppingCanvas.width = sourceImage.videoWidth;
-      croppingCanvas.height = sourceImage.videoHeight;
-    } else if (sourceImage) {
-      croppingCanvas.width = sourceImage.width;
-      croppingCanvas.height = sourceImage.height;
-    } else {
-      croppingCanvas.width = 1920;
-      croppingCanvas.height = 1080;
-    }
-
-    const sourceRect = new Rect(sourceImage);
-    const canvasRect = new Rect(croppingCanvas);
-    const destRect = sourceRect.fitTo(canvasRect);
-
-    const context = croppingCanvas.getContext('2d');
-    if (!context) {
-      return;
-    }
-    context.drawImage(
-      sourceImage,
-      sourceRect.x,
-      sourceRect.y,
-      sourceRect.width,
-      sourceRect.height,
-      destRect.x,
-      destRect.y,
-      destRect.width,
-      destRect.height
-    );
-    setCropping(true);
-  };
-
-  const handleUpload = function (event: ChangeEvent<HTMLInputElement>) {
-    const reader = new FileReader();
-    reader.onload = function () {
-      const img = new Image();
-      img.onload = () => {
-        const thumbnailCanvas = canvasRef.current;
-        if (!thumbnailCanvas) {
-          return;
-        }
-        const context = thumbnailCanvas.getContext('2d');
-        if (!context) {
-          return;
-        }
-        const videoRect = new Rect(img);
-        const canvasRect = new Rect(thumbnailCanvas);
-        const destRect = videoRect.scaleTo(canvasRect);
-
-        context.drawImage(
-          img,
-          videoRect.x,
-          videoRect.y,
-          videoRect.width,
-          videoRect.height,
-          destRect.x,
-          destRect.y,
-          destRect.width,
-          destRect.height
-        );
-        setUploadedImage(img);
-        setCanClear(true);
-      };
-      if (reader.result) {
-        img.src = reader.result as string;
-      }
-    };
-    if (event.target.files && event.target.files[0]) {
-      reader.readAsDataURL(event.target.files[0]);
-      setThumbnailFilename(event.target.files[0].name);
-    }
-  };
-
-  const onButtonClick = () => {
-    if (inputRef.current) {
-      (inputRef.current as any).click();
-    }
-  };
-
-  const handleCaptureFrame = () => {
-    if (video) {
-      openCropOverlay(video);
-    }
-  };
-
-  const handleCropUploadedImage = () => {
-    if (uploadedImage) {
-      openCropOverlay(uploadedImage);
-    }
-  };
-
-  return (
-    <Stack
-      id='thumbnail-container'
-      sx={{ backgroundColor: palette.secondary.dark }}
-    >
-      <div
-        id='cropping-overlay'
-        style={{ display: cropping ? 'block' : 'none' }}
-      >
-        <div id='cropping-overlay-element-container'>
-          <button id='cropping-close-button' onClick={closeCrop}>
-            <CloseIcon />
-          </button>
-          <div id='cropping-button-grid-container'>
-            <Grid id='cropping-button-grid' container spacing={1}>
-              <Grid xs={6}>
-                <button
-                  id='cropping-toggle-aspect'
-                  onClick={handleToggleAspectClick}
-                >
-                  Toggle 1:1 aspect ratio {fixedAspect ? 'off' : 'on'}
-                </button>
-              </Grid>
-              <Grid xs={6}>
-                <button id='cropping-center-selection' onClick={centerCrop}>
-                  Center
-                </button>
-              </Grid>
-              <Grid xs={6}>
-                <button id='cropping-accept' onClick={acceptCrop}>
-                  Accept
-                </button>
-              </Grid>
-              <Grid xs={6}>
-                <button id='cropping-accept-fit' onClick={acceptAndFitCrop}>
-                  Accept & Fit
-                </button>
-              </Grid>
-            </Grid>
-          </div>
-          <ReactCrop
-            crop={crop ?? undefined}
-            onChange={(c) => setCrop(c)}
-            aspect={Number(fixedAspect)}
-            className='react-crop'
-            maxHeight={croppingCanvasRef.current?.height}
-          >
-            {!crop && <div id='crop-instruct'>Click and drag to crop image</div>}
-            <canvas id='cropping-canvas' ref={croppingCanvasRef} />
-          </ReactCrop>
-          <div id='cropping-dimensions'>
-            Dimensions: {crop?.width || 0}px {'\u00d7'} {crop?.height || 0}px
-          </div>
-        </div>
-      </div>
-      <canvas id='thumbnail-canvas' width='400' height='400' ref={canvasRef} />
-      <Stack id='thumbnail-button-container' direction='column' spacing={1}>
-        <Grid container spacing={1}>
-          <Grid xs={6}>
-            <button
-              id='capture-frame-button'
-              type='button'
-              onClick={handleCaptureFrame}
-            >
-              Capture frame
-            </button>
-          </Grid>
-          <Grid xs={6}>
-            <Stack id='file-crop-button-container' direction='column'>
-              <input
-                ref={inputRef}
-                type='file'
-                accept='.jpg,.png'
-                id='file-selector-input'
-                multiple={false}
-                onChange={handleUpload}
-              />
-              <button type='button' onClick={onButtonClick}>
-                Upload from file...
-              </button>
-              <TextField
-                id='thumbnail-filename-field'
-                size='small'
-                style={{ margin: 0 }}
-                fullWidth
-                hiddenLabel
-                color='primary'
-                type='text'
-                disabled
-                InputLabelProps={{ shrink: true }}
-                placeholder='Filename'
-                value={thumbnailFilename}
-              />
-              <button
-                type='button'
-                disabled={!uploadedImage}
-                onClick={handleCropUploadedImage}
-              >
-                Crop uploaded image
-              </button>
-            </Stack>
-          </Grid>
-        </Grid>
-        <button type='button' disabled={!canClear} onClick={clear}>
-          Clear
-        </button>
-      </Stack>
-    </Stack>
   );
 }
