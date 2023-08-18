@@ -6,7 +6,7 @@ import React, {
 import { AiFillGithub } from 'react-icons/ai';
 import './App.css';
 import { Home } from './Home';
-import { Player } from './Player';
+import { Player } from './player/Player';
 import { Uploader } from './upload/Uploader';
 import { Stack, ThemeProvider } from '@mui/material';
 import { THEME, palette } from './assets/themes/theme';

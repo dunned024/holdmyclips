@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Clip, Comment, parseClip } from './types';
+import { Clip, Comment, parseClip } from '../types';
 import './Player.css';
 import { useParams } from 'react-router-dom';
+import { Stack } from '@mui/material';
+import ReactPlayer from 'react-player';
+import { VideoController } from './VideoController';
 
 export function Player() {
   const { clipId } = useParams();
@@ -28,6 +31,32 @@ export function Player() {
 
   return (
     <div className='player'>
+      {/* <Stack id='video-preview-container'>
+        <div id='player-box'>
+          <ReactPlayer
+            id='video'
+            width='100%'
+            height='100%'
+            volume={volume}
+            url={props.sourceUrl}
+            ref={playerRef}
+            playing={isPlaying}
+            onDuration={loadClipDuration}
+            progressInterval={100}
+            onProgress={handleOnProgress}
+            onEnded={() => setIsPlaying(false)}
+          />
+        </div>
+        <VideoController
+          isPlaying={isPlaying}
+          currentSeek={currentSeek}
+          clipDuration={maxDuration * 1000}
+          volume={volume}
+          handleSeekChange={handleSeekChange}
+          handlePlayPause={handlePlayPause}
+          handleVolumeChange={handleVolumeChange}
+        />
+      </Stack> */}
       <div className='clip-container'>
         <div className='video-container'>
           <video autoPlay controls>
