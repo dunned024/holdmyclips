@@ -1,4 +1,4 @@
-import React, { ChangeEvent } from 'react';
+import React, { ChangeEvent, ReactElement } from 'react';
 import '../Previewer.css';
 import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
@@ -7,12 +7,11 @@ import 'react-image-crop/dist/ReactCrop.css';
 import Stack from '@mui/material/Stack';
 import { palette } from '../../assets/themes/theme';
 
-// export class TrimmerComponent {
-//   public readonly TrimSetter: FunctionComponent<TrimSetterProps>;
-//   public readonly TrimSlider: FunctionComponent<TrimSlider>;
-
-//   constructor(props: any) {}
-// }
+export interface TrimProps {
+  TrimSlider: ReactElement;
+  startTime: number;
+  endTime: number;
+}
 
 export interface TrimSliderProps extends SliderProps {
   isTrimming: boolean;
