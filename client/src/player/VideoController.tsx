@@ -1,4 +1,4 @@
-import React, { ReactElement, useRef, useState } from 'react';
+import React, { ReactElement, RefObject, useRef, useState } from 'react';
 import './VideoController.css';
 import { styled } from '@mui/material/styles';
 import Slider from '@mui/material/Slider';
@@ -12,37 +12,45 @@ import VolumeUp from '@mui/icons-material/VolumeUp';
 import { palette } from '../assets/themes/theme';
 import { formatTime } from '../services/time';
 import ReactPlayer from 'react-player';
-import { TrimSlider, TrimSliderProps } from '../upload/components/Trimmer';
 import { OnProgressProps } from 'react-player/base';
-import { getUsername } from '../services/cognito';
+import { TrimProps } from '../upload/components/Trimmer';
 
-export function VideoComponent(props: any) {
-  const playerRef = useRef<ReactPlayer>(null);
-  const [clipDuration, setClipDuration] = useState(0);
-  const [maxDuration, setMaxDuration] = useState(0);
+interface VideoComponentProps {
+  sourceUrl: string;
+  maxDuration: number;
+  loadClipDuration: (d: number) => void;
+  trimProps?: TrimProps;
+  playerRef?: RefObject<ReactPlayer>;
+}
+
+export function VideoComponent(props: VideoComponentProps) {
+  const playerRef = props.playerRef ?? useRef<ReactPlayer>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSeek, setCurrentSeek] = useState(0);
-  const [trimPips, setTrimPips] = useState([0, clipDuration]);
-  const [isTrimming, setIsTrimming] = useState(false);
-  const [trimStartError, setTrimStartError] = useState('');
-  const [trimEndError, setTrimEndError] = useState('');
 
   const [volume, setVolume] = useState(1);
-  const minDistance = 5000;
 
+  let startTime: number = 0;
+  let endTime: number = props.maxDuration * 1000;
+  if (props.trimProps) {
+    startTime = props.trimProps.startTime;
+    endTime = props.trimProps.endTime;
 
-  const loadClipDuration = function (d: number) {
-    setClipDuration(d);
-    setMaxDuration(d);
-    setTrimPips([0, d * 1000]);
-  };
+    if (startTime > currentSeek) {
+      setCurrentSeek(startTime);
+      playerRef.current?.seekTo(startTime / 1000);
+    } else if (endTime < currentSeek) {
+      setCurrentSeek(endTime);
+      playerRef.current?.seekTo(endTime / 1000);
+    }
+  }
 
   const handleOnProgress = function (e: OnProgressProps) {
     // Because ReactPlayer updates every 100ms, playedSeconds may exceed
-    // trimPips[1], i.e. the trimmed end of the clip, so we re-set it
+    // endTime], i.e. the trimmed end of the clip, so we re-set it
     // back to the "allowed maximum"
-    if (e.playedSeconds * 1000 >= trimPips[1]) {
-      playerRef.current?.seekTo(trimPips[1] / 1000, 'seconds');
+    if (e.playedSeconds * 1000 >= endTime) {
+      playerRef.current?.seekTo(endTime / 1000, 'seconds');
       setIsPlaying(false);
     } else {
       setCurrentSeek(e.playedSeconds * 1000);
@@ -55,9 +63,9 @@ export function VideoComponent(props: any) {
     }
     const currentTime = playerRef.current?.getCurrentTime() * 1000;
 
-    if (currentTime >= trimPips[1]) {
-      playerRef.current?.seekTo(trimPips[0] / 1000);
-      setCurrentSeek(trimPips[0]);
+    if (currentTime >= endTime) {
+      playerRef.current?.seekTo(startTime / 1000);
+      setCurrentSeek(startTime);
     }
     setIsPlaying(!isPlaying);
   };
@@ -67,37 +75,9 @@ export function VideoComponent(props: any) {
       return;
     }
 
-    if (trimPips[0] <= newValue && newValue <= trimPips[1]) {
+    if (startTime <= newValue && newValue <= endTime) {
       playerRef.current?.seekTo(newValue / 1000, 'seconds');
       setCurrentSeek(newValue);
-    }
-  };
-
-  const handleTrimChange = (
-    event: Event,
-    newValue: number | number[],
-    activeThumb: number
-  ) => {
-    if (!Array.isArray(newValue)) {
-      return;
-    }
-
-    if (activeThumb === 0) {
-      const value = Math.min(
-        newValue[0],
-        trimPips[1] - minDistance,
-        currentSeek
-      );
-      setTrimPips([value, trimPips[1]]);
-      setClipDuration((trimPips[1] - value) / 1000);
-    } else {
-      const value = Math.max(
-        newValue[1],
-        trimPips[0] + minDistance,
-        currentSeek
-      );
-      setTrimPips([trimPips[0], value]);
-      setClipDuration((value - trimPips[0]) / 1000);
     }
   };
 
@@ -108,19 +88,6 @@ export function VideoComponent(props: any) {
     setVolume(newValue);
   };
 
-  const trimSliderProps: TrimSliderProps = {
-    id: 'trimmer',
-    max: maxDuration * 1000,
-    value: trimPips,
-    onChange: handleTrimChange,
-    valueLabelFormat: formatTime,
-    valueLabelDisplay: 'auto',
-    disableSwap: true,
-    isTrimming: isTrimming
-  };
-
-  const trimSlider = <TrimSlider {...trimSliderProps} />;
-
   return (
     <Stack id='video-preview-container'>
       <div id='player-box'>
@@ -130,9 +97,9 @@ export function VideoComponent(props: any) {
           height='100%'
           volume={volume}
           url={props.sourceUrl}
-          ref={playerRef}
+          ref={playerRef} // either need to pass this in as a prop or couple everything back together -- can't capture thumbnail from frame
           playing={isPlaying}
-          onDuration={loadClipDuration}
+          onDuration={props.loadClipDuration}
           progressInterval={100}
           onProgress={handleOnProgress}
           onEnded={() => setIsPlaying(false)}
@@ -141,12 +108,12 @@ export function VideoComponent(props: any) {
       <VideoController
         isPlaying={isPlaying}
         currentSeek={currentSeek}
-        clipDuration={maxDuration * 1000}
+        clipDuration={props.maxDuration * 1000}
         volume={volume}
         handleSeekChange={handleSeekChange}
         handlePlayPause={handlePlayPause}
         handleVolumeChange={handleVolumeChange}
-        TrimSlider={trimSlider}
+        TrimSlider={props.trimProps?.TrimSlider}
       />
     </Stack>
   );
