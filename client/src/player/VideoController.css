@@ -1,3 +1,15 @@
+#aspect-ratio-wrapper {
+    position: relative;
+    padding-top: 56.25%;
+}
+
+#video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: black;
+}
+
 #controller {
     width: 100%;
     border-radius: 0 0 4px 4px;

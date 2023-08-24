@@ -1,4 +1,4 @@
-import React, { ReactElement, RefObject, useRef, useState } from 'react';
+import React, { RefObject, useRef, useState } from 'react';
 import './VideoController.css';
 import { styled } from '@mui/material/styles';
 import Slider from '@mui/material/Slider';
@@ -16,6 +16,7 @@ import { OnProgressProps } from 'react-player/base';
 import { TrimProps } from '../upload/components/Trimmer';
 
 interface VideoComponentProps {
+  id?: string;
   sourceUrl: string;
   maxDuration: number;
   loadClipDuration: (d: number) => void;
@@ -30,6 +31,8 @@ export function VideoComponent(props: VideoComponentProps) {
 
   const [volume, setVolume] = useState(1);
 
+  const clipDuration = props.maxDuration * 1000;
+
   let startTime: number = 0;
   let endTime: number = props.maxDuration * 1000;
   if (props.trimProps) {
@@ -38,10 +41,10 @@ export function VideoComponent(props: VideoComponentProps) {
 
     if (startTime > currentSeek) {
       setCurrentSeek(startTime);
-      playerRef.current?.seekTo(startTime / 1000);
+      playerRef.current?.seekTo(startTime / 1000, 'seconds');
     } else if (endTime < currentSeek) {
       setCurrentSeek(endTime);
-      playerRef.current?.seekTo(endTime / 1000);
+      playerRef.current?.seekTo(endTime / 1000, 'seconds');
     }
   }
 
@@ -64,7 +67,7 @@ export function VideoComponent(props: VideoComponentProps) {
     const currentTime = playerRef.current?.getCurrentTime() * 1000;
 
     if (currentTime >= endTime) {
-      playerRef.current?.seekTo(startTime / 1000);
+      playerRef.current?.seekTo(startTime / 1000, 'seconds');
       setCurrentSeek(startTime);
     }
     setIsPlaying(!isPlaying);
@@ -89,15 +92,15 @@ export function VideoComponent(props: VideoComponentProps) {
   };
 
   return (
-    <Stack id='video-preview-container'>
-      <div id='player-box'>
+    <Stack id={props.id}>
+      <div id='aspect-ratio-wrapper'>
         <ReactPlayer
           id='video'
-          width='100%'
-          height='100%'
+          width='100%' // Using the 'responsive player' trick for fixed aspect ratio
+          height='100%' // https://github.com/cookpete/react-player#responsive-player
           volume={volume}
           url={props.sourceUrl}
-          ref={playerRef} // either need to pass this in as a prop or couple everything back together -- can't capture thumbnail from frame
+          ref={playerRef}
           playing={isPlaying}
           onDuration={props.loadClipDuration}
           progressInterval={100}
@@ -105,92 +108,64 @@ export function VideoComponent(props: VideoComponentProps) {
           onEnded={() => setIsPlaying(false)}
         />
       </div>
-      <VideoController
-        isPlaying={isPlaying}
-        currentSeek={currentSeek}
-        clipDuration={props.maxDuration * 1000}
-        volume={volume}
-        handleSeekChange={handleSeekChange}
-        handlePlayPause={handlePlayPause}
-        handleVolumeChange={handleVolumeChange}
-        TrimSlider={props.trimProps?.TrimSlider}
-      />
-    </Stack>
-  );
-}
 
-export interface VideoControllerProps {
-  currentSeek: number;
-  handleSeekChange: (e: Event, newValue: number | number[]) => void;
-
-  volume: number;
-  handleVolumeChange: (e: Event, newValue: number | number[]) => void;
-
-  isPlaying: boolean;
-  handlePlayPause: () => void;
-
-  clipDuration: number;
-
-  TrimSlider?: ReactElement;
-}
-
-export function VideoController(props: VideoControllerProps) {
-  return (
-    <div
-      id='controller'
-      style={{
-        backgroundColor: palette.secondary.light,
-        color: palette.secondary.contrastText
-      }}
-    >
       <Stack
-        id='controller-stack'
-        direction='row'
-        spacing={2}
-        alignItems='center'
+        id='controller'
+        style={{
+          backgroundColor: palette.secondary.light,
+          color: palette.secondary.contrastText
+        }}
       >
         <Stack
-          id='slider-stack'
+          id='controller-stack'
           direction='row'
           spacing={2}
           alignItems='center'
         >
-          <IconButton onClick={props.handlePlayPause}>
-            {props.isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
-          </IconButton>
-          <div id='slider-container'>
-            <SeekSlider
-              id='seeker'
-              max={props.clipDuration}
-              value={props.currentSeek}
-              onChange={props.handleSeekChange}
-              valueLabelFormat={formatTime}
-              valueLabelDisplay='auto'
-              disableSwap
+          <Stack
+            id='slider-stack'
+            direction='row'
+            spacing={2}
+            alignItems='center'
+          >
+            <IconButton onClick={handlePlayPause}>
+              {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+            </IconButton>
+
+            <Stack id='slider-container'>
+              <SeekSlider
+                id='seeker'
+                max={clipDuration}
+                value={currentSeek}
+                onChange={handleSeekChange}
+                valueLabelFormat={formatTime}
+                valueLabelDisplay='auto'
+                disableSwap
+              />
+              {props.trimProps?.TrimSlider}
+            </Stack>
+
+            <Stack>
+              {formatTime(currentSeek)} / {formatTime(clipDuration)}
+            </Stack>
+          </Stack>
+
+          <Stack direction='row' spacing={1}>
+            <VolumeDown />
+            <Slider
+              id='volume-slider'
+              size='small'
+              color='secondary'
+              max={1}
+              step={0.05}
+              value={volume}
+              onChange={handleVolumeChange}
             />
-            {props.TrimSlider}
-          </div>
-
-          <div>
-            {formatTime(props.currentSeek)} / {formatTime(props.clipDuration)}
-          </div>
-        </Stack>
-
-        <Stack direction='row' spacing={1}>
-          <VolumeDown />
-          <Slider
-            id='volume-slider'
-            size='small'
-            color='secondary'
-            max={1}
-            step={0.05}
-            value={props.volume}
-            onChange={props.handleVolumeChange}
-          />
-          <VolumeUp />
+            <VolumeUp />
+          </Stack>
         </Stack>
       </Stack>
-    </div>
+    </Stack>
   );
 }
 

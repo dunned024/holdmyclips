@@ -128,6 +128,7 @@ export function Previewer(props: {
   return (
     <Stack id='previewer' direction='row'>
       <VideoComponent
+        id='video-component'
         sourceUrl={props.sourceUrl}
         loadClipDuration={loadClipDuration}
         maxDuration={maxDuration}
@@ -135,6 +136,7 @@ export function Previewer(props: {
         playerRef={playerRef}
       />
       <FormAccordian
+        id='clip-details-form'
         source={props.source}
         uploadClip={props.uploadClip}
         username={username}

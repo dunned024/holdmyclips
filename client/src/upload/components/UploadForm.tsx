@@ -22,6 +22,7 @@ import { palette } from '../../assets/themes/theme';
 import { ThumbnailSetter } from './Thumbnail';
 
 interface FormAccordianProps {
+  id?: string;
   source: File;
   uploadClip: (formData: ClipUploadData) => void;
   clipDuration: number;
@@ -93,7 +94,7 @@ export function FormAccordian(props: FormAccordianProps) {
   };
 
   return (
-    <div id='clip-details-form'>
+    <div id={props.id}>
       <Stack id='form-container'>
         <StyledAccordion
           expanded={expanded === 'panel1'}
