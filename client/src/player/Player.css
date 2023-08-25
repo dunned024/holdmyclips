@@ -35,8 +35,9 @@
 
 #details-container {
     padding: 10px;
+    color: black;
+    height: 100px;
 
-    background-color: #ffffff;
     border-radius: 4px;
 
     display: flex;
@@ -48,8 +49,9 @@
 #comments-container {
     height: 100%;
     padding: 10px;
+    margin: 10px 0 0 0;
+    color: black;
 
-    background-color: #1f2531;
     border-radius: 4px;
 
     text-align: center;
@@ -58,20 +60,18 @@
 
 #comments-box {
     height: 100%;
-    background-color: #1f2531;
-    border: 1px solid white;
+    /* border: 1px solid; */
+    margin: 10px 0 0 0;
 
     overflow: auto;
 }
 
 .comment {
-    background-color: black;
-    border-bottom: solid 1px white;
+    color: white;
 }
 
 .comment .header {
     padding: 0 4px;
-    background-color: red;
     display: flex;
     flex-direction: row;
     justify-content: space-between;

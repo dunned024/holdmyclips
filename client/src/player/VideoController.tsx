@@ -140,6 +140,7 @@ export function VideoComponent(props: VideoComponentProps) {
                 onChange={handleSeekChange}
                 valueLabelFormat={formatTime}
                 valueLabelDisplay='auto'
+                hideTrack={props.trimProps !== undefined}
                 disableSwap
               />
               {props.trimProps?.TrimSlider}
@@ -169,15 +170,28 @@ export function VideoComponent(props: VideoComponentProps) {
   );
 }
 
-const SeekSlider = styled(Slider)(() => ({
-  color: palette.secondary.dark,
-  '& .MuiSlider-track': {
-    opacity: 0
-  },
-  '& .MuiSlider-rail': {
-    opacity: 0
-  },
+const SeekSlider = styled(Slider, {
+  shouldForwardProp: (prop) => prop !== 'hideTrack'
+})<{ hideTrack: boolean }>(({ hideTrack }) => ({
+  color: hideTrack ? palette.secondary.dark : palette.secondary.main,
+  '& .MuiSlider-track': hideTrack
+    ? {
+        opacity: 0
+      }
+    : {
+        height: 10,
+        borderRadius: 0
+      },
+  '& .MuiSlider-rail': hideTrack
+    ? {
+        opacity: 0
+      }
+    : {
+        height: 10,
+        borderRadius: 0
+      },
   '& .MuiSlider-thumb': {
+    color: palette.secondary.dark,
     'z-index': 1,
     width: 20,
     height: 20

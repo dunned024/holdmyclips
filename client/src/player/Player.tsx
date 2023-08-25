@@ -4,6 +4,7 @@ import './Player.css';
 import { useParams } from 'react-router-dom';
 import { Stack } from '@mui/material';
 import { VideoComponent } from './VideoController';
+import { palette } from '../assets/themes/theme';
 
 const fakeComments: Comment[] = [
   {
@@ -59,9 +60,18 @@ export function Player() {
         </Stack>
         <Stack id='sidebar'>
           <ClipDetails clip={clip} />
-          <Stack id='comments-container'>
+          <Stack
+            id='comments-container'
+            sx={{ backgroundColor: palette.secondary.light }}
+          >
             Comments
-            <Stack id='comments-box'>
+            <Stack
+              id='comments-box'
+              sx={{
+                backgroundColor: palette.secondary.main,
+                border: `1px solid ${palette.primary.light}`
+              }}
+            >
               {fakeComments.map((comment, index) => (
                 <CommentCard comment={comment} id={index} key={index} />
               ))}
@@ -75,26 +85,36 @@ export function Player() {
 
 function ClipDetails(props: { clip?: Clip }) {
   return (
-    <div id='details-container'>
+    <Stack
+      id='details-container'
+      sx={{ backgroundColor: palette.secondary.light }}
+    >
       <div id='description'>{props.clip?.description}</div>
-      <div id='stats-container'>
+      <Stack id='stats-container'>
         <div id='uploader'>Uploader: {props.clip?.uploader}</div>
         {/* <div className="duration">Duration: { clip?.duration }</div> */}
         {/* <div className="views">Views: { clip?.views }</div> */}
-      </div>
-    </div>
+      </Stack>
+    </Stack>
   );
 }
 
 function CommentCard(props: { comment: Comment; id: number }) {
   const comment = props.comment;
   return (
-    <div className='comment' key={props.id}>
+    <Stack
+      className='comment'
+      key={props.id}
+      sx={{
+        backgroundColor: palette.secondary.dark,
+        borderBottom: `1px solid ${palette.primary.light}`
+      }}
+    >
       <div className='header'>
         <div className='author'>{comment.author}</div>
         <div className='posted-at'>{comment.postedAt.toISOString()}</div>
       </div>
       <div className='text'>{comment.text}</div>
-    </div>
+    </Stack>
   );
 }
