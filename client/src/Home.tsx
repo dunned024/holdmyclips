@@ -1,29 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import './Home.css';
 import { Link } from 'react-router-dom';
-import { Clip } from './types';
-import { getUsername } from './services/cognito';
+import { Clip, ClipDex } from './types';
 
-export function Home() {
-  const username = getUsername();
-  const [clips, setClips] = useState<Clip[]>([]);
-
-  useEffect(() => {
-    async function getClips() {
-      const res = await fetch('/clips');
-      const data = await res.json();
-      setClips(JSON.parse(data).clips);
-    }
-
-    if (!clips.length) {
-      getClips();
-    }
-  }, [clips]);
-
+export function Home(props: { clips: ClipDex; username?: string }) {
   return (
     <div className='home'>
       <div className='upload-button-row'>
-        {username ? (
+        {props.username ? (
           <a className='link' id='upload-link' href='/upload' rel='noreferrer'>
             <button>Upload clip</button>
           </a>
@@ -39,8 +23,8 @@ export function Home() {
         )}
       </div>
       <div className='clip-rows'>
-        {clips.map((clip) => (
-          <ClipCard key={clip.id} clip={clip} />
+        {Object.entries(props.clips).map(([clipId, clip]) => (
+          <ClipCard key={clipId} clip={clip} />
         ))}
       </div>
     </div>

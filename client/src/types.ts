@@ -1,3 +1,7 @@
+export interface ClipDex {
+  [index: string]: Clip;
+}
+
 export interface Clip {
   id: string;
   title: string;
@@ -30,9 +34,9 @@ export function parseClip(rawClip: Record<string, string>): Clip {
 export interface ClipUploadData {
   id: string;
   title: string;
-  duration: string;
+  duration: number;
   uploader: string;
   description?: string;
-  views: string;
+  views: number;
   comments: string;
 }

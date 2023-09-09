@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Clip, Comment, parseClip } from '../types';
+import React, { useState } from 'react';
+import { Clip, ClipDex, Comment } from '../types';
 import './Player.css';
 import { useParams } from 'react-router-dom';
-import { Stack } from '@mui/material';
+import { Grid, Stack } from '@mui/material';
 import { VideoComponent } from './VideoController';
 import { palette } from '../assets/themes/theme';
 
@@ -19,33 +19,14 @@ const fakeComments: Comment[] = [
   }
 ];
 
-export function Player() {
+export function Player(props: { clips: ClipDex }) {
   const { clipId } = useParams();
+  if (clipId === undefined) {
+    return <span />;
+  }
 
-  const [clip, setClip] = useState<Clip>();
+  const clip: Clip = props.clips[clipId];
   const [maxDuration, setMaxDuration] = useState(0);
-
-  const loadClipDuration = function (d: number) {
-    setMaxDuration(d);
-  };
-
-  useEffect(() => {
-    async function getClip(id: string) {
-      try {
-        const res = await fetch(
-          `https://clips.dunned024.com/clips/${id}/${id}.json`
-        );
-        const data = await res.json();
-        setClip(parseClip(data));
-      } catch (error) {
-        console.log(error);
-      }
-    }
-
-    if (!clip && clipId) {
-      getClip(clipId);
-    }
-  }, [clipId, clip]);
 
   return (
     <div id='player-container'>
@@ -54,7 +35,7 @@ export function Player() {
           <VideoComponent
             sourceUrl={`https://clips.dunned024.com/clips/${clipId}/${clipId}.mp4`}
             maxDuration={maxDuration}
-            loadClipDuration={loadClipDuration}
+            loadClipDuration={setMaxDuration}
           />
           <h1 id='title'>{clip?.title}</h1>
         </Stack>
@@ -84,17 +65,28 @@ export function Player() {
 }
 
 function ClipDetails(props: { clip?: Clip }) {
+  if (!props.clip) {
+    console.log('no clip??');
+    return <span />;
+  }
+
   return (
     <Stack
       id='details-container'
       sx={{ backgroundColor: palette.secondary.light }}
     >
-      <div id='description'>{props.clip?.description}</div>
-      <Stack id='stats-container'>
-        <div id='uploader'>Uploader: {props.clip?.uploader}</div>
-        {/* <div className="duration">Duration: { clip?.duration }</div> */}
-        {/* <div className="views">Views: { clip?.views }</div> */}
-      </Stack>
+      <Grid id='stats-container' container textAlign='left'>
+        <Grid id='uploader-text' item xs={12}>
+          <span>Uploader: {props.clip.uploader}</span>
+        </Grid>
+        <Grid id='duration-text' item xs={6}>
+          Duration: {props.clip.duration}
+        </Grid>
+        <Grid id='views-text' item xs={6}>
+          Views: {props.clip.views}
+        </Grid>
+      </Grid>
+      <Stack>{props.clip.description}</Stack>
     </Stack>
   );
 }

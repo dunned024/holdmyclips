@@ -11,9 +11,37 @@ import { Uploader } from './upload/Uploader';
 import { Stack, ThemeProvider } from '@mui/material';
 import { THEME, palette } from './assets/themes/theme';
 import { getUsername } from './services/cognito';
+import { useEffect, useState } from 'react';
+import { Clip, ClipDex } from './types';
 
 function App() {
   const username = getUsername();
+  const [clips, setClips] = useState<ClipDex>({});
+
+  useEffect(() => {
+    async function getClips() {
+      let endpoint = '';
+      if (process.env.NODE_ENV === 'development') {
+        endpoint = 'http://localhost:3001';
+      }
+
+      const res = await fetch(`${endpoint}/clips`);
+      const data = await res.json();
+
+      const clipList: ClipDex = {};
+      // I think S3 serves the data as a string, so we need JSON.parse somewhere in here
+      // TODO: see if I can reconcile the two approaches
+      data.clips.forEach((clip: Clip) => {
+        clipList[clip.id] = clip;
+      });
+
+      setClips(clipList);
+    }
+
+    if (!clips.length) {
+      getClips();
+    }
+  }, []);
 
   return (
     <div>
@@ -63,8 +91,14 @@ function App() {
         >
           <Router>
             <Routes>
-              <Route path='/' element={<Home />}></Route>
-              <Route path='/player/:clipId' element={<Player />}></Route>
+              <Route
+                path='/'
+                element={<Home clips={clips} username={username} />}
+              ></Route>
+              <Route
+                path='/player/:clipId'
+                element={<Player clips={clips} />}
+              ></Route>
               <Route path='/upload' element={<Uploader />}></Route>
             </Routes>
           </Router>

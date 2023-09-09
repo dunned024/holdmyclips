@@ -7,3 +7,4 @@
 # large assets
 server/assets/
 client/assets/
+client/s3/
