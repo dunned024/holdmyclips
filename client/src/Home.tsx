@@ -1,13 +1,43 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './Home.css';
 import { Link } from 'react-router-dom';
 import { Clip, ClipDex } from './types';
+import { getUsername } from './services/cognito';
 
-export function Home(props: { clips: ClipDex; username?: string }) {
+export function Home() {
+  const [clips, setClips] = useState<ClipDex>({});
+  const username = getUsername();
+
+  useEffect(() => {
+    async function getClips() {
+      let endpoint = '';
+      if (process.env.NODE_ENV === 'development') {
+        endpoint = 'http://localhost:3001';
+      }
+
+      const res = await fetch(`${endpoint}/clips`);
+      const data = await res.json();
+
+      const clipList: ClipDex = {};
+      // I think S3 serves the data as a string, so we need JSON.parse somewhere in here
+      // TODO: see if I can reconcile the two approaches
+      console.log(data);
+      data.clips.forEach((clip: Clip) => {
+        clipList[clip.id] = clip;
+      });
+
+      setClips(clipList);
+    }
+
+    if (!clips.length) {
+      getClips();
+    }
+  }, []);
+
   return (
     <div className='home'>
       <div className='upload-button-row'>
-        {props.username ? (
+        {username ? (
           <a className='link' id='upload-link' href='/upload' rel='noreferrer'>
             <button>Upload clip</button>
           </a>
@@ -23,7 +53,7 @@ export function Home(props: { clips: ClipDex; username?: string }) {
         )}
       </div>
       <div className='clip-rows'>
-        {Object.entries(props.clips).map(([clipId, clip]) => (
+        {Object.entries(clips).map(([clipId, clip]) => (
           <ClipCard key={clipId} clip={clip} />
         ))}
       </div>

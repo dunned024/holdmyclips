@@ -1,32 +1,44 @@
-import React, { useState } from 'react';
-import { Clip, ClipDex, Comment } from '../types';
+import React, { useEffect, useState } from 'react';
+import { Clip, Comment } from '../types';
 import './Player.css';
 import { useParams } from 'react-router-dom';
 import { Grid, Stack } from '@mui/material';
 import { VideoComponent } from './VideoController';
 import { palette } from '../assets/themes/theme';
+import { secondsToMMSS } from '../services/time';
 
-const fakeComments: Comment[] = [
-  {
-    author: 'dennis',
-    text: 'this is a comment',
-    postedAt: new Date()
-  },
-  {
-    author: 'dennis 2',
-    text: 'this is a comment again',
-    postedAt: new Date()
-  }
-];
-
-export function Player(props: { clips: ClipDex }) {
+export function Player() {
   const { clipId } = useParams();
-  if (clipId === undefined) {
+  console.log(clipId);
+
+  const [clip, setClip] = useState<Clip>();
+  const [maxDuration, setMaxDuration] = useState(0);
+
+  useEffect(() => {
+    async function getClip(id: string) {
+      let endpoint = '';
+      if (process.env.NODE_ENV === 'development') {
+        endpoint = 'http://localhost:3001';
+      }
+
+      // TODO: Get this by fetching the ClipDex
+      //  Note: can't persist this info from when it's first fetched
+      //  https://stackoverflow.com/a/53455443
+      const res = await fetch(`${endpoint}/clips/${id}/${id}.json`);
+      const data = await res.json();
+
+      // TODO: Need to call parseClip here if ClipDex only returns strings
+      setClip(data);
+    }
+
+    if (!clip && clipId) {
+      getClip(clipId);
+    }
+  }, [clipId, clip]);
+
+  if (!clipId || !clip) {
     return <span />;
   }
-
-  const clip: Clip = props.clips[clipId];
-  const [maxDuration, setMaxDuration] = useState(0);
 
   return (
     <div id='player-container'>
@@ -53,7 +65,7 @@ export function Player(props: { clips: ClipDex }) {
                 border: `1px solid ${palette.primary.light}`
               }}
             >
-              {fakeComments.map((comment, index) => (
+              {clip.comments.map((comment, index) => (
                 <CommentCard comment={comment} id={index} key={index} />
               ))}
             </Stack>
@@ -74,13 +86,14 @@ function ClipDetails(props: { clip?: Clip }) {
     <Stack
       id='details-container'
       sx={{ backgroundColor: palette.secondary.light }}
+      direction='column'
     >
       <Grid id='stats-container' container textAlign='left'>
         <Grid id='uploader-text' item xs={12}>
           <span>Uploader: {props.clip.uploader}</span>
         </Grid>
         <Grid id='duration-text' item xs={6}>
-          Duration: {props.clip.duration}
+          Duration: {secondsToMMSS(props.clip.duration)}
         </Grid>
         <Grid id='views-text' item xs={6}>
           Views: {props.clip.views}
@@ -104,7 +117,7 @@ function CommentCard(props: { comment: Comment; id: number }) {
     >
       <div className='header'>
         <div className='author'>{comment.author}</div>
-        <div className='posted-at'>{comment.postedAt.toISOString()}</div>
+        <div className='posted-at'>{comment.postedAt}</div>
       </div>
       <div className='text'>{comment.text}</div>
     </Stack>

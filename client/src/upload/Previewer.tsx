@@ -125,6 +125,7 @@ export function Previewer(props: {
     endTime: trimPips[1]
   };
 
+  console.log(clipDuration);
   return (
     <Stack id='previewer' direction='row'>
       <VideoComponent

@@ -16,7 +16,7 @@ export interface Clip {
 export interface Comment {
   author: string;
   text: string;
-  postedAt: Date;
+  postedAt: string;
 }
 
 export function parseClip(rawClip: Record<string, string>): Clip {
