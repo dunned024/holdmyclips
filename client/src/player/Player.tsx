@@ -9,7 +9,6 @@ import { secondsToMMSS } from '../services/time';
 
 export function Player() {
   const { clipId } = useParams();
-  console.log(clipId);
 
   const [clip, setClip] = useState<Clip>();
   const [maxDuration, setMaxDuration] = useState(0);
@@ -65,9 +64,11 @@ export function Player() {
                 border: `1px solid ${palette.primary.light}`
               }}
             >
+              Comments are not yet supported...
+              {/* TODO: Implement comments 
               {clip.comments.map((comment, index) => (
                 <CommentCard comment={comment} id={index} key={index} />
-              ))}
+              ))} */}
             </Stack>
           </Stack>
         </Stack>
@@ -76,34 +77,40 @@ export function Player() {
   );
 }
 
-function ClipDetails(props: { clip?: Clip }) {
-  if (!props.clip) {
-    console.log('no clip??');
-    return <span />;
-  }
-
+function ClipDetails(props: { clip: Clip }) {
   return (
     <Stack
       id='details-container'
       sx={{ backgroundColor: palette.secondary.light }}
       direction='column'
+      spacing={2}
     >
-      <Grid id='stats-container' container textAlign='left'>
+      <Grid id='stats-container' container textAlign='left' spacing={1}>
         <Grid id='uploader-text' item xs={12}>
-          <span>Uploader: {props.clip.uploader}</span>
+          <span>
+            Uploader: <b>{props.clip.uploader}</b>
+          </span>
         </Grid>
         <Grid id='duration-text' item xs={6}>
-          Duration: {secondsToMMSS(props.clip.duration)}
+          Duration: <b>{secondsToMMSS(props.clip.duration)}</b>
         </Grid>
-        <Grid id='views-text' item xs={6}>
-          Views: {props.clip.views}
+        <Grid id='views-text' item textAlign='right' xs={6}>
+          <b>{props.clip.views}</b> views
         </Grid>
       </Grid>
-      <Stack>{props.clip.description}</Stack>
+      {props.clip.description !== '' && (
+        <Stack
+          id='description-container'
+          sx={{ backgroundColor: palette.secondary.main }}
+        >
+          {props.clip.description}
+        </Stack>
+      )}
     </Stack>
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function CommentCard(props: { comment: Comment; id: number }) {
   const comment = props.comment;
   return (
