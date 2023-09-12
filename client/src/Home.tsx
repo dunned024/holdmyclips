@@ -22,7 +22,15 @@ export function Home() {
       // I think S3 serves the data as a string, so we need JSON.parse somewhere in here
       // TODO: see if I can reconcile the two approaches
       console.log(data);
-      data.clips.forEach((clip: Clip) => {
+
+      let clipsData;
+      if (process.env.NODE_ENV === 'development') {
+        clipsData = data.clips;
+      } else {
+        clipsData = JSON.parse(data).clips;
+      }
+
+      clipsData.forEach((clip: Clip) => {
         clipList[clip.id] = clip;
       });
 

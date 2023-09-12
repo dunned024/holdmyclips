@@ -11,6 +11,7 @@ import { Uploader } from './upload/Uploader';
 import { Stack, ThemeProvider } from '@mui/material';
 import { THEME, palette } from './assets/themes/theme';
 import { getUsername } from './services/cognito';
+import { SignedIn } from './Auth';
 
 function App() {
   const username = getUsername();
@@ -66,6 +67,7 @@ function App() {
               <Route path='/' element={<Home />}></Route>
               <Route path='/player/:clipId' element={<Player />}></Route>
               <Route path='/upload' element={<Uploader />}></Route>
+              <Route path='/signedin' element={<SignedIn />}></Route>
             </Routes>
           </Router>
         </Stack>

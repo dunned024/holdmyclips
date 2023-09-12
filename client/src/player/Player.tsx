@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Clip, Comment } from '../types';
+import { Clip, Comment, parseClip } from '../types';
 import './Player.css';
 import { useParams } from 'react-router-dom';
 import { Grid, Stack } from '@mui/material';
@@ -27,7 +27,11 @@ export function Player() {
       const data = await res.json();
 
       // TODO: Need to call parseClip here if ClipDex only returns strings
-      setClip(data);
+      if (process.env.NODE_ENV === 'development') {
+        setClip(data);
+      } else {
+        setClip(parseClip(data));
+      }
     }
 
     if (!clip && clipId) {
