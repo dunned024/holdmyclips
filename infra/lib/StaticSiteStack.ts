@@ -1,6 +1,6 @@
 import { CfnOutput, Duration, Stack, StackProps } from 'aws-cdk-lib';
 import { Bucket, BlockPublicAccess, CorsRule, HttpMethods, CfnBucket, ObjectOwnership, BucketAccessControl } from 'aws-cdk-lib/aws-s3';
-import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions, AddBehaviorOptions, ResponseHeadersPolicy } from 'aws-cdk-lib/aws-cloudfront';
+import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions, AddBehaviorOptions, ResponseHeadersPolicy, LambdaEdgeEventType } from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
 import { experimental } from 'aws-cdk-lib/aws-cloudfront';
 import { Code, Runtime } from 'aws-cdk-lib/aws-lambda';
@@ -15,9 +15,11 @@ import { Construct } from 'constructs';
 import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
 import { HostedDomain } from './HostedDomainStack'
 import { ConfiguredStackProps } from './config';
-import { CloudFrontAuth } from './auth/CloudfrontAuth';
+import { AuthLambdaFnVersions, CloudFrontAuth, ConfiguredAuthLambdaParams } from './auth/CloudfrontAuth';
 import { AuthLambdas } from './auth/AuthLambdas';
 import { UserPool, UserPoolClient } from 'aws-cdk-lib/aws-cognito';
+import * as lambda from "aws-cdk-lib/aws-lambda"
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
 
 export interface StaticSiteStackProps extends ConfiguredStackProps {
@@ -105,11 +107,12 @@ export class StaticSiteStack extends Stack {
     });
 
     const auth = props.cloudFrontAuth;
+    const authLambdas = this.getAuthLambdaFnVersions();
     const distribution = new Distribution(this, 'Distribution', {
       additionalBehaviors: {
-        ...auth.createAuthPagesBehaviors(s3Origin),
-        'upload': auth.createProtectedBehavior(s3Origin, uploadBehavior),
-        'signedin': auth.createProtectedBehavior(s3Origin, uploadBehavior),
+        ...auth.createAuthPagesBehaviors(authLambdas, s3Origin),
+        'upload': auth.createProtectedBehavior(authLambdas, s3Origin, uploadBehavior),
+        'signedin': auth.createProtectedBehavior(authLambdas, s3Origin, uploadBehavior),
         // 'user': auth.createProtectedBehavior(apiOrigin, apiBehavior), // pathPattern matches API endpoint
       },
       certificate: props.hostedDomain.cert,
@@ -136,5 +139,20 @@ export class StaticSiteStack extends Stack {
     );
 
     new CfnOutput(this, 'StaticSiteDistributionId', { value: distribution.distributionId });
+  }
+
+  getAuthLambdaFnVersions(): AuthLambdaFnVersions {
+    function fn(scope: Stack, name: string): lambda.IVersion {
+      const value = StringParameter.valueForStringParameter(scope, `/HMC/lambdas/${name}Arn`)
+      return lambda.Version.fromVersionArn(scope, name, value)
+    }
+
+    return {
+      checkAuthFn: fn(this, 'CheckAuthFn'),
+      httpHeadersFn: fn(this, 'HttpHeadersFn'),
+      parseAuthFn: fn(this, 'ParseAuthFn'),
+      refreshAuthFn: fn(this, 'RefreshAuthFn'),
+      signOutFn: fn(this, 'SignOutFn'),
+    }
   }
 }

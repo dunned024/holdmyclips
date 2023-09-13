@@ -15,7 +15,24 @@ import { Construct } from "constructs"
 
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import { ConfigureNatOptions } from "aws-cdk-lib/aws-ec2"
+import { Stack } from "aws-cdk-lib"
 
+
+export interface ConfiguredAuthLambdaParams {
+  checkAuthFn: StringParameter;
+  httpHeadersFn: StringParameter;
+  parseAuthFn: StringParameter;
+  refreshAuthFn: StringParameter;
+  signOutFn: StringParameter;
+}
+
+export interface AuthLambdaFnVersions {
+  checkAuthFn: lambda.IVersion;
+  httpHeadersFn: lambda.IVersion;
+  parseAuthFn: lambda.IVersion;
+  refreshAuthFn: lambda.IVersion;
+  signOutFn: lambda.IVersion;
+}
 
 export interface CloudFrontAuthProps {
   /**
@@ -83,11 +100,7 @@ export class CloudFrontAuth extends Construct {
   public readonly signOutPath: string
   public readonly refreshAuthPath: string
 
-  private readonly checkAuthFn: lambda.IVersion
-  private readonly httpHeadersFn: lambda.IVersion
-  private readonly parseAuthFn: lambda.IVersion
-  private readonly refreshAuthFn: lambda.IVersion
-  private readonly signOutFn: lambda.IVersion
+  public readonly authLambdaParams: ConfiguredAuthLambdaParams
 
   private readonly oauthScopes: string[]
 
@@ -150,30 +163,46 @@ export class CloudFrontAuth extends Construct {
       nonceSigningSecret,
     }
 
-    this.checkAuthFn = new LambdaConfig(this, "CheckAuthFn", {
-      function: props.authLambdas.checkAuthFn,
-      config,
-    }).version
+    this.authLambdaParams = {
+      checkAuthFn: this.createConfiguredLambdaSsmParameter(
+        "CheckAuthFn",
+        props.authLambdas.checkAuthFn,
+        config
+      ),
+      httpHeadersFn: this.createConfiguredLambdaSsmParameter(
+        "HttpHeadersFn",
+        props.authLambdas.httpHeadersFn,
+        config
+      ),
+      parseAuthFn: this.createConfiguredLambdaSsmParameter(
+        "ParseAuthFn",
+        props.authLambdas.parseAuthFn,
+        config
+      ),
+      refreshAuthFn: this.createConfiguredLambdaSsmParameter(
+        "RefreshAuthFn",
+        props.authLambdas.refreshAuthFn,
+        config
+      ),
+      signOutFn: this.createConfiguredLambdaSsmParameter(
+        "SignOutFn",
+        props.authLambdas.signOutFn,
+        config
+      ),
+    }
+  }
 
-    this.httpHeadersFn = new LambdaConfig(this, "HttpHeadersFn", {
-      function: props.authLambdas.httpHeadersFn,
+  createConfiguredLambdaSsmParameter(name: string, fn: lambda.Function, config: StoredConfig) {
+    const fnVersion = new LambdaConfig(this, name, {
+      function: fn,
       config,
     }).version
+  
+    return new StringParameter(this, `${name}SsmParam`, {
+      parameterName: `/HMC/lambdas/${name}Arn`,
+      stringValue: fnVersion.edgeArn,
+    })
 
-    this.parseAuthFn = new LambdaConfig(this, "ParseAuthFn", {
-      function: props.authLambdas.parseAuthFn,
-      config,
-    }).version
-
-    this.refreshAuthFn = new LambdaConfig(this, "RefreshAuthFn", {
-      function: props.authLambdas.refreshAuthFn,
-      config,
-    }).version
-
-    this.signOutFn = new LambdaConfig(this, "SignOutFn", {
-      function: props.authLambdas.signOutFn,
-      config,
-    }).version
   }
 
   /**
@@ -184,6 +213,7 @@ export class CloudFrontAuth extends Construct {
    * - sign out page
    */
   public createAuthPagesBehaviors(
+    authLambdas: AuthLambdaFnVersions,
     origin: IOrigin,
   ): Record<string, BehaviorOptions> {
     function path(path: string, fn: IVersion): Record<string, BehaviorOptions> {
@@ -203,9 +233,9 @@ export class CloudFrontAuth extends Construct {
     }
 
     return {
-      ...path(this.callbackPath, this.parseAuthFn),
-      ...path(this.refreshAuthPath, this.refreshAuthFn),
-      ...path(this.signOutPath, this.signOutFn),
+      ...path(this.callbackPath, authLambdas.parseAuthFn),
+      ...path(this.refreshAuthPath, authLambdas.refreshAuthFn),
+      ...path(this.signOutPath, authLambdas.signOutFn),
     }
   }
 
@@ -213,6 +243,7 @@ export class CloudFrontAuth extends Construct {
    * Create behavior that includes authorization check.
    */
   public createProtectedBehavior(
+    authLambdas: AuthLambdaFnVersions,
     origin: IOrigin,
     options?: AddBehaviorOptions,
   ): BehaviorOptions {
@@ -223,11 +254,11 @@ export class CloudFrontAuth extends Construct {
       edgeLambdas: [
         {
           eventType: cloudfront.LambdaEdgeEventType.VIEWER_REQUEST,
-          functionVersion: this.checkAuthFn,
+          functionVersion: authLambdas.checkAuthFn,
         },
         {
           eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
-          functionVersion: this.httpHeadersFn,
+          functionVersion: authLambdas.httpHeadersFn,
         },
       ],
       ...options,
