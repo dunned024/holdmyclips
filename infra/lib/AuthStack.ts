@@ -105,6 +105,7 @@ export class AuthStack extends Stack {
       cognitoAuthDomain: authDomainName,
       authLambdas: new AuthLambdas(this, 'AuthLambdas'),
       fqdn: props.fqdn,
+      logLevel: 'info',
       userPool: this.userPool,
       client: userPoolClient,
       ...props.authPaths

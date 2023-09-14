@@ -22,6 +22,8 @@ export function Uploader() {
       console.log(res);
 
       console.log(source);
+      // TODO: send video via PUT to /uploadclip?filename={id}.{ext}
+      //  e.g. /uploadclip?filename=able-continent.mp4
       const videoRes = await fetch(`/clips/${id}/${id}.mp4`, {
         headers: {
           'Content-Type': 'video/mp4'

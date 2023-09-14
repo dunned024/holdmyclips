@@ -112,6 +112,7 @@ export class StaticSiteStack extends Stack {
       additionalBehaviors: {
         ...auth.createAuthPagesBehaviors(authLambdas, s3Origin),
         'upload': auth.createProtectedBehavior(authLambdas, s3Origin, uploadBehavior),
+        'uploadclip': auth.createProtectedBehavior(authLambdas, s3Origin, uploadBehavior),
         'signedin': auth.createProtectedBehavior(authLambdas, s3Origin, uploadBehavior),
         // 'user': auth.createProtectedBehavior(apiOrigin, apiBehavior), // pathPattern matches API endpoint
       },

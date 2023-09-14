@@ -15,7 +15,7 @@ import { Construct } from "constructs"
 
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import { ConfigureNatOptions } from "aws-cdk-lib/aws-ec2"
-import { Stack } from "aws-cdk-lib"
+import { Stack, Token } from "aws-cdk-lib"
 
 
 export interface ConfiguredAuthLambdaParams {
@@ -194,7 +194,7 @@ export class CloudFrontAuth extends Construct {
 
   createConfiguredLambdaSsmParameter(name: string, fn: lambda.Function, config: StoredConfig) {
     const fnVersion = new LambdaConfig(this, name, {
-      function: fn,
+      function: fn.currentVersion,
       config,
     }).version
   
@@ -202,7 +202,6 @@ export class CloudFrontAuth extends Construct {
       parameterName: `/HMC/lambdas/${name}Arn`,
       stringValue: fnVersion.edgeArn,
     })
-
   }
 
   /**

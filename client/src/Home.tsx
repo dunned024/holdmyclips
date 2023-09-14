@@ -21,7 +21,6 @@ export function Home() {
       const clipList: ClipDex = {};
       // I think S3 serves the data as a string, so we need JSON.parse somewhere in here
       // TODO: see if I can reconcile the two approaches
-      console.log(data);
 
       let clipsData;
       if (process.env.NODE_ENV === 'development') {

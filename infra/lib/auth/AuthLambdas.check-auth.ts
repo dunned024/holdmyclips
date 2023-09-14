@@ -10,6 +10,26 @@ import { createNonceHmac, generateNonce } from "./util/nonce"
 export const handler = createRequestHandler(async (config, event) => {
   const request = event.Records[0].cf.request
   const domainName = request.headers["host"][0].value
+  
+  let uploadTargetUri = undefined;
+  if (request.method === 'GET' && request.uri === '/uploadclip') {
+    const filename = validateUploadFilename(request.querystring) // ensure filename is in querystring and has a value
+    config.logger.info({filename})
+    if (filename === undefined) {
+      return staticPage({
+        title: "Invalid filename",
+        statusCode: "400",
+        message: "The provided filename is invalid.",
+        details:
+          "The filename parameter was not provided or not assigned a value.",
+        linkHref: `https://${domainName}${config.signOutPath}`,  // TODO: generalize staticPage
+        linkText: "Sign out",
+      })
+    }
+    uploadTargetUri = constructUploadTargetUri(filename)
+    config.logger.info("uploadTargetUri:", uploadTargetUri)
+  }
+
   const requestedUri = `${request.uri}${
     request.querystring ? "?" + request.querystring : ""
   }`
@@ -26,7 +46,7 @@ export const handler = createRequestHandler(async (config, event) => {
   })
 
   if (!idToken) {
-    return redirectToSignIn({ config, domainName, requestedUri })
+    return redirectToSignIn({ config, domainName, requestedUri: uploadTargetUri ? "/" : requestedUri })
   }
 
   // If the ID token has expired or expires in less than 10 minutes
@@ -38,7 +58,7 @@ export const handler = createRequestHandler(async (config, event) => {
   const { exp } = idTokenPayload
   config.logger.debug("ID token exp:", exp, new Date(exp * 1000).toISOString())
   if (Date.now() / 1000 > exp - 60 * 10 && refreshToken) {
-    return redirectToRefresh({ config, domainName, requestedUri })
+    return redirectToRefresh({ config, domainName, requestedUri: uploadTargetUri ?? requestedUri })
   }
 
   // Check that the ID token is valid.
@@ -52,7 +72,7 @@ export const handler = createRequestHandler(async (config, event) => {
 
   if (validateResult !== undefined) {
     config.logger.debug("ID token not valid:", validateResult.validationError)
-    return redirectToSignIn({ config, domainName, requestedUri })
+    return redirectToSignIn({ config, domainName, requestedUri: uploadTargetUri ? "/" : requestedUri })
   }
 
   config.logger.info("JWT is valid")
@@ -68,7 +88,8 @@ export const handler = createRequestHandler(async (config, event) => {
       linkText: "Sign out",
     })
   }
-
+  
+  request.uri = uploadTargetUri ?? requestedUri;
   return request
 })
 
@@ -180,4 +201,23 @@ function generatePkceVerifier(config: Config) {
   }
   config.logger.debug("Generated PKCE verifier:", verifier)
   return verifier
+}
+
+function validateUploadFilename(queryString: string): string | undefined {
+  const vars = queryString.split('&');
+  for (let i = 0; i < vars.length; i++) {
+    const pair = vars[i].split('=');
+    if (decodeURIComponent(pair[0]) === 'filename') {
+      if (pair.length < 2 || !pair[1]) {
+        return;
+      }
+      return decodeURIComponent(pair[1])
+    }
+  }
+  return;
+}
+
+function constructUploadTargetUri(filename: string): string {
+  const id = filename.replace(/\.[^/.]+$/, "")
+  return `/clips/${id}/${filename}`
 }
