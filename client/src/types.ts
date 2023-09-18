@@ -9,8 +9,8 @@ export interface Clip {
   // uploadedAt: Date
   description: string;
   duration: number;
-  views: number;
-  comments: Comment[];
+  views?: number;
+  comments?: Comment[];
 }
 
 export interface Comment {
@@ -25,18 +25,18 @@ export function parseClip(rawClip: Record<string, string>): Clip {
     title: rawClip.title,
     uploader: rawClip.uploader,
     description: rawClip.description,
-    duration: parseInt(rawClip.duration),
-    views: parseInt(rawClip.views),
-    comments: JSON.parse(rawClip.comments)
+    duration: parseInt(rawClip.duration)
+    // views: parseInt(rawClip.views),
+    // comments: JSON.parse(rawClip.comments)
   };
 }
 
 export interface ClipUploadData {
   id: string;
   title: string;
-  duration: number;
+  duration: string; // TODO: use proper types. Mapping this to string while I figure out DynamoDB typing
   uploader: string;
   description?: string;
-  views: number;
-  comments: string;
+  views?: number;
+  comments?: string;
 }

@@ -7,13 +7,11 @@ import * as parser from 'aws-lambda-multipart-parser';
 
 
 export const handler = async (event, context, callback) => {
-    console.log('event: ')
-    console.log(event)
+    console.log({event})
 
     if (event.httpMethod === 'PUT') {
-
-        const parsedData = parser.parse(event);
-        console.log(parsedData)
+        const parsedData = JSON.parse(event.body);
+        console.log({parsedData})
 
         const id = parsedData['id'];
         
@@ -24,12 +22,12 @@ export const handler = async (event, context, callback) => {
             Body: JSON.stringify(parsedData),
             ContentType: 'application/json'},
             function (err,data) {
-                console.log(JSON.stringify(err) + ' ' + JSON.stringify(data));
+                console.log({error: JSON.stringify(err) + ' ' + JSON.stringify(data)});
             }
           );
         
-        storeIndexRecord(id, parsedData)
-        invalidateDistributionPath();
+        await storeIndexRecord(id, parsedData);
+        await invalidateDistributionPath();
     }
     
     callback(null, event);
@@ -41,27 +39,29 @@ const storeIndexRecord = async (id, parsedData) => {
     indexItem['id'] = {S: id};
     indexItem['title'] = {S: parsedData['title']};
     indexItem['uploader'] = {S: parsedData['uploader']};
-    indexItem['description'] = {S: parsedData['description']};
+    indexItem['description'] = {S: parsedData['description'] || ''};
     indexItem['duration'] = {N: parsedData['duration']};
 
     const tableName = await _getStackOutput('HMCClipdex', 'ClipdexTableName')
-    console.log(tableName)
+    console.log({tableName})
     
     const putParams = {
         TableName: tableName,
         Item: indexItem
     };
+    console.log({putParams})
 
     const dynamodb = new DynamoDB();
-    await dynamodb.putItem(putParams);
+    dynamodb.putItem(putParams);
 }
 
 const invalidateDistributionPath = async () => {
     const distributionId = await _getStackOutput('HMCStaticSite', 'StaticSiteDistributionId');
-    console.log(distributionId)
+    console.log({distributionId})
 
     const callerReference = new Date().toISOString().replace(/\:|\-|\./g, '')
-    console.log(callerReference)
+    console.log({callerReference})
+
     const invalidationParams = {
         DistributionId: distributionId,
         InvalidationBatch: {
@@ -75,7 +75,7 @@ const invalidateDistributionPath = async () => {
 
     const cloudFront = new CloudFront();
     cloudFront.createInvalidation(invalidationParams, function(err, data) {
-        if (err) console.log(err, err.stack);
+        if (err) console.log({err, errStack: err.stack});
         else console.log(data)
     })
 }
@@ -85,7 +85,7 @@ const _getStackOutput = (stackName, outputKey) => new Promise((resolve, reject) 
 
     cloudFormation.describeStacks({StackName: stackName}, function(err, data) {
         if (err) {
-            console.log(err, err.stack);
+            console.log({err, errStack: err.stack});
             reject(err)
         } else {
             const stackOutputs = data.Stacks[0].Outputs
@@ -93,5 +93,4 @@ const _getStackOutput = (stackName, outputKey) => new Promise((resolve, reject) 
             resolve(output)
         }
     })
-
 })

@@ -80,21 +80,28 @@ export class StaticSiteStack extends Stack {
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     }
 
-    const uploadBehavior: AddBehaviorOptions = {
-      allowedMethods: AllowedMethods.ALLOW_ALL,
+    const protectedPageBehavior: AddBehaviorOptions = {
+      allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
       cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
       originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
       responseHeadersPolicy,
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     }
 
-    const apiOrigin = new RestApiOrigin(props.apiGateway, {originPath: '/prod'}) // originPath points to the Stage
     const apiBehavior: AddBehaviorOptions = {
-      allowedMethods: AllowedMethods.ALLOW_ALL,
+      allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+      cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
       originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     }
 
+    const uploadBehavior: AddBehaviorOptions = {
+      allowedMethods: AllowedMethods.ALLOW_ALL,
+      cachePolicy: new CachePolicy(this, 'UploadCachePolicy', {maxTtl: Duration.seconds(0), minTtl: Duration.seconds(0)}),
+      originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    }
+  
     // Re-evaluate whether or not this is needed, based on how much it
     // costs to store these logs vs. their usefulness.
     // They're also not easy to use, since I'm not spending money on
@@ -108,13 +115,14 @@ export class StaticSiteStack extends Stack {
 
     const auth = props.cloudFrontAuth;
     const authLambdas = this.getAuthLambdaFnVersions();
+    const apiOrigin = new RestApiOrigin(props.apiGateway, {originPath: '/prod'}) // originPath points to the Stage
     const distribution = new Distribution(this, 'Distribution', {
       additionalBehaviors: {
         ...auth.createAuthPagesBehaviors(authLambdas, s3Origin),
-        'upload': auth.createProtectedBehavior(authLambdas, s3Origin, uploadBehavior),
+        'signedin': auth.createProtectedBehavior(authLambdas, s3Origin, protectedPageBehavior),
+        'upload': auth.createProtectedBehavior(authLambdas, s3Origin, protectedPageBehavior),
         'uploadclip': auth.createProtectedBehavior(authLambdas, s3Origin, uploadBehavior),
-        'signedin': auth.createProtectedBehavior(authLambdas, s3Origin, uploadBehavior),
-        // 'user': auth.createProtectedBehavior(apiOrigin, apiBehavior), // pathPattern matches API endpoint
+        'clipdata': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior) // pathPattern matches API endpoint
       },
       certificate: props.hostedDomain.cert,
       defaultBehavior: defaultBehavior,
@@ -124,8 +132,8 @@ export class StaticSiteStack extends Stack {
       logBucket: logBucket,
     });
 
+    // This path is responsible for returning data from the clipdex
     distribution.addBehavior('clips', apiOrigin, apiBehavior) // pathPattern matches API endpoint
-    distribution.addBehavior('user', apiOrigin, apiBehavior) // pathPattern matches API endpoint
 
     new ARecord(this, 'DnsRecord', {
       recordName: props.fqdn,

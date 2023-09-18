@@ -12,7 +12,7 @@ export const handler = createRequestHandler(async (config, event) => {
   const domainName = request.headers["host"][0].value
   
   let uploadTargetUri = undefined;
-  if (request.method === 'GET' && request.uri === '/uploadclip') {
+  if (request.method === 'PUT' && request.uri === '/uploadclip') {
     const filename = validateUploadFilename(request.querystring) // ensure filename is in querystring and has a value
     config.logger.info({filename})
     if (filename === undefined) {
@@ -30,6 +30,9 @@ export const handler = createRequestHandler(async (config, event) => {
     config.logger.info("uploadTargetUri:", uploadTargetUri)
   }
 
+  // TODO: this logic can be cleaned up
+  //  Need to set request.uri to requestedUri or uploadTargetUri
+  //  For uploads, figure out some graceful redirect? Or show an error?
   const requestedUri = `${request.uri}${
     request.querystring ? "?" + request.querystring : ""
   }`

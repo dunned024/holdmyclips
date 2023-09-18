@@ -82,11 +82,11 @@ export function FormAccordian(props: FormAccordianProps) {
     const clipUploadDetails: ClipUploadData = {
       id: randomId(),
       title,
-      duration: props.clipDuration,
+      duration: props.clipDuration.toString(),
       uploader: props.username,
-      description,
-      views: 0,
-      comments: '[]'
+      description
+      // views: 0,
+      // comments: '[]'
     };
 
     console.log(clipUploadDetails);
