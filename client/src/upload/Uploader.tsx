@@ -15,7 +15,7 @@ export function Uploader() {
 
     try {
       const id = uploadData.id;
-      const res = await fetch('/clipdata', {
+      const res = fetch('/clipdata', {
         method: 'PUT',
         body: JSON.stringify(uploadData)
       });
@@ -24,7 +24,7 @@ export function Uploader() {
       console.log(source);
       // TODO: send video via PUT to /uploadclip?filename={id}.{ext}
       //  e.g. /uploadclip?filename=able-continent.mp4
-      const videoRes = await fetch(`/uploadclip?filename=${id}.mp4`, {
+      const videoRes = fetch(`/uploadclip?filename=${id}.mp4`, {
         headers: {
           'Content-Type': 'video/mp4'
         },

@@ -3,6 +3,16 @@
     padding-top: 56.25%;
 }
 
+#paused-button {
+    height: 100px;
+    width: 100px;
+    z-index: 1;
+    position: absolute;
+    font-size: 128px;
+    top: calc(50% - 64px);
+    left: calc(50% - 64px);
+}
+
 #video {
     position: absolute;
     top: 0;

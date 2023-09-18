@@ -93,7 +93,12 @@ export function VideoComponent(props: VideoComponentProps) {
 
   return (
     <Stack id={props.id}>
-      <div id='aspect-ratio-wrapper'>
+      <div id='aspect-ratio-wrapper' onClick={handlePlayPause}>
+        {!isPlaying && (
+          <span id='paused-button'>
+            <PlayArrowIcon fontSize='inherit' />
+          </span>
+        )}
         <ReactPlayer
           id='video'
           width='100%' // Using the 'responsive player' trick for fixed aspect ratio

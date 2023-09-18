@@ -99,10 +99,10 @@ function ClipDetails(props: { clip: Clip }) {
           Duration: <b>{secondsToMMSS(props.clip.duration)}</b>
         </Grid>
         <Grid id='views-text' item textAlign='right' xs={6}>
-          <b>{props.clip.views}</b> views
+          <b>{props.clip.views ?? '?'}</b> views
         </Grid>
       </Grid>
-      {props.clip.description !== '' && (
+      {props.clip.description && (
         <Stack
           id='description-container'
           sx={{ backgroundColor: palette.secondary.main }}
