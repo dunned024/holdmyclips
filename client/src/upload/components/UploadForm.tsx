@@ -24,7 +24,7 @@ import { ThumbnailSetter } from './Thumbnail';
 interface FormAccordianProps {
   id?: string;
   source: File;
-  uploadClip: (formData: ClipUploadData) => void;
+  uploadClip: (formData: ClipUploadData, thumbnailUrl: string | null) => void;
   clipDuration: number;
   username: string | undefined;
   playerRef: MutableRefObject<ReactPlayer | null>;
@@ -48,6 +48,8 @@ export function FormAccordian(props: FormAccordianProps) {
   const [title, setTitle] = useState<string>(props.source.name);
   const [description, setDescription] = useState<string | undefined>();
   const [titleError, setTitleError] = useState<string | undefined>();
+
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
 
   const handleTitleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.value === '') {
@@ -90,7 +92,7 @@ export function FormAccordian(props: FormAccordianProps) {
     };
 
     console.log(clipUploadDetails);
-    props.uploadClip(clipUploadDetails);
+    props.uploadClip(clipUploadDetails, thumbnailUrl);
   };
 
   return (
@@ -163,7 +165,10 @@ export function FormAccordian(props: FormAccordianProps) {
             Thumbnail
           </AccordionSummary>
           <AccordionDetails>
-            <ThumbnailSetter playerRef={props.playerRef} />
+            <ThumbnailSetter
+              playerRef={props.playerRef}
+              setThumbnailUrl={setThumbnailUrl}
+            />
           </AccordionDetails>
         </StyledAccordion>
         <StyledAccordion

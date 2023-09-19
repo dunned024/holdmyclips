@@ -19,7 +19,7 @@ import { formatTime } from '../services/time';
 export function Previewer(props: {
   source: File;
   sourceUrl: string;
-  uploadClip: (clipForm: ClipUploadData) => void;
+  uploadClip: (clipForm: ClipUploadData, thumbnailUrl: string | null) => void;
 }) {
   const playerRef = useRef<ReactPlayer>(null);
   const [clipDuration, setClipDuration] = useState(0);

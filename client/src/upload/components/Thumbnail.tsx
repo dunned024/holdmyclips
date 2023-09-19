@@ -14,6 +14,7 @@ import { palette } from '../../assets/themes/theme';
 
 export function ThumbnailSetter(props: {
   playerRef: MutableRefObject<ReactPlayer | null>;
+  setThumbnailUrl: (thumbnailUrl: string | null) => void;
 }) {
   const [canClear, setCanClear] = useState<boolean>(false);
   const [uploadedImage, setUploadedImage] = useState<HTMLImageElement | null>(
@@ -47,6 +48,7 @@ export function ThumbnailSetter(props: {
     setCrop(null);
     setAcceptedCrop(null);
     setCanClear(false);
+    props.setThumbnailUrl(null);
     if (inputRef.current) {
       (inputRef.current as HTMLInputElement).value = '';
     }
@@ -101,8 +103,8 @@ export function ThumbnailSetter(props: {
     const cropScaling = cropCanvasBoundRect.getScaleValues(cropCanvasRect);
 
     // That ratio is applied to the size of the crop box, as well as its
-    // <x, y> coordinates That to get the true image we want to transpose
-    // from the cropping canvas
+    // <x, y> coordinates to get the true image we want to transpose from
+    // the cropping canvas
     const cropRect = new Rect(crop, true);
     const scaledCropRect = cropRect.scaleTo(cropScaling);
 
@@ -124,6 +126,7 @@ export function ThumbnailSetter(props: {
     setAcceptedCrop(crop);
     setCropping(false);
     setCanClear(true);
+    props.setThumbnailUrl(thumbnailCanvas.toDataURL('image/png'));
   };
 
   const acceptAndFitCrop = function () {
@@ -169,6 +172,7 @@ export function ThumbnailSetter(props: {
     setAcceptedCrop(crop);
     setCropping(false);
     setCanClear(true);
+    props.setThumbnailUrl(thumbnailCanvas.toDataURL('image/png'));
   };
 
   const closeCrop = function () {
@@ -253,6 +257,7 @@ export function ThumbnailSetter(props: {
         );
         setUploadedImage(img);
         setCanClear(true);
+        props.setThumbnailUrl(thumbnailCanvas.toDataURL('image/png'));
       };
       if (reader.result) {
         img.src = reader.result as string;
