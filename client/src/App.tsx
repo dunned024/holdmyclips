@@ -31,7 +31,7 @@ function App() {
               href='https://github.com/dunned024'
               rel='noreferrer'
             >
-              <AiFillGithub />
+              <AiFillGithub id='github-icon' />
               dunned024
             </a>
           </div>

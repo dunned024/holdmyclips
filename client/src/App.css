@@ -40,6 +40,12 @@
 
 #github-link {
   float: left;
+  display: flex;
+  align-items: center;
+}
+
+#github-icon {
+  padding-right: 2px;
 }
 
 .app {
