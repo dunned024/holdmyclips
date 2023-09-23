@@ -78,7 +78,7 @@
     border-radius: 8px;
 }
 
-#go-clip:hover, #go-home:hover {
+#go-clip:hover:enabled, #go-home:hover:enabled {
     background-color: #418378
 }
 
