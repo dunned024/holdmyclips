@@ -1,7 +1,10 @@
 import React, { ChangeEvent, DragEvent, useRef, useState } from 'react';
 import './FileSelector.css';
 
-export function FileSelector(props: { setSource: (source: File) => void }) {
+export function FileSelector(props: {
+  setSource: (source: File) => void;
+  setActivePage: (page: number) => void;
+}) {
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef(null);
 
@@ -23,6 +26,7 @@ export function FileSelector(props: { setSource: (source: File) => void }) {
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       props.setSource(e.dataTransfer.files[0]);
+      props.setActivePage(1);
     }
   };
 
@@ -31,6 +35,7 @@ export function FileSelector(props: { setSource: (source: File) => void }) {
 
     if (e.target.files && e.target.files[0]) {
       props.setSource(e.target.files[0]);
+      props.setActivePage(1);
     }
   };
 

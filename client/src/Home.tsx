@@ -3,6 +3,7 @@ import './Home.css';
 import { Link } from 'react-router-dom';
 import { Clip, ClipDex } from './types';
 import { getUsername } from './services/cognito';
+import { secondsToMMSS } from './services/time';
 
 export function Home() {
   const [clips, setClips] = useState<ClipDex>({});
@@ -85,7 +86,7 @@ function ClipCard(props: { clip: Clip }) {
             src={`https://clips.dunned024.com/clips/${clip.id}/${clip.id}.png`}
             alt={clip.title}
           />
-          <div className='clip-duration'>{clip.duration}</div>
+          <div className='clip-duration'>{secondsToMMSS(clip.duration)}</div>
           {showDetails && (
             <div className='clip-card-body'>
               <div className='clip-title'>{clip.title}</div>

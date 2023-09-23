@@ -40,3 +40,8 @@ export interface ClipUploadData {
   views?: number;
   comments?: string;
 }
+
+export interface TrimDirectives {
+  startTime: string;
+  endTime: string;
+}

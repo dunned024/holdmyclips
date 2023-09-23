@@ -1,6 +1,6 @@
 import React, { ChangeEvent, useRef, useState } from 'react';
 import './Previewer.css';
-import { ClipUploadData } from '../types';
+import { ClipUploadData, TrimDirectives } from '../types';
 import 'react-image-crop/dist/ReactCrop.css';
 import ReactPlayer from 'react-player';
 import Stack from '@mui/material/Stack';
@@ -19,12 +19,17 @@ import { formatTime } from '../services/time';
 export function Previewer(props: {
   source: File;
   sourceUrl: string;
-  uploadClip: (clipForm: ClipUploadData, thumbnailUrl: string | null) => void;
+  uploadClip: (
+    clipForm: ClipUploadData,
+    thumbnailUrl: string | null,
+    trimDirectives?: TrimDirectives
+  ) => void;
+  setActivePage: (page: number) => void;
 }) {
   const playerRef = useRef<ReactPlayer>(null);
   const [clipDuration, setClipDuration] = useState(0);
   const [maxDuration, setMaxDuration] = useState(0);
-  const [trimPips, setTrimPips] = useState([0, clipDuration]);
+  const [trimPips, setTrimPips] = useState([0, clipDuration * 1000]);
   const [isTrimming, setIsTrimming] = useState(false);
   const [trimStartError, setTrimStartError] = useState('');
   const [trimEndError, setTrimEndError] = useState('');
@@ -32,6 +37,23 @@ export function Previewer(props: {
   const minDistance = 5000;
 
   const username = getUsername();
+
+  const handleUpload = function (
+    clipForm: ClipUploadData,
+    thumbnailUrl: string | null
+  ) {
+    props.setActivePage(2);
+
+    if (trimPips[0] !== 0 || trimPips[1] !== clipDuration * 1000) {
+      const trimDirectives: TrimDirectives = {
+        startTime: new Date(trimPips[0]).toISOString().slice(11, 23),
+        endTime: new Date(trimPips[1]).toISOString().slice(11, 23)
+      };
+      props.uploadClip(clipForm, thumbnailUrl, trimDirectives);
+    } else {
+      props.uploadClip(clipForm, thumbnailUrl);
+    }
+  };
 
   const loadClipDuration = function (d: number) {
     setClipDuration(d);
@@ -82,7 +104,6 @@ export function Previewer(props: {
 
   const handleTrimEndInput = (e: ChangeEvent<HTMLInputElement>) => {
     const value = +e.target.value * 1000;
-    console.log(value);
     if (value > maxDuration * 1000) {
       setTrimEndError('Cannot exceed max clip length');
       setTrimPips([trimPips[0], Math.trunc(maxDuration * 100) * 10]);
@@ -125,7 +146,6 @@ export function Previewer(props: {
     endTime: trimPips[1]
   };
 
-  console.log(clipDuration);
   return (
     <Stack id='previewer' direction='row'>
       <VideoComponent
@@ -139,7 +159,7 @@ export function Previewer(props: {
       <FormAccordian
         id='clip-details-form'
         source={props.source}
-        uploadClip={props.uploadClip}
+        uploadClip={handleUpload}
         username={username}
         clipDuration={clipDuration}
         playerRef={playerRef}
