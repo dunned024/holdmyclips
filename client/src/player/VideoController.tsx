@@ -1,4 +1,4 @@
-import React, { RefObject, useRef, useState } from 'react';
+import React, { RefObject, useEffect, useRef, useState } from 'react';
 import './VideoController.css';
 import { styled } from '@mui/material/styles';
 import Slider from '@mui/material/Slider';
@@ -29,7 +29,15 @@ export function VideoComponent(props: VideoComponentProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSeek, setCurrentSeek] = useState(0);
 
-  const [volume, setVolume] = useState(1);
+  const [volume, setVolume] = useState<number>(1);
+
+  useEffect(() => {
+    // Load stored volume preference from localStorage
+    const storedVolume = localStorage.getItem('videoVolume');
+    if (storedVolume !== null) {
+      setVolume(parseFloat(storedVolume));
+    }
+  }, []);
 
   const clipDuration = props.maxDuration * 1000;
 
@@ -89,6 +97,7 @@ export function VideoComponent(props: VideoComponentProps) {
       return;
     }
     setVolume(newValue);
+    localStorage.setItem('videoVolume', newValue.toString());
   };
 
   return (
