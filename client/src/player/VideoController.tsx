@@ -14,6 +14,8 @@ import { formatTime } from '../services/time';
 import ReactPlayer from 'react-player';
 import { OnProgressProps } from 'react-player/base';
 import { TrimProps } from '../upload/components/Trimmer';
+import screenfull from 'screenfull';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
 
 interface VideoComponentProps {
   id?: string;
@@ -30,6 +32,8 @@ export function VideoComponent(props: VideoComponentProps) {
   const [currentSeek, setCurrentSeek] = useState(0);
 
   const [volume, setVolume] = useState<number>(1);
+
+  const controllerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Load stored volume preference from localStorage
@@ -100,8 +104,16 @@ export function VideoComponent(props: VideoComponentProps) {
     localStorage.setItem('videoVolume', newValue.toString());
   };
 
+  const handleFullscreen = () => {
+    if (screenfull.isEnabled) {
+      if (controllerRef.current) {
+        screenfull.request(controllerRef.current);
+      }
+    }
+  };
+
   return (
-    <Stack id={props.id}>
+    <Stack id={props.id} ref={controllerRef}>
       <div id='aspect-ratio-wrapper' onClick={handlePlayPause}>
         {!isPlaying && (
           <span id='paused-button'>
@@ -177,6 +189,11 @@ export function VideoComponent(props: VideoComponentProps) {
               onChange={handleVolumeChange}
             />
             <VolumeUp />
+          </Stack>
+          <Stack direction='row' spacing={1}>
+            <IconButton onClick={handleFullscreen}>
+              <FullscreenIcon />
+            </IconButton>
           </Stack>
         </Stack>
       </Stack>
