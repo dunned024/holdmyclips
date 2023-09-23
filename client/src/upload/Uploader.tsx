@@ -45,7 +45,7 @@ export function Uploader() {
       setUploadProgressMsg(currentMsg);
 
       //---- UPLOAD CLIP DETAILS ----//
-      const dataRes = fetch('/clipdata', {
+      const dataRes = await fetch('/clipdata', {
         method: 'PUT',
         body: JSON.stringify(uploadData)
       });
@@ -86,7 +86,7 @@ export function Uploader() {
         thumbBlob = new Blob([], { type: 'image/jpeg' });
       }
 
-      const thumbRes = fetch(`/uploadclip?filename=${id}.png`, {
+      const thumbRes = await fetch(`/uploadclip?filename=${id}.png`, {
         headers: {
           'Content-Type': 'image/png'
         },
@@ -195,7 +195,7 @@ export function Uploader() {
         setUploadProgressHistory(history);
         setUploadProgressMsg(currentMsg);
 
-        const videoRes = fetch(`/uploadclip?filename=${id}.mp4`, {
+        const videoRes = await fetch(`/uploadclip?filename=${id}.mp4`, {
           headers: {
             'Content-Type': 'video/mp4'
           },
@@ -210,7 +210,7 @@ export function Uploader() {
         setUploadProgressMsg(currentMsg);
 
         // TODO: use variable extensions
-        const videoRes = fetch(`/uploadclip?filename=${id}.mp4`, {
+        const videoRes = await fetch(`/uploadclip?filename=${id}.mp4`, {
           headers: {
             'Content-Type': 'video/mp4'
           },
