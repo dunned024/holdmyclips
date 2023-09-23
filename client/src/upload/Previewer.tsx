@@ -44,7 +44,7 @@ export function Previewer(props: {
   ) {
     props.setActivePage(2);
 
-    if (trimPips[0] !== 0 || trimPips[1] !== clipDuration * 1000) {
+    if (trimPips[0] !== 0 || trimPips[1] !== maxDuration * 1000) {
       const trimDirectives: TrimDirectives = {
         startTime: new Date(trimPips[0]).toISOString().slice(11, 23),
         endTime: new Date(trimPips[1]).toISOString().slice(11, 23)
