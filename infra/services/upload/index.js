@@ -8,6 +8,7 @@ import * as parser from 'aws-lambda-multipart-parser';
 
 export const handler = async (event, context, callback) => {
     console.log({event})
+    console.log({stringEvent: JSON.stringify(event)})
 
     if (event.httpMethod === 'PUT') {
         const parsedData = JSON.parse(event.body);
@@ -22,7 +23,10 @@ export const handler = async (event, context, callback) => {
             Body: JSON.stringify(parsedData),
             ContentType: 'application/json'},
             function (err,data) {
-                console.log({error: JSON.stringify(err) + ' ' + JSON.stringify(data)});
+                if (err) {
+                    console.log({error: 'Error in S3 upload:' + JSON.stringify(err) + ' ' + JSON.stringify(data)});
+                }
+                return data;
             }
           );
         
@@ -36,10 +40,14 @@ export const handler = async (event, context, callback) => {
 const storeIndexRecord = async (id, parsedData) => {
     const indexItem = {};
 
+    const sanitizedTitle = parsedData['title'].replace(/"/g, '\\"')
+    const sanitizedDescription = (parsedData['description'] || '').replace(/"/g, '\\"')
+    console.log({parsedTitle: parsedData['title'], sanitizedTitle})
+
     indexItem['id'] = {S: id};
-    indexItem['title'] = {S: parsedData['title']};
+    indexItem['title'] = {S: sanitizedTitle};
     indexItem['uploader'] = {S: parsedData['uploader']};
-    indexItem['description'] = {S: parsedData['description'] || ''};
+    indexItem['description'] = {S: sanitizedDescription};
     indexItem['duration'] = {N: parsedData['duration']};
 
     const tableName = await _getStackOutput('HMCClipdex', 'ClipdexTableName')
