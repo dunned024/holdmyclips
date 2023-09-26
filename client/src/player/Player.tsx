@@ -6,6 +6,7 @@ import { Grid, Stack } from '@mui/material';
 import { VideoComponent } from './VideoController';
 import { palette } from '../assets/themes/theme';
 import { secondsToMMSS } from '../services/time';
+import { ENDPOINT } from '../config';
 
 export function Player() {
   const { clipId } = useParams();
@@ -15,15 +16,10 @@ export function Player() {
 
   useEffect(() => {
     async function getClip(id: string) {
-      let endpoint = '';
-      if (process.env.NODE_ENV === 'development') {
-        endpoint = 'http://localhost:3001';
-      }
-
       // TODO: Get this by fetching the ClipDex
       //  Note: can't persist this info from when it's first fetched
       //  https://stackoverflow.com/a/53455443
-      const res = await fetch(`${endpoint}/clips/${id}/${id}.json`);
+      const res = await fetch(`${ENDPOINT}/clips/${id}/${id}.json`);
       const data = await res.json();
 
       // TODO: Need to call parseClip here if ClipDex only returns strings

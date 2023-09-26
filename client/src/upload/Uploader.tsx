@@ -6,6 +6,7 @@ import './Uploader.css';
 import { ClipUploadData, TrimDirectives } from '../types';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { ENDPOINT } from '../config';
 
 enum Pages {
   FileSelector,
@@ -40,14 +41,18 @@ export function Uploader() {
       const id = uploadData.id;
       setClipId(id);
 
-      let currentMsg, history;
+      let currentMsg, history: string[];
       currentMsg = `Uploading clip data - ID: ${id}`;
       setUploadProgressMsg(currentMsg);
 
       //---- UPLOAD CLIP DETAILS ----//
-      const dataRes = await fetch('/clipdata', {
+      const dataRes = await fetch(`${ENDPOINT}/clipdata`, {
         method: 'PUT',
-        body: JSON.stringify(uploadData)
+        body: JSON.stringify(uploadData),
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       });
       console.log(dataRes);
 
@@ -86,44 +91,21 @@ export function Uploader() {
         thumbBlob = new Blob([], { type: 'image/jpeg' });
       }
 
-      const thumbRes = await fetch(`/uploadclip?filename=${id}.png`, {
-        headers: {
-          'Content-Type': 'image/png'
-        },
-        method: 'PUT',
-        body: thumbBlob
-      });
+      const thumbRes = await fetch(
+        `${ENDPOINT}/uploadclip?filename=${id}.png`,
+        {
+          headers: {
+            'Content-Type': 'image/png'
+          },
+          method: 'PUT',
+          body: thumbBlob
+        }
+      );
       console.log(thumbRes);
 
-      //---- UPLOAD VIDEO ----//
-      // const xhr = new XMLHttpRequest();
-      // xhr.open('POST', `/uploadclip?filename=${id}.mp4`, true);
-
-      // xhr.upload.addEventListener('progress', (event) => {
-      //   if (event.lengthComputable) {
-      //     const percentComplete = (event.loaded / event.total) * 100;
-      //     setUploadProgress(percentComplete);
-      //   }
-      // });
-
-      // xhr.onreadystatechange = () => {
-      //   if (xhr.readyState === XMLHttpRequest.DONE) {
-      //     if (xhr.status === 200) {
-      //       console.log('Image uploaded successfully.');
-      //       // Handle success, e.g., update UI or store the S3 URL
-      //     } else {
-      //       console.error('Failed to upload image.');
-      //       // Handle error
-      //     }
-      //   }
-      // };
-
-      // xhr.send(source);
-      // const formData = new FormData();
-      // formData.append('file', source);
-      // xhr.send(formData);
-
       //---- TRIM ----//
+      const clipUploadForm = new FormData();
+
       history = [...history, currentMsg];
       currentMsg = 'Checking for clip trimming';
       setUploadProgressHistory(history);
@@ -188,41 +170,59 @@ export function Uploader() {
         const data = await ffmpeg.readFile('output.mp4');
         const fileBlob = new Blob([data], { type: 'video/mp4' });
         const trimmedFile = new File([fileBlob], `${id}.mp4`);
+
         setSource(trimmedFile);
-
-        history = [...history, currentMsg];
-        currentMsg = 'Uploading clip';
-        setUploadProgressHistory(history);
-        setUploadProgressMsg(currentMsg);
-
-        const videoRes = await fetch(`/uploadclip?filename=${id}.mp4`, {
-          headers: {
-            'Content-Type': 'video/mp4'
-          },
-          method: 'PUT',
-          body: trimmedFile
-        });
-        console.log(videoRes);
+        clipUploadForm.append('file', trimmedFile);
       } else {
-        history = [...history, currentMsg];
-        currentMsg = 'Uploading clip';
-        setUploadProgressHistory(history);
-        setUploadProgressMsg(currentMsg);
-
+        clipUploadForm.append('file', source);
         // TODO: use variable extensions
-        const videoRes = await fetch(`/uploadclip?filename=${id}.mp4`, {
-          headers: {
-            'Content-Type': 'video/mp4'
-          },
-          method: 'PUT',
-          body: source
-        });
-        console.log(videoRes);
+        // const videoRes = await fetch(
+        //   `${ENDPOINT}/uploadclip?filename=${id}.mp4`,
+        //   {
+        //     headers: {
+        //       'Content-Type': 'video/mp4'
+        //     },
+        //     method: 'PUT',
+        //     body: source
+        //   }
+        // );
+        // console.log(videoRes);
       }
-      history = [...history, 'Done!'];
-      setUploadProgressHistory(history);
-      setUploadProgressMsg(null);
-      setIsFinished(true);
+
+      //---- UPLOAD VIDEO ----//
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.ceil((event.loaded / event.total) * 100);
+          setUploadProgressMsg(`Uploading clip: ${percentComplete}%`);
+        }
+      });
+
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+          console.log({ xhr });
+          if (xhr.status === 200) {
+            console.log('Clip uploaded successfully!');
+            history = [...history, 'Clip uploaded successfully!'];
+            setUploadProgressHistory(history);
+            setUploadProgressMsg(null);
+          } else {
+            console.error('Failed to upload clip.');
+            const currentTime = new Date().toISOString();
+            history = [
+              ...history,
+              `Failed to upload clip. Contact Dennis with the following information: {ID: ${id} | time: ${currentTime}}`
+            ];
+            setUploadProgressHistory(history);
+            setUploadProgressMsg(null);
+          }
+          setIsFinished(true);
+        }
+      };
+
+      xhr.open('PUT', `${ENDPOINT}/uploadclip?filename=${id}.mp4`, true);
+      xhr.send(clipUploadForm);
     } catch (error) {
       console.log(error);
     }
