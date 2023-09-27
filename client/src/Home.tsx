@@ -29,7 +29,7 @@ export function Home() {
   }, []);
 
   return (
-    <div className='home'>
+    <div id='home'>
       <div className='upload-button-row'>
         {username ? (
           <a className='link' id='upload-link' href='/upload' rel='noreferrer'>

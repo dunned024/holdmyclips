@@ -56,7 +56,12 @@ function App() {
           </div>
           <span id='stretch'></span>
         </Stack>
-        <Stack className='app'>
+        <Stack
+          className='app'
+          sx={{
+            background: `linear-gradient(to bottom, ${palette.primary.main} 0%, ${palette.primary.main} 75%, ${palette.primary.dark} 100%)`
+          }}
+        >
           <Router>
             <Routes>
               <Route path='/' element={<Home />}></Route>
@@ -65,13 +70,6 @@ function App() {
               <Route path='/signedin' element={<SignedIn />}></Route>
             </Routes>
           </Router>
-
-          <Stack
-            id='bg-gradient'
-            sx={{
-              background: `linear-gradient(180deg, ${palette.primary.main} 0%, ${palette.primary.main} 75%, ${palette.primary.dark} 100%)`
-            }}
-          ></Stack>
         </Stack>
       </ThemeProvider>
     </div>
