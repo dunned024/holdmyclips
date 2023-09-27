@@ -60,7 +60,11 @@ export const handler = createRequestHandler(async (config, event) => {
   const idTokenPayload = decodeIdToken(idToken)
   const { exp } = idTokenPayload
   config.logger.debug("ID token exp:", exp, new Date(exp * 1000).toISOString())
-  if (Date.now() / 1000 > exp - 60 * 10 && refreshToken) {
+  
+  const tokenIsExpiring = Date.now() / 1000 > exp - 60 * 10
+  // Hacky way to refresh auth prior to upload
+  const preuploadTokenIsExpiring = Date.now() / 1000 > exp - 60 * 7 && request.uri === "/preupload"
+  if ((tokenIsExpiring || preuploadTokenIsExpiring) && refreshToken) {
     return redirectToRefresh({ config, domainName, requestedUri: uploadTargetUri ?? requestedUri })
   }
 

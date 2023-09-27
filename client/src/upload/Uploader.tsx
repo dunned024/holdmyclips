@@ -6,7 +6,6 @@ import './Uploader.css';
 import { ClipUploadData, TrimDirectives } from '../types';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
-import { ENDPOINT } from '../config';
 
 enum Pages {
   FileSelector,
@@ -38,6 +37,15 @@ export function Uploader() {
     }
 
     try {
+      // Trigger auth refresh before uploading
+      const preupload = await fetch(`/preupload`, {
+        method: 'GET',
+        headers: {
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+      console.log(preupload);
+
       const id = uploadData.id;
       setClipId(id);
 
@@ -46,7 +54,7 @@ export function Uploader() {
       setUploadProgressMsg(currentMsg);
 
       //---- UPLOAD CLIP DETAILS ----//
-      const dataRes = await fetch(`${ENDPOINT}/clipdata`, {
+      const dataRes = await fetch(`/clipdata`, {
         method: 'PUT',
         body: JSON.stringify(uploadData),
         headers: {
@@ -91,16 +99,13 @@ export function Uploader() {
         thumbBlob = new Blob([], { type: 'image/jpeg' });
       }
 
-      const thumbRes = await fetch(
-        `${ENDPOINT}/uploadclip?filename=${id}.png`,
-        {
-          headers: {
-            'Content-Type': 'image/png'
-          },
-          method: 'PUT',
-          body: thumbBlob
-        }
-      );
+      const thumbRes = await fetch(`/uploadclip?filename=${id}.png`, {
+        headers: {
+          'Content-Type': 'image/png'
+        },
+        method: 'PUT',
+        body: thumbBlob
+      });
       console.log(thumbRes);
 
       //---- TRIM ----//
@@ -221,8 +226,8 @@ export function Uploader() {
         }
       };
 
-      xhr.open('PUT', `${ENDPOINT}/uploadclip?filename=${id}.mp4`, true);
-      xhr.send(clipUploadForm);
+      xhr.open('PUT', `/uploadclip?filename=${id}.mp4`, true);
+      xhr.send(clipUploadForm.get('file'));
     } catch (error) {
       console.log(error);
     }
