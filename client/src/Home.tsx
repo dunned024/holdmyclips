@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { Clip, ClipDex } from './types';
 import { getUsername } from './services/cognito';
 import { secondsToMMSS } from './services/time';
-import { ENDPOINT } from './config';
 
 export function Home() {
   const [clips, setClips] = useState<ClipDex>({});
@@ -12,7 +11,7 @@ export function Home() {
 
   useEffect(() => {
     async function getClips() {
-      const res = await fetch(`${ENDPOINT}/clips`);
+      const res = await fetch(`/clips`);
       const data = await res.json();
 
       const clipList: ClipDex = {};

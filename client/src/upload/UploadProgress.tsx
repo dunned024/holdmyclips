@@ -3,6 +3,7 @@ import './UploadProgress.css';
 import { Stack } from '@mui/material';
 import { AiFillCheckSquare } from 'react-icons/ai';
 import { Ring } from '@uiball/loaders';
+import { Link } from 'react-router-dom';
 
 export function UploadProgress(props: {
   uploadProgressMsg: string | null;
@@ -50,7 +51,7 @@ export function UploadProgress(props: {
           </div>
         </div>
         <div id='wrapup-buttons'>
-          <a href={`/player/${props.clipId}`} rel='noreferrer'>
+          <Link to={`/player/${props.clipId}`} className='wrapup-button-link'>
             <button
               disabled={!props.isFinished}
               className='wrapup-button'
@@ -58,8 +59,8 @@ export function UploadProgress(props: {
             >
               Go to my Clip
             </button>
-          </a>
-          <a href='/' rel='noreferrer'>
+          </Link>
+          <Link to='/' className='wrapup-button-link'>
             <button
               disabled={!props.isFinished}
               className='wrapup-button'
@@ -67,7 +68,7 @@ export function UploadProgress(props: {
             >
               Go to Homepage
             </button>
-          </a>
+          </Link>
         </div>
       </div>
     </Stack>
