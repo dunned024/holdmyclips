@@ -57,6 +57,12 @@ export function Home() {
 function ClipCard(props: { clip: Clip }) {
   const clip = props.clip;
   const [showDetails, setShowDetails] = useState<boolean>(false);
+  const [imgSrc, setImgSrc] = useState<string | undefined>(
+    `https://clips.dunned024.com/clips/${clip.id}/${clip.id}.png`
+  );
+
+  const fallback = 'https://clips.dunned024.com/default_thumbnail.png';
+  const onError = () => setImgSrc(fallback);
 
   return (
     <div
@@ -68,7 +74,8 @@ function ClipCard(props: { clip: Clip }) {
       <Link to={`/player/${clip.id}`} className='clip-link'>
         <div className='clip-card'>
           <img
-            src={`https://clips.dunned024.com/clips/${clip.id}/${clip.id}.png`}
+            src={imgSrc ? imgSrc : fallback}
+            onError={onError}
             alt={clip.title}
           />
           <div className='clip-duration'>{secondsToMMSS(clip.duration)}</div>
