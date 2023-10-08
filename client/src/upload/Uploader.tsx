@@ -49,30 +49,14 @@ export function Uploader() {
       const id = uploadData.id;
       setClipId(id);
 
-      let currentMsg, history: string[];
-      currentMsg = `Uploading clip data - ID: ${id}`;
-      setUploadProgressMsg(currentMsg);
-
-      //---- UPLOAD CLIP DETAILS ----//
-      const dataRes = await fetch(`/clipdata`, {
-        method: 'PUT',
-        body: JSON.stringify(uploadData),
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      });
-      console.log(dataRes);
-
-      history = [currentMsg];
-      currentMsg = 'Checking for thumbnail';
-      setUploadProgressHistory(history);
-      setUploadProgressMsg(currentMsg);
-
       //---- UPLOAD THUMBNAIL ----//
+      let currentMsg: string, history: string[];
+      currentMsg = 'Checking for thumbnail';
+      setUploadProgressMsg(currentMsg);
+
       let thumbBlob;
       if (thumbnailUrl) {
-        history = [...history, currentMsg];
+        history = [currentMsg];
         currentMsg = 'Encoding thumbnail';
         setUploadProgressHistory(history);
         setUploadProgressMsg(currentMsg);
@@ -91,7 +75,7 @@ export function Uploader() {
         setUploadProgressHistory(history);
         setUploadProgressMsg(currentMsg);
       } else {
-        history = [...history, currentMsg];
+        history = [currentMsg];
         currentMsg = 'Setting default thumbnail';
         setUploadProgressHistory(history);
         setUploadProgressMsg(currentMsg);
@@ -172,6 +156,7 @@ export function Uploader() {
         setUploadProgressHistory(history);
         setUploadProgressMsg(currentMsg);
 
+        // TODO: use variable extensions
         const data = await ffmpeg.readFile('output.mp4');
         const fileBlob = new Blob([data], { type: 'video/mp4' });
         const trimmedFile = new File([fileBlob], `${id}.mp4`);
@@ -180,18 +165,6 @@ export function Uploader() {
         clipUploadForm.append('file', trimmedFile);
       } else {
         clipUploadForm.append('file', source);
-        // TODO: use variable extensions
-        // const videoRes = await fetch(
-        //   `${ENDPOINT}/uploadclip?filename=${id}.mp4`,
-        //   {
-        //     headers: {
-        //       'Content-Type': 'video/mp4'
-        //     },
-        //     method: 'PUT',
-        //     body: source
-        //   }
-        // );
-        // console.log(videoRes);
       }
 
       //---- UPLOAD VIDEO ----//
@@ -228,6 +201,20 @@ export function Uploader() {
 
       xhr.open('PUT', `/uploadclip?filename=${id}.mp4`, true);
       xhr.send(clipUploadForm.get('file'));
+
+      //---- UPLOAD CLIP DETAILS ----//
+      currentMsg = `Uploading clip data - ID: ${id}`;
+      setUploadProgressMsg(currentMsg);
+
+      const dataRes = await fetch(`/clipdata`, {
+        method: 'PUT',
+        body: JSON.stringify(uploadData),
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+      console.log(dataRes);
     } catch (error) {
       console.log(error);
     }
