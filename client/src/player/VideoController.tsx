@@ -27,9 +27,10 @@ interface VideoComponentProps {
 }
 
 export function VideoComponent(props: VideoComponentProps) {
-  const playerRef = props.playerRef ?? useRef<ReactPlayer>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSeek, setCurrentSeek] = useState(0);
+  const nullPlayerRef = useRef<ReactPlayer>(null);
+  const playerRef = props.playerRef ?? nullPlayerRef;
 
   const [volume, setVolume] = useState<number>(1);
 
