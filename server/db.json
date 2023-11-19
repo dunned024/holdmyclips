@@ -1,0 +1,64 @@
+{
+    "clips": {
+        "clips": [
+            {
+                "id": "hurricane-anemone",
+                "duration": "6.45",
+                "description": "nothing to see here",
+                "uploader": "",
+                "title": "fast splatter",
+                "views": 0,
+                "comments": [
+                    {
+                        "author": "dennis", 
+                        "text": "this is a comment", 
+                        "postedAt": "2023-09-01 18:59"
+                    },
+                    {
+                        "author": "dennis2", 
+                        "text": "this is another comment", 
+                        "postedAt": "2023-09-01 20:44"
+                    }
+                ]
+            },
+            {
+                "id": "goofy-share",
+                "duration": "9.01",
+                "description": "",
+                "uploader": "",
+                "title": "foolish lifeline cannot escape death",
+                "views": 0,
+                "comments": []
+            }
+        ]
+    },
+    "hurricane-anemone": {
+        "id": "hurricane-anemone",
+        "duration": "6.45",
+        "description": "nothing to see here",
+        "uploader": "Dennis Person",
+        "title": "fast splatter",
+        "views": 0,
+        "comments": [
+            {
+                "author": "dennis", 
+                "text": "this is a comment", 
+                "postedAt": "2023-09-01 18:59"
+            },
+            {
+                "author": "dennis2", 
+                "text": "this is another comment", 
+                "postedAt": "2023-09-01 20:44"
+            }
+        ]
+    },
+    "goofy-share": {
+        "id": "goofy-share",
+        "duration": "9.01",
+        "description": "nothing to see here",
+        "uploader": "Dennis Person 2",
+        "title": "foolish lifeline cannot escape death",
+        "views": 0,
+        "comments": []
+    }
+}

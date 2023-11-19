@@ -1,16 +1,5 @@
 version: '3.7'
 services:
-  hmc_server:
-    container_name: hmc_server
-    build: server
-    restart: unless-stopped
-    ports:
-      - 4000:4000
-    environment:
-      - ASSETS_LOCATION=postgres
-    volumes:
-      - ./server:/home/node/server
-    command: npm run dev
   hmc_client:
     container_name: hmc_client
     build: 
@@ -19,4 +8,15 @@ services:
         REACT_APP_SERVER_API_ENDPOINT: "http://localhost:4000"
     restart: unless-stopped
     ports:
-      - 3001:3000
+      - 3000:3000
+
+  hmc_server:
+    container_name: hmc_server
+    image: node:18.13.0
+    restart: unless-stopped
+    ports:
+      - 4000:4000
+    volumes:
+      - ./server:/server
+    working_dir: /server
+    command: bash -c "npm i && npm run server"

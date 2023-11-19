@@ -1,7 +1,7 @@
 export const ENDPOINT =
   process.env.NODE_ENV === 'production'
     ? 'https://clips.dunned024.com'
-    : 'http://localhost:3001';
+    : 'http://localhost:4000';
 
 // TODO: Once I can reliably update Lambda@Edge functions,
 // provide client_id as a cookie
