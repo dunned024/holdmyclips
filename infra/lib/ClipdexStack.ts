@@ -74,9 +74,9 @@ export class ClipdexStack extends Stack {
                     #foreach($elem in $inputRoot.Items) {
                         "id": "$elem.id.S",
                         "duration": "$elem.duration.N",
-                        "description": "$elem.description.S",
+                        "description": "$util.escapeJavaScript($elem.description.S).replaceAll("\\\\'","'")",
                         "uploader": "$elem.uploader.S",
-                        "title": "$elem.title.S"
+                        "title": "$util.escapeJavaScript($elem.title.S).replaceAll("\\\\'","'")"
                       }#if($foreach.hasNext),#end
                     #end
                   ]
