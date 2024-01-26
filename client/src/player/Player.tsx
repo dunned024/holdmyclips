@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Clip, Comment, parseClip } from '../types';
+import { Clip, Comment } from '../types';
 import './Player.css';
 import { useParams } from 'react-router-dom';
 import { Grid, Stack } from '@mui/material';
 import { VideoComponent } from './VideoController';
 import { palette } from '../assets/themes/theme';
 import { secondsToMMSS } from '../services/time';
-import { ENDPOINT } from '../config';
+import { getClipMetadata } from '../services/clips';
 
 export function Player() {
   const { clipId } = useParams();
@@ -16,18 +16,9 @@ export function Player() {
 
   useEffect(() => {
     async function getClip(id: string) {
-      // TODO: Get this by fetching the ClipDex
-      //  Note: can't persist this info from when it's first fetched
-      //  https://stackoverflow.com/a/53455443
-      const res = await fetch(`${ENDPOINT}/clips/${id}/${id}.json`);
-      const data = await res.json();
-
       // TODO: Need to call parseClip here if ClipDex only returns strings
-      if (process.env.NODE_ENV === 'development') {
-        setClip(data);
-      } else {
-        setClip(parseClip(data));
-      }
+      const clipMetadata = await getClipMetadata(id);
+      setClip(clipMetadata);
     }
 
     if (!clip && clipId) {
