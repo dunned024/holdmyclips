@@ -43,6 +43,14 @@ export class StaticSiteStack extends Stack {
       cors: [corsRule],
       versioned: true,
     });
+    
+    bucket.addLifecycleRule({
+      enabled: true,
+      expiredObjectDeleteMarker: true,
+      id: 'DeleteExpiredNoncurrentVersionsAfter2Weeks',
+      noncurrentVersionExpiration: Duration.days(14),
+      prefix: 'clips/'
+    })
 
     const responseHeadersPolicy = new ResponseHeadersPolicy(this, 'ResponseHeadersPolicy', {
       responseHeadersPolicyName: 'CorsAndCsp',
