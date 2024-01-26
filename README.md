@@ -5,7 +5,7 @@ Hold My Clips is a small-scale serverless video hosting app, built for enjoyment
 
 ## Local Development
 
-When running locally, clip metadata is spoofed using [json-server](https://www.npmjs.com/package/json-server). The clips themselves are still retrieved from S3.
+When running locally, clip metadata is spoofed using [json-server](https://www.npmjs.com/package/json-server). The clips themselves (i.e. media) are still retrieved from S3.
 
 Simply start the json-server and client containers with:
 

@@ -4,7 +4,7 @@
             {
                 "id": "hurricane-anemone",
                 "duration": "6.45",
-                "description": "nothing to see here",
+                "description": "nothing to see here\n\ndescription with newline",
                 "uploader": "",
                 "title": "fast splatter",
                 "views": 0,
@@ -35,7 +35,7 @@
     "hurricane-anemone": {
         "id": "hurricane-anemone",
         "duration": "6.45",
-        "description": "nothing to see here",
+        "description": "nothing to see here\n\ndescription with newline",
         "uploader": "Dennis Person",
         "title": "fast splatter",
         "views": 0,

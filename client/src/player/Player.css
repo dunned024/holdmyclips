@@ -46,6 +46,7 @@
     max-height: 100px;
     padding: 10px;
     color: black;
+    white-space: pre-line;
 
     border-radius: 4px;
 
