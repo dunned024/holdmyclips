@@ -2,29 +2,22 @@ import React, { useEffect, useState } from 'react';
 import './Home.css';
 import { Link } from 'react-router-dom';
 import { Clip, ClipDex } from './types';
+import { getClips } from './services/clips';
 import { getUsername } from './services/cognito';
 import { secondsToMMSS } from './services/time';
-import { ENDPOINT } from './config';
 
 export function Home() {
-  const [clips, setClips] = useState<ClipDex>({});
+  const [clipDex, setClipDex] = useState<ClipDex>({});
   const username = getUsername();
 
   useEffect(() => {
-    async function getClips() {
-      const res = await fetch(`${ENDPOINT}/clips`);
-      const data = await res.json();
-
-      const clipList: ClipDex = {};
-      data.clips.forEach((clip: Clip) => {
-        clipList[clip.id] = clip;
-      });
-
-      setClips(clipList);
+    async function populateClipDex() {
+      const clipList = await getClips();
+      setClipDex(clipList);
     }
 
-    if (!clips.length) {
-      getClips();
+    if (!clipDex.length) {
+      populateClipDex();
     }
   }, []);
 
@@ -47,7 +40,7 @@ export function Home() {
         )}
       </div>
       <div className='clip-rows'>
-        {Object.entries(clips).map(([clipId, clip]) => (
+        {Object.entries(clipDex).map(([clipId, clip]) => (
           <ClipCard key={clipId} clip={clip} />
         ))}
       </div>
