@@ -2,7 +2,6 @@ import { ENDPOINT } from '../config';
 import { Clip, ClipDex } from '../types';
 
 export async function getClips(): Promise<ClipDex> {
-  console.log('calling getClips')
   const res = await fetch(`${ENDPOINT}/clips`);
   const data = await res.json();
 
@@ -26,9 +25,6 @@ export async function getClipMetadata(id: string): Promise<Clip> {
 }
 
 export function parseClip(rawClip: Record<string, string>): Clip {
-  console.log(rawClip);
-  console.log(rawClip.description);
-  console.log(rawClip.description.replace(/(\n)+/g, '<br />'));
   return {
     id: rawClip.id,
     title: rawClip.title,
