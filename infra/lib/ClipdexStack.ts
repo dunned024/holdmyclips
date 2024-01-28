@@ -1,13 +1,11 @@
-import { CfnOutput, Duration, Stack, StackProps } from 'aws-cdk-lib';
-import { AccessLogFormat, AuthorizationType, AwsIntegration, CognitoUserPoolsAuthorizer, LambdaIntegration, LambdaRestApi, LogGroupLogDestination, PassthroughBehavior, RestApi } from 'aws-cdk-lib/aws-apigateway';
+import { CfnOutput, Duration, Stack } from 'aws-cdk-lib';
+import { AccessLogFormat, AwsIntegration, LambdaIntegration, LambdaRestApi, LogGroupLogDestination, PassthroughBehavior, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb';
 import { ManagedPolicy, PolicyDocument, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
 import { Code, Function, Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
 import path from 'path';
 import { ConfiguredStackProps } from './config';
-import { UserPool, UserPoolClient } from 'aws-cdk-lib/aws-cognito';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { LogGroup } from 'aws-cdk-lib/aws-logs';
 
 export interface ClipdexStackProps extends ConfiguredStackProps {
@@ -96,68 +94,61 @@ export class ClipdexStack extends Stack {
     clipdexTable.grantReadData(integrationRole);
 
     // Add Lambda integration for uploading clips
+    const lambdaRole = getLambdaRole(this)
     const clipDataResource = this.apiGateway.root.addResource('clipdata');
-    const uploadLambda = new UploadLambda(this, 'Lambda');
-    const uploadIntegration = new LambdaIntegration(uploadLambda.handler)
+    const uploadLambda = new Function(this, 'UploadFunction', {
+      runtime: Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: Code.fromAsset(path.join(__dirname, '../services/upload/')),
+      role: lambdaRole,
+      timeout: Duration.minutes(2),
+    });
+    const uploadIntegration = new LambdaIntegration(uploadLambda)
     clipDataResource.addMethod('PUT', uploadIntegration)  // PUT /clipdata
-    clipdexTable.grantReadWriteData(uploadLambda.handler);
+    clipdexTable.grantReadWriteData(uploadLambda);
 
     new CfnOutput(this, 'ClipdexTableName', { value: clipdexTable.tableName });
   }
 }
 
-class UploadLambda extends Construct {
-  public readonly handler: Function;
+function getLambdaRole(scope: Construct) {
+  const s3PolicyStatement = new PolicyStatement({
+    actions: [
+      's3:PutObject*',
+      's3:PutObjectAcl*',
+      's3:GetObject*',
+      's3:GetObjectAcl*',
+      's3:DeleteObject',
+    ],
+    resources: ['arn:aws:s3:::hold-my-clips/clips/*'],
+  })
 
-  constructor(scope: Construct, id: string) {
-    super(scope, id);
+  const cloudformationPolicyStatement = new PolicyStatement({
+    actions: [
+      'cloudformation:DescribeStacks',
+    ],
+    resources: ['arn:aws:cloudformation:us-east-1:*:stack/HMC*'],
+  })
 
-    const s3PolicyStatement = new PolicyStatement({
-      actions: [
-        's3:PutObject*',
-        's3:PutObjectAcl*',
-        's3:GetObject*',
-        's3:GetObjectAcl*',
-        's3:DeleteObject',
-      ],
-      resources: ['arn:aws:s3:::hold-my-clips/clips/*'],
-    })
+  const cloudfrontPolicyStatement = new PolicyStatement({
+    actions: [
+      'cloudfront:CreateInvalidation',
+    ],
+    resources: ['*'],
+  })
 
-    const cloudformationPolicyStatement = new PolicyStatement({
-      actions: [
-        'cloudformation:DescribeStacks',
-      ],
-      resources: ['arn:aws:cloudformation:us-east-1:*:stack/HMC*'],
-    })
-
-    const cloudfrontPolicyStatement = new PolicyStatement({
-      actions: [
-        'cloudfront:CreateInvalidation',
-      ],
-      resources: ['*'],
-    })
-
-    const uploadPolicy = new PolicyDocument({
-      statements: [s3PolicyStatement, cloudformationPolicyStatement, cloudfrontPolicyStatement]
-    })
-    
-    const uploadRole = new Role(this, 'Role', {
-      roleName: 'hold-my-clips-lambda-upload-role',
-      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
-      managedPolicies: [
-        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
-      ],
-      inlinePolicies: {
-        'HMC-lambda-s3-access': uploadPolicy
-      }
-    });
-
-    this.handler = new Function(this, 'Function', {
-      runtime: Runtime.NODEJS_18_X,
-      handler: 'index.handler',
-      code: Code.fromAsset(path.join(__dirname, '../services/upload/')),
-      role: uploadRole,
-      timeout: Duration.minutes(2),
-    });
-  }
-}
+  const uploadPolicy = new PolicyDocument({
+    statements: [s3PolicyStatement, cloudformationPolicyStatement, cloudfrontPolicyStatement]
+  })
+  
+  return new Role(scope, 'Role', {
+    roleName: 'hold-my-clips-lambda-role',
+    assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+    managedPolicies: [
+      ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+    ],
+    inlinePolicies: {
+      'HMC-lambda-s3-access': uploadPolicy
+    }
+  });
+} 
