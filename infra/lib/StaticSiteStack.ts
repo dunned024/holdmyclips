@@ -1,11 +1,7 @@
-import { CfnOutput, Duration, Stack, StackProps } from 'aws-cdk-lib';
+import { CfnOutput, Duration, Stack } from 'aws-cdk-lib';
 import { Bucket, BlockPublicAccess, CorsRule, HttpMethods, CfnBucket, ObjectOwnership, BucketAccessControl } from 'aws-cdk-lib/aws-s3';
-import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions, AddBehaviorOptions, ResponseHeadersPolicy, LambdaEdgeEventType } from 'aws-cdk-lib/aws-cloudfront';
+import { AllowedMethods, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions, AddBehaviorOptions, ResponseHeadersPolicy } from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
-import { experimental } from 'aws-cdk-lib/aws-cloudfront';
-import { Code, Runtime } from 'aws-cdk-lib/aws-lambda';
-import { Role, ManagedPolicy, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
-import path from 'path';
 import {
   ARecord,
   RecordTarget
@@ -16,8 +12,6 @@ import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
 import { HostedDomain } from './HostedDomainStack'
 import { ConfiguredStackProps } from './config';
 import { AuthLambdaFnVersions, CloudFrontAuth, ConfiguredAuthLambdaParams } from './auth/CloudfrontAuth';
-import { AuthLambdas } from './auth/AuthLambdas';
-import { UserPool, UserPoolClient } from 'aws-cdk-lib/aws-cognito';
 import * as lambda from "aws-cdk-lib/aws-lambda"
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
@@ -130,7 +124,8 @@ export class StaticSiteStack extends Stack {
         'signedin': auth.createProtectedBehavior(authLambdas, s3Origin, protectedPageBehavior),
         'upload': auth.createProtectedBehavior(authLambdas, s3Origin, protectedPageBehavior),
         'uploadclip': auth.createProtectedBehavior(authLambdas, s3Origin, uploadBehavior),
-        'clipdata': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior) // pathPattern matches API endpoint
+        'clipdata': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior), // pathPattern matches API endpoint
+        'clipcomments': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior) // pathPattern matches API endpoint
       },
       certificate: props.hostedDomain.cert,
       defaultBehavior: defaultBehavior,

@@ -8,15 +8,10 @@ import path from 'path';
 import { ConfiguredStackProps } from './config';
 import { LogGroup } from 'aws-cdk-lib/aws-logs';
 
-export interface ClipdexStackProps extends ConfiguredStackProps {
-  // authUserPool: UserPool
-  // authUserPoolClient: UserPoolClient
-}
-
 export class ClipdexStack extends Stack {
   public readonly apiGateway: LambdaRestApi;
 
-  constructor(scope: Construct, id: string, props: ClipdexStackProps) {
+  constructor(scope: Construct, id: string, props: ConfiguredStackProps) {
     super(scope, id, props);
 
     const logGroup = new LogGroup(this, "APILogs");
@@ -41,9 +36,36 @@ export class ClipdexStack extends Stack {
       },
     });
 
+    const lambdaRole = getLambdaRole(this)
+
     const integrationRole = new Role(this, 'IntegrationRole', {
       assumedBy: new ServicePrincipal('apigateway.amazonaws.com'),
     })
+
+    // Add Lambda integration for uploading clips
+    const clipDataResource = this.apiGateway.root.addResource('clipdata');
+    const uploadLambda = new Function(this, 'UploadFunction', {
+      runtime: Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: Code.fromAsset(path.join(__dirname, '../services/upload/')),
+      role: lambdaRole,
+      timeout: Duration.minutes(2),
+    });
+    const uploadIntegration = new LambdaIntegration(uploadLambda)
+    clipDataResource.addMethod('PUT', uploadIntegration)  // PUT /clipdata
+
+    // Add Lambda integration for managing comments
+    const clipCommentsResource = this.apiGateway.root.addResource('clipcomments');
+    const commentsLambda = new Function(this, 'CommentsFunction', {
+      runtime: Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: Code.fromAsset(path.join(__dirname, '../services/comments/')),
+      role: lambdaRole,
+      timeout: Duration.minutes(2),
+    });
+    const commentsIntegration = new LambdaIntegration(commentsLambda)
+    clipCommentsResource.addMethod('POST', commentsIntegration)  // POST /clipcomments
+    clipCommentsResource.addMethod('DELETE', commentsIntegration)  // DELETE /clipcomments
 
     // Create DynamoDB table to act as metadata index
     const clipdexTable = new Table(this, 'ClipdexTable', {
@@ -92,21 +114,8 @@ export class ClipdexStack extends Stack {
     })
 
     clipdexTable.grantReadData(integrationRole);
-
-    // Add Lambda integration for uploading clips
-    const lambdaRole = getLambdaRole(this)
-    const clipDataResource = this.apiGateway.root.addResource('clipdata');
-    const uploadLambda = new Function(this, 'UploadFunction', {
-      runtime: Runtime.NODEJS_18_X,
-      handler: 'index.handler',
-      code: Code.fromAsset(path.join(__dirname, '../services/upload/')),
-      role: lambdaRole,
-      timeout: Duration.minutes(2),
-    });
-    const uploadIntegration = new LambdaIntegration(uploadLambda)
-    clipDataResource.addMethod('PUT', uploadIntegration)  // PUT /clipdata
     clipdexTable.grantReadWriteData(uploadLambda);
-
+  
     new CfnOutput(this, 'ClipdexTableName', { value: clipdexTable.tableName });
   }
 }
