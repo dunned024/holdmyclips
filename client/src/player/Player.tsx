@@ -1,25 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { ChangeEvent, useEffect, useState } from 'react';
 import { Clip, Comment } from '../types';
 import './Player.css';
 import { useParams } from 'react-router-dom';
-import { Grid, Stack } from '@mui/material';
+import { Grid, Stack, TextField } from '@mui/material';
 import { VideoComponent } from './VideoController';
 import { palette } from '../assets/themes/theme';
-import { secondsToMMSS } from '../services/time';
+import { readableTimestamp, secondsToMMSS } from '../services/time';
 import { getClipMetadata } from '../services/clips';
+import { FaPlusCircle } from 'react-icons/fa';
+import { getUsername } from '../services/cognito';
 
 export function Player() {
   const { clipId } = useParams();
 
   const [clip, setClip] = useState<Clip>();
   const [maxDuration, setMaxDuration] = useState(0);
+  const [comments, setComments] = useState<Comment[]>([]);
+  console.log(comments);
+
+  const username = getUsername();
 
   useEffect(() => {
     async function getClip(id: string) {
-      // TODO: Need to call parseClip here if ClipDex only returns strings
       const clipMetadata = await getClipMetadata(id);
       setClip(clipMetadata);
     }
+
+    // async function getComments() {
+    //   setClip(clipMetadata);
+    // }
 
     if (!clip && clipId) {
       getClip(clipId);
@@ -28,6 +37,23 @@ export function Player() {
 
   if (!clipId || !clip) {
     return <span />;
+  }
+
+  async function sendComment(commentText: string) {
+    console.log(username);
+    if (username) {
+      // send comment via comments service
+      //  TODO
+
+      // update comments array
+      const newComment = {
+        author: username,
+        commentText,
+        postedAt: readableTimestamp(new Date()),
+        likes: 0
+      }
+      setComments([...comments, newComment]);
+    }
   }
 
   return (
@@ -55,11 +81,10 @@ export function Player() {
                 border: `1px solid ${palette.primary.light}`
               }}
             >
-              Comments are not yet supported...
-              {/* TODO: Implement comments 
-              {clip.comments.map((comment, index) => (
+              {comments.map((comment, index) => (
                 <CommentCard comment={comment} id={index} key={index} />
-              ))} */}
+              ))}
+              <AddCommentContainer sendComment={sendComment} />
             </Stack>
           </Stack>
         </Stack>
@@ -101,6 +126,63 @@ function ClipDetails(props: { clip: Clip }) {
   );
 }
 
+function AddCommentContainer(props: {
+  sendComment: (commentText: string) => void;
+}) {
+  const [isAddingComment, setIsAddingComment] = useState(false);
+  const [commentText, setcommentText] = useState<string | undefined>();
+  const [canSubmit, setCanSubmit] = useState(false);
+
+  const handleCommentInputChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    if (e.target.value === '' || e.target.value === undefined) {
+      setCanSubmit(false);
+      return;
+    }
+    setcommentText(e.target.value);
+    setCanSubmit(true);
+  };
+
+  const cancelCommentInput = () => {
+    setIsAddingComment(false);
+    setcommentText(undefined);
+    setCanSubmit(false);
+  };
+
+  const verifyAndSendComment = () => {
+    console.log(commentText);
+    if (commentText !== undefined && commentText !== '' && canSubmit) {
+      setIsAddingComment(false);
+      setCanSubmit(false);
+      props.sendComment(commentText);
+      setcommentText(undefined);
+    }
+  };
+
+  return (
+    <Stack id='add-comment-container'>
+      {isAddingComment && (
+        <Stack id='adding-comment-container'>
+          <textarea id='comment-box' onChange={handleCommentInputChange} />
+          <Stack id='adding-comment-control'>
+            <button onClick={cancelCommentInput}>Cancel</button>
+            <button onClick={verifyAndSendComment} disabled={!canSubmit}>
+              Submit
+            </button>
+          </Stack>
+        </Stack>
+      )}
+      {!isAddingComment && (
+        <button
+          id='add-comment-button'
+          onClick={() => setIsAddingComment(true)}
+        >
+          <FaPlusCircle id='add-comment-plus' />
+        </button>
+      )}
+    </Stack>
+  );
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function CommentCard(props: { comment: Comment; id: number }) {
   const comment = props.comment;
@@ -117,7 +199,7 @@ function CommentCard(props: { comment: Comment; id: number }) {
         <div className='author'>{comment.author}</div>
         <div className='posted-at'>{comment.postedAt}</div>
       </div>
-      <div className='text'>{comment.text}</div>
+      <div className='text'>{comment.commentText}</div>
     </Stack>
   );
 }

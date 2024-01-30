@@ -11,3 +11,8 @@ export function secondsToMMSS(value: number) {
     .padStart(2, '0');
   return `${minutes}:${secondsPastMinute}`;
 }
+
+export function readableTimestamp(timestamp: Date) {
+  const isoStrings = timestamp.toISOString().split('T');
+  return `${isoStrings[0]} ${isoStrings[1].substring(0, 5)}`;
+}

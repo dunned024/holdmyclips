@@ -15,8 +15,9 @@ export interface Clip {
 
 export interface Comment {
   author: string;
-  text: string;
+  commentText: string;
   postedAt: string;
+  likes: number;
 }
 
 export interface ClipUploadData {
