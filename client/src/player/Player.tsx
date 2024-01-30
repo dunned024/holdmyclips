@@ -2,7 +2,7 @@ import React, { ChangeEvent, useEffect, useState } from 'react';
 import { Clip, Comment } from '../types';
 import './Player.css';
 import { useParams } from 'react-router-dom';
-import { Grid, Stack, TextField } from '@mui/material';
+import { Grid, Stack } from '@mui/material';
 import { VideoComponent } from './VideoController';
 import { palette } from '../assets/themes/theme';
 import { readableTimestamp, secondsToMMSS } from '../services/time';
@@ -51,7 +51,8 @@ export function Player() {
         commentText,
         postedAt: readableTimestamp(new Date()),
         likes: 0
-      }
+      };
+
       setComments([...comments, newComment]);
     }
   }
@@ -183,7 +184,6 @@ function AddCommentContainer(props: {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function CommentCard(props: { comment: Comment; id: number }) {
   const comment = props.comment;
   return (

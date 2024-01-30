@@ -78,20 +78,21 @@
 }
 
 #add-comment-container {
-    height: 100px;
+    height: 140px;
     width: calc(100% - 8px);
     
     display: flex;
     flex-direction: column;
-    justify-content: center;
     align-items: center;
     padding: 4px;
 }
 
 #add-comment-button {
-    height: 70%;
+    height: 70px;
     width: 70%;
     border-radius: 8px;
+
+    margin: 10px 0;
 
     background-color: #23aca0;
     color: #374153;
@@ -141,7 +142,7 @@
 }
 
 .comment .header {
-    padding: 0 8px;
+    padding: 4px 8px;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -149,7 +150,7 @@
 }
 
 .comment .text {
-    padding: 8px;
+    padding: 4px 10px;
     text-align: left;
     white-space: pre-line;
     font-weight: 300;
