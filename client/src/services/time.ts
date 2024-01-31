@@ -14,5 +14,5 @@ export function secondsToMMSS(value: number) {
 
 export function readableTimestamp(timestamp: Date) {
   const isoStrings = timestamp.toISOString().split('T');
-  return `${isoStrings[0]} ${isoStrings[1].substring(0, 5)}`;
+  return `${isoStrings[0]} @ ${isoStrings[1].substring(0, 5)}`;
 }

@@ -7,19 +7,7 @@
                 "description": "nothing to see here\n\ndescription with newline",
                 "uploader": "",
                 "title": "fast splatter",
-                "views": 0,
-                "comments": [
-                    {
-                        "author": "dennis", 
-                        "text": "this is a comment", 
-                        "postedAt": "2023-09-01 18:59"
-                    },
-                    {
-                        "author": "dennis2", 
-                        "text": "this is another comment", 
-                        "postedAt": "2023-09-01 20:44"
-                    }
-                ]
+                "views": 0
             },
             {
                 "id": "goofy-share",
@@ -27,27 +15,28 @@
                 "description": "",
                 "uploader": "",
                 "title": "foolish lifeline cannot escape death",
-                "views": 0,
-                "comments": []
+                "views": 0
             }
         ]
     },
     "hurricane-anemone": {
         "id": "hurricane-anemone",
         "duration": "6.45",
-        "description": "nothing to see here\n\ndescription with newline",
+        "description": "nothing to see here\n\ndescription with newline\n\nadding a longer description to see if it scrolls\n\nand again",
         "uploader": "Dennis Person",
         "title": "fast splatter",
-        "views": 0,
+        "views": 0
+    },
+    "hurricane-anemone-comments": {
         "comments": [
             {
                 "author": "dennis", 
-                "text": "this is a comment", 
+                "commentText": "this is a comment", 
                 "postedAt": "2023-09-01 18:59"
             },
             {
                 "author": "dennis2", 
-                "text": "this is another comment", 
+                "commentText": "this is another comment", 
                 "postedAt": "2023-09-01 20:44"
             }
         ]
@@ -58,7 +47,20 @@
         "description": "nothing to see here",
         "uploader": "Dennis Person 2",
         "title": "foolish lifeline cannot escape death",
-        "views": 0,
-        "comments": []
+        "views": 0
+    },
+    "goofy-share-comments": {
+        "comments": [
+            {
+                "author": "dennis", 
+                "commentText": "this is a comment", 
+                "postedAt": "2023-09-01 18:59"
+            },
+            {
+                "author": "dennis2", 
+                "commentText": "this is another comment", 
+                "postedAt": "2023-09-01 20:44"
+            }
+        ]
     }
 }

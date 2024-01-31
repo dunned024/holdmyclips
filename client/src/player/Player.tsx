@@ -9,6 +9,8 @@ import { readableTimestamp, secondsToMMSS } from '../services/time';
 import { getClipMetadata } from '../services/clips';
 import { FaPlusCircle } from 'react-icons/fa';
 import { getUsername } from '../services/cognito';
+import { getComments, sendComment } from '../services/comments';
+import { FaGear } from 'react-icons/fa6';
 
 export function Player() {
   const { clipId } = useParams();
@@ -16,7 +18,6 @@ export function Player() {
   const [clip, setClip] = useState<Clip>();
   const [maxDuration, setMaxDuration] = useState(0);
   const [comments, setComments] = useState<Comment[]>([]);
-  console.log(comments);
 
   const username = getUsername();
 
@@ -24,11 +25,10 @@ export function Player() {
     async function getClip(id: string) {
       const clipMetadata = await getClipMetadata(id);
       setClip(clipMetadata);
-    }
 
-    // async function getComments() {
-    //   setClip(clipMetadata);
-    // }
+      const clipComments = await getComments(id);
+      setComments(clipComments);
+    }
 
     if (!clip && clipId) {
       getClip(clipId);
@@ -39,11 +39,15 @@ export function Player() {
     return <span />;
   }
 
-  async function sendComment(commentText: string) {
+  async function postComment(commentText: string) {
     console.log(username);
-    if (username) {
+    if (username && clipId) {
       // send comment via comments service
-      //  TODO
+      sendComment({
+        id: clipId,
+        user: username,
+        commentText
+      });
 
       // update comments array
       const newComment = {
@@ -74,18 +78,24 @@ export function Player() {
             id='comments-container'
             sx={{ backgroundColor: palette.secondary.light }}
           >
-            Comments
+            <div>Comments</div>
             <Stack
               id='comments-box'
               sx={{
                 backgroundColor: palette.secondary.main,
-                border: `1px solid ${palette.primary.light}`
+                border: `1px solid ${palette.primary.light}`,
+                overflow: 'auto'
               }}
             >
               {comments.map((comment, index) => (
-                <CommentCard comment={comment} id={index} key={index} />
+                <CommentCard
+                  comment={comment}
+                  id={index}
+                  key={index}
+                  username={username}
+                />
               ))}
-              <AddCommentContainer sendComment={sendComment} />
+              <AddCommentContainer postComment={postComment} />
             </Stack>
           </Stack>
         </Stack>
@@ -128,7 +138,7 @@ function ClipDetails(props: { clip: Clip }) {
 }
 
 function AddCommentContainer(props: {
-  sendComment: (commentText: string) => void;
+  postComment: (commentText: string) => void;
 }) {
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [commentText, setcommentText] = useState<string | undefined>();
@@ -152,9 +162,9 @@ function AddCommentContainer(props: {
   const verifyAndSendComment = () => {
     console.log(commentText);
     if (commentText !== undefined && commentText !== '' && canSubmit) {
+      props.postComment(commentText);
       setIsAddingComment(false);
       setCanSubmit(false);
-      props.sendComment(commentText);
       setcommentText(undefined);
     }
   };
@@ -163,7 +173,11 @@ function AddCommentContainer(props: {
     <Stack id='add-comment-container'>
       {isAddingComment && (
         <Stack id='adding-comment-container'>
-          <textarea id='comment-box' onChange={handleCommentInputChange} />
+          <textarea
+            id='comment-box'
+            onChange={handleCommentInputChange}
+            autoFocus={true}
+          />
           <Stack id='adding-comment-control'>
             <button onClick={cancelCommentInput}>Cancel</button>
             <button onClick={verifyAndSendComment} disabled={!canSubmit}>
@@ -184,21 +198,55 @@ function AddCommentContainer(props: {
   );
 }
 
-function CommentCard(props: { comment: Comment; id: number }) {
+function CommentCard(props: {
+  comment: Comment;
+  id: number;
+  username?: string;
+}) {
+  const [isHovering, setIsHovering] = useState(false);
   const comment = props.comment;
+  const isOwnedByUser = props.username === comment.author;
+
   return (
     <Stack
       className='comment'
       key={props.id}
       sx={{
         backgroundColor: palette.secondary.dark,
-        borderBottom: `1px solid ${palette.primary.light}`
+        borderBottom: `2px solid ${palette.primary.light}`
       }}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
     >
-      <div className='header'>
-        <div className='author'>{comment.author}</div>
-        <div className='posted-at'>{comment.postedAt}</div>
-      </div>
+      <Grid className='header' container textAlign='left' spacing={0}>
+        <Grid id='author' item xs={6}>
+          {comment.author}
+        </Grid>
+        {isHovering && isOwnedByUser && (
+          <Grid id='author' item xs={6} textAlign='right'>
+            <div className='options'>
+              <button className='options-button'>
+                <FaGear />
+              </button>
+            </div>
+          </Grid>
+        )}
+
+        <Grid
+          id='posted-at'
+          item
+          xs={12}
+          sx={{ marginLeft: '10px', fontWeight: 200 }}
+        >
+          {comment.postedAt}
+        </Grid>
+      </Grid>
+      <hr
+        className='separator'
+        style={{
+          borderBottom: `1px solid ${palette.primary.light}`
+        }}
+      />
       <div className='text'>{comment.commentText}</div>
     </Stack>
   );

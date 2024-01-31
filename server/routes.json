@@ -1,4 +1,6 @@
 {
     "/clips/goofy-share/goofy-share\\.json": "/goofy-share",
-    "/clips/hurricane-anemone/hurricane-anemone\\.json": "/hurricane-anemone"
+    "/clips/goofy-share/goofy-share\\.comments\\.json": "/goofy-share-comments",
+    "/clips/hurricane-anemone/hurricane-anemone\\.json": "/hurricane-anemone",
+    "/clips/hurricane-anemone/hurricane-anemone\\.comments\\.json": "/hurricane-anemone-comments"
 }
