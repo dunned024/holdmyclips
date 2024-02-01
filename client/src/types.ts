@@ -14,6 +14,7 @@ export interface Clip {
 }
 
 export interface Comment {
+  id: number;
   author: string;
   commentText: string;
   postedAt: string;
