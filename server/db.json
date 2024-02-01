@@ -30,11 +30,13 @@
     "hurricane-anemone-comments": {
         "comments": [
             {
+                "id": 1,
                 "author": "dennis", 
                 "commentText": "this is a comment", 
                 "postedAt": "2023-09-01 18:59"
             },
             {
+                "id": 2,
                 "author": "dennis2", 
                 "commentText": "this is another comment", 
                 "postedAt": "2023-09-01 20:44"
@@ -52,11 +54,13 @@
     "goofy-share-comments": {
         "comments": [
             {
+                "id": 1,
                 "author": "dennis", 
                 "commentText": "this is a comment", 
                 "postedAt": "2023-09-01 18:59"
             },
             {
+                "id": 2,
                 "author": "dennis2", 
                 "commentText": "this is another comment", 
                 "postedAt": "2023-09-01 20:44"

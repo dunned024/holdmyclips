@@ -9,8 +9,10 @@ import { readableTimestamp, secondsToMMSS } from '../services/time';
 import { getClipMetadata } from '../services/clips';
 import { FaPlusCircle } from 'react-icons/fa';
 import { getUsername } from '../services/cognito';
-import { getComments, sendComment } from '../services/comments';
+import * as CommentService from '../services/comments';
 import { FaGear } from 'react-icons/fa6';
+import { FaRegTrashAlt } from 'react-icons/fa';
+import { MdOutlineClose } from 'react-icons/md';
 
 export function Player() {
   const { clipId } = useParams();
@@ -26,7 +28,7 @@ export function Player() {
       const clipMetadata = await getClipMetadata(id);
       setClip(clipMetadata);
 
-      const clipComments = await getComments(id);
+      const clipComments = await CommentService.getComments(id);
       setComments(clipComments);
     }
 
@@ -43,14 +45,19 @@ export function Player() {
     console.log(username);
     if (username && clipId) {
       // send comment via comments service
-      sendComment({
+      CommentService.sendComment({
         id: clipId,
         user: username,
         commentText
       });
 
+      let newId = 1;
+      if (comments.length > 0) {
+        newId = Math.max(...comments.map((comment) => comment.id)) + 1;
+      }
       // update comments array
       const newComment = {
+        id: newId,
         author: username,
         commentText,
         postedAt: readableTimestamp(new Date()),
@@ -61,6 +68,19 @@ export function Player() {
     }
   }
 
+  async function deleteComment(commentId: number) {
+    console.log(username);
+    if (username && clipId) {
+      // delete comment via comments service
+      CommentService.deleteComment({
+        id: clipId,
+        user: username,
+        commentId
+      });
+
+      setComments([...comments.filter((comment) => comment.id == commentId)]);
+    }
+  }
   return (
     <div id='player-container'>
       <Stack id='player' direction='row'>
@@ -87,12 +107,12 @@ export function Player() {
                 overflow: 'auto'
               }}
             >
-              {comments.map((comment, index) => (
+              {comments.map((comment) => (
                 <CommentCard
+                  key={comment.id}
                   comment={comment}
-                  id={index}
-                  key={index}
                   username={username}
+                  deleteComment={deleteComment}
                 />
               ))}
               <AddCommentContainer postComment={postComment} />
@@ -200,44 +220,56 @@ function AddCommentContainer(props: {
 
 function CommentCard(props: {
   comment: Comment;
-  id: number;
   username?: string;
+  deleteComment: (id: number) => void;
 }) {
   const [isHovering, setIsHovering] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
   const comment = props.comment;
   const isOwnedByUser = props.username === comment.author;
 
   return (
     <Stack
       className='comment'
-      key={props.id}
+      key={comment.id}
       sx={{
         backgroundColor: palette.secondary.dark,
         borderBottom: `2px solid ${palette.primary.light}`
       }}
       onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
+      onMouseLeave={() => {
+        setIsHovering(false);
+        setShowOptions(false);
+      }}
     >
       <Grid className='header' container textAlign='left' spacing={0}>
-        <Grid id='author' item xs={6}>
+        <Grid className='author' item xs={6}>
           {comment.author}
         </Grid>
         {isHovering && isOwnedByUser && (
-          <Grid id='author' item xs={6} textAlign='right'>
-            <div className='options'>
-              <button className='options-button'>
+          <Grid className='options' item xs={6} justifyContent='right'>
+            {!showOptions && (
+              <button className='gear' onClick={() => setShowOptions(true)}>
                 <FaGear />
               </button>
-            </div>
+            )}
+            {showOptions && (
+              <Stack className='options-buttons'>
+                <button
+                  className='delete'
+                  onClick={() => props.deleteComment(comment.id)}
+                >
+                  <FaRegTrashAlt />
+                </button>
+                <button className='close' onClick={() => setShowOptions(false)}>
+                  <MdOutlineClose />
+                </button>
+              </Stack>
+            )}
           </Grid>
         )}
 
-        <Grid
-          id='posted-at'
-          item
-          xs={12}
-          sx={{ marginLeft: '10px', fontWeight: 200 }}
-        >
+        <Grid className='posted-at' item xs={12}>
           {comment.postedAt}
         </Grid>
       </Grid>

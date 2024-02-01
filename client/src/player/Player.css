@@ -145,37 +145,49 @@
 
 .comment .header {
     padding: 4px 8px;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
     font-weight: 500;
-}
-
-.comment .author-and-options {
-    display: flex;
-    flex-direction: row;
-}
-
-.comment .author {
-    padding: 0 8px;
 }
 
 .comment .options {
     height: 22px;
-    margin: 0 4px;
+    display: flex;
+    flex-direction: row;
+    justify-content: right;
 }
 
-.comment .options-button {
+.comment .options button {
     height: 22px;
-    width: 22px;
     background-color: #37635a;
     font-size: 20px;
 }
 
-.comment .options-button:hover {
+.comment .options button:hover {
     background-color: #37635a;
     color: #67b1a8;
     transition-duration: 0.1s;
+}
+
+.comment .gear {
+    width: 22px;
+    padding: 0;
+    margin: 0 4px;
+}
+
+.comment .options-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: right;
+}
+
+.comment .close {
+    width: 22px;
+    padding: 0;
+    margin: 0 4px 0 0;
+}
+
+.comment .posted-at {
+    margin-left: 10px;
+    font-weight: 200;
 }
 
 .comment .separator {

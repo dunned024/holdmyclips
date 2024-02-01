@@ -27,3 +27,23 @@ export async function sendComment(props: {
   });
   console.log(res);
 }
+
+export async function deleteComment(props: {
+  id: string;
+  user: string;
+  commentId: number;
+}) {
+  const res = await fetch(`/clipcomments`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    },
+    method: 'DELETE',
+    body: JSON.stringify({
+      clipId: props.id,
+      user: props.user,
+      commentId: props.commentId
+    })
+  });
+  console.log(res);
+}
