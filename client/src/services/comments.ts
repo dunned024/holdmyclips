@@ -5,7 +5,10 @@ export async function getComments(id: string): Promise<Comment[]> {
   const res = await fetch(`${ENDPOINT}/clips/${id}/${id}.comments.json`);
   const data = await res.json();
 
-  return data['comments'];
+  return data['comments'].map((c: Record<string, any>) => {
+    c.postedAt = parseInt(c.postedAt);
+    return c;
+  });
 }
 
 export async function sendComment(props: {
