@@ -27,7 +27,7 @@ export const handler = async (event, context, callback) => {
     let newCommentsObj;
     if (event.httpMethod === "POST") {
         // Add comment
-        newCommentsObj = addCommentToCommentsObject(comments, parsedData["user"], parsedData["commentText"])
+        newCommentsObj = addCommentToCommentsObject(comments, parsedData["author"], parsedData["commentText"])
     } else if (event.httpMethod == "DELETE") {
         // Delete comment
         const targetComment = comments.find((o) => o.commentId === parsedData["commentId"]);
@@ -38,8 +38,8 @@ export const handler = async (event, context, callback) => {
             return {"error": err}
         }
 
-        if (targetComment["author"] != parsedData["user"]) {
-            const err = `Target comment author (${targetComment["author"]}) does not match user (${parsedData["user"]})`
+        if (targetComment["author"] != parsedData["author"]) {
+            const err = `Target comment author (${targetComment["author"]}) does not match user (${parsedData["author"]})`
             console.log("Error when deleting comment: ", err)
             return {"error": err}
         }

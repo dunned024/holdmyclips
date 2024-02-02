@@ -46,18 +46,18 @@ export function Player() {
     if (username && clipId) {
       // send comment via comments service
       CommentService.sendComment({
-        id: clipId,
-        user: username,
+        clipId,
+        author: username,
         commentText
       });
 
       let newId = 1;
       if (comments.length > 0) {
-        newId = Math.max(...comments.map((comment) => comment.id)) + 1;
+        newId = Math.max(...comments.map((comment) => comment.commentId)) + 1;
       }
       // update comments array
       const newComment = {
-        id: newId,
+        commentId: newId,
         author: username,
         commentText,
         postedAt: readableTimestamp(new Date()),
@@ -73,14 +73,17 @@ export function Player() {
     if (username && clipId) {
       // delete comment via comments service
       CommentService.deleteComment({
-        id: clipId,
-        user: username,
+        clipId,
+        author: username,
         commentId
       });
 
-      setComments([...comments.filter((comment) => comment.id == commentId)]);
+      setComments([
+        ...comments.filter((comment) => comment.commentId == commentId)
+      ]);
     }
   }
+
   return (
     <div id='player-container'>
       <Stack id='player' direction='row'>
@@ -109,7 +112,7 @@ export function Player() {
             >
               {comments.map((comment) => (
                 <CommentCard
-                  key={comment.id}
+                  key={comment.commentId}
                   comment={comment}
                   username={username}
                   deleteComment={deleteComment}
@@ -221,7 +224,7 @@ function AddCommentContainer(props: {
 function CommentCard(props: {
   comment: Comment;
   username?: string;
-  deleteComment: (id: number) => void;
+  deleteComment: (commentId: number) => void;
 }) {
   const [isHovering, setIsHovering] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
@@ -231,7 +234,7 @@ function CommentCard(props: {
   return (
     <Stack
       className='comment'
-      key={comment.id}
+      key={comment.commentId}
       sx={{
         backgroundColor: palette.secondary.dark,
         borderBottom: `2px solid ${palette.primary.light}`
@@ -257,7 +260,7 @@ function CommentCard(props: {
               <Stack className='options-buttons'>
                 <button
                   className='delete'
-                  onClick={() => props.deleteComment(comment.id)}
+                  onClick={() => props.deleteComment(comment.commentId)}
                 >
                   <FaRegTrashAlt />
                 </button>

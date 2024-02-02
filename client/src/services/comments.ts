@@ -9,8 +9,8 @@ export async function getComments(id: string): Promise<Comment[]> {
 }
 
 export async function sendComment(props: {
-  id: string;
-  user: string;
+  clipId: string;
+  author: string;
   commentText: string;
 }) {
   const res = await fetch(`/clipcomments`, {
@@ -20,8 +20,8 @@ export async function sendComment(props: {
     },
     method: 'POST',
     body: JSON.stringify({
-      clipId: props.id,
-      user: props.user,
+      clipId: props.clipId,
+      author: props.author,
       commentText: props.commentText
     })
   });
@@ -29,8 +29,8 @@ export async function sendComment(props: {
 }
 
 export async function deleteComment(props: {
-  id: string;
-  user: string;
+  clipId: string;
+  author: string;
   commentId: number;
 }) {
   const res = await fetch(`/clipcomments`, {
@@ -40,8 +40,8 @@ export async function deleteComment(props: {
     },
     method: 'DELETE',
     body: JSON.stringify({
-      clipId: props.id,
-      user: props.user,
+      clipId: props.clipId,
+      author: props.author,
       commentId: props.commentId
     })
   });
