@@ -44,11 +44,13 @@ export function Player() {
   async function postComment(commentText: string) {
     console.log(username);
     if (username && clipId) {
+      const timestamp = Date.now();
       // send comment via comments service
       CommentService.sendComment({
         clipId,
         author: username,
-        commentText
+        commentText,
+        postedAt: timestamp
       });
 
       let newId = 1;
@@ -60,7 +62,7 @@ export function Player() {
         commentId: newId,
         author: username,
         commentText,
-        postedAt: readableTimestamp(new Date()),
+        postedAt: timestamp,
         likes: 0
       };
 
@@ -118,7 +120,9 @@ export function Player() {
                   deleteComment={deleteComment}
                 />
               ))}
-              <AddCommentContainer postComment={postComment} />
+              {username !== undefined && (
+                <AddCommentContainer postComment={postComment} />
+              )}
             </Stack>
           </Stack>
         </Stack>
@@ -273,7 +277,7 @@ function CommentCard(props: {
         )}
 
         <Grid className='posted-at' item xs={12}>
-          {comment.postedAt}
+          {readableTimestamp(comment.postedAt)}
         </Grid>
       </Grid>
       <hr

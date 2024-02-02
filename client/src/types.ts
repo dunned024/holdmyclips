@@ -17,7 +17,7 @@ export interface Comment {
   commentId: number;
   author: string;
   commentText: string;
-  postedAt: string;
+  postedAt: number;
   likes: number;
 }
 

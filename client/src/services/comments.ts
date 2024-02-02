@@ -12,6 +12,7 @@ export async function sendComment(props: {
   clipId: string;
   author: string;
   commentText: string;
+  postedAt: number;
 }) {
   const res = await fetch(`/clipcomments`, {
     headers: {
@@ -22,7 +23,8 @@ export async function sendComment(props: {
     body: JSON.stringify({
       clipId: props.clipId,
       author: props.author,
-      commentText: props.commentText
+      commentText: props.commentText,
+      postedAt: props.postedAt
     })
   });
   console.log(res);

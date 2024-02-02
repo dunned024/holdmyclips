@@ -27,7 +27,7 @@ export const handler = async (event, context, callback) => {
     let newCommentsObj;
     if (event.httpMethod === "POST") {
         // Add comment
-        newCommentsObj = addCommentToCommentsObject(comments, parsedData["author"], parsedData["commentText"])
+        newCommentsObj = addCommentToCommentsObject(comments, parsedData["author"], parsedData["commentText"], parsedData["postedAt"])
     } else if (event.httpMethod == "DELETE") {
         // Delete comment
         const targetComment = comments.find((o) => o.commentId === parsedData["commentId"]);
@@ -86,7 +86,7 @@ const getClipCommentsObject = async (s3, clipId) => {
     }
 }
 
-const addCommentToCommentsObject = (comments, author, newCommentText) => {
+const addCommentToCommentsObject = (comments, author, newCommentText, postedAt) => {
     let nextId;
     if (!comments.length) {
         nextId = 1
@@ -98,12 +98,12 @@ const addCommentToCommentsObject = (comments, author, newCommentText) => {
         commentId: nextId,
         author: author,
         commentText: newCommentText,
-        timestamp: Date.now().toString()
+        postedAt: postedAt
     }
 
     comments.push(newComment)
     const newCommentsObj = {"comments": comments.sort((x, y) => {
-        return new Date(x.timestamp).getTime() - new Date(y.timestamp).getTime()
+        return x.postedAt - y.postedAt
     })}
     return newCommentsObj
 }

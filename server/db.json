@@ -33,13 +33,13 @@
                 "id": 1,
                 "author": "dennis", 
                 "commentText": "this is a comment", 
-                "postedAt": "2023-09-01 18:59"
+                "postedAt": 1706883212825
             },
             {
                 "id": 2,
                 "author": "dennis2", 
                 "commentText": "this is another comment", 
-                "postedAt": "2023-09-01 20:44"
+                "postedAt": 1706883212825
             }
         ]
     },
@@ -57,13 +57,13 @@
                 "id": 1,
                 "author": "dennis", 
                 "commentText": "this is a comment", 
-                "postedAt": "2023-09-01 18:59"
+                "postedAt": 1706883212825
             },
             {
                 "id": 2,
                 "author": "dennis2", 
                 "commentText": "this is another comment", 
-                "postedAt": "2023-09-01 20:44"
+                "postedAt": 1706883212825
             }
         ]
     }

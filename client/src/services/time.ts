@@ -12,7 +12,9 @@ export function secondsToMMSS(value: number) {
   return `${minutes}:${secondsPastMinute}`;
 }
 
-export function readableTimestamp(timestamp: Date) {
-  const isoStrings = timestamp.toISOString().split('T');
-  return `${isoStrings[0]} @ ${isoStrings[1].substring(0, 5)}`;
+export function readableTimestamp(timestamp: number) {
+  const date = new Date(timestamp);
+  const yyyymmdd = date.toISOString().split('T')[0];
+  const hhmmss = date.toTimeString().split(' ')[0];
+  return `${yyyymmdd} @ ${hhmmss}`;
 }
