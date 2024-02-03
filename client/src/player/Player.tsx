@@ -71,7 +71,6 @@ export function Player() {
   }
 
   async function deleteComment(commentId: number) {
-    console.log(username);
     if (username && clipId) {
       // delete comment via comments service
       CommentService.deleteComment({
@@ -81,7 +80,7 @@ export function Player() {
       });
 
       setComments([
-        ...comments.filter((comment) => comment.commentId == commentId)
+        ...comments.filter((comment) => comment.commentId !== commentId)
       ]);
     }
   }

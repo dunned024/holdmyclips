@@ -6,6 +6,7 @@ export async function getComments(id: string): Promise<Comment[]> {
   const data = await res.json();
 
   return data['comments'].map((c: Record<string, any>) => {
+    c.commentId = parseInt(c.commentId);
     c.postedAt = parseInt(c.postedAt);
     return c;
   });

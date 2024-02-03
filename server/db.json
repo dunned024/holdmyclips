@@ -30,13 +30,13 @@
     "hurricane-anemone-comments": {
         "comments": [
             {
-                "id": 1,
+                "commentId": "1",
                 "author": "dennis", 
                 "commentText": "this is a comment", 
                 "postedAt": "1706883212825"
             },
             {
-                "id": 2,
+                "commentId": "2",
                 "author": "dennis2", 
                 "commentText": "this is another comment", 
                 "postedAt": "1706883212825"
@@ -54,13 +54,13 @@
     "goofy-share-comments": {
         "comments": [
             {
-                "id": 1,
+                "commentId": "1",
                 "author": "dennis", 
                 "commentText": "this is a comment", 
                 "postedAt": "1706883212825"
             },
             {
-                "id": 2,
+                "commentId": "2",
                 "author": "dennis2", 
                 "commentText": "this is another comment", 
                 "postedAt": "1706883212825"
