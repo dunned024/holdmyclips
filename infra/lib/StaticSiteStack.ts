@@ -1,6 +1,20 @@
 import { CfnOutput, Duration, Stack } from 'aws-cdk-lib';
 import { Bucket, BlockPublicAccess, CorsRule, HttpMethods, CfnBucket, ObjectOwnership, BucketAccessControl } from 'aws-cdk-lib/aws-s3';
-import { AllowedMethods, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions, AddBehaviorOptions, ResponseHeadersPolicy } from 'aws-cdk-lib/aws-cloudfront';
+import { 
+  AllowedMethods,
+  CachePolicy,
+  CachedMethods,
+  Distribution,
+  EdgeLambda,
+  ErrorResponse,
+  OriginAccessIdentity,
+  LambdaEdgeEventType,
+  ViewerProtocolPolicy,
+  OriginRequestPolicy,
+  BehaviorOptions,
+  AddBehaviorOptions,
+  ResponseHeadersPolicy
+} from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
 import {
   ARecord,
@@ -11,9 +25,11 @@ import { Construct } from 'constructs';
 import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
 import { HostedDomain } from './HostedDomainStack'
 import { ConfiguredStackProps } from './config';
-import { AuthLambdaFnVersions, CloudFrontAuth, ConfiguredAuthLambdaParams } from './auth/CloudfrontAuth';
-import * as lambda from "aws-cdk-lib/aws-lambda"
+import { AuthLambdaFnVersions, CloudFrontAuth } from './auth/CloudfrontAuth';
+import { Code, Function, Runtime, Version, IVersion } from 'aws-cdk-lib/aws-lambda';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { ManagedPolicy, PolicyDocument, PolicyStatement, Role, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
+import path from 'path';
 
 
 export interface StaticSiteStackProps extends ConfiguredStackProps {
@@ -81,6 +97,16 @@ export class StaticSiteStack extends Stack {
       responseHeadersPolicy,
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     }
+  
+    const linkPreviewBehavior: BehaviorOptions = {
+      origin: s3Origin,
+      allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
+      cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
+      edgeLambdas: [this.getLinkPreviewEdgeLambda()],
+      originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
+      responseHeadersPolicy,
+      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    }
 
     const protectedPageBehavior: AddBehaviorOptions = {
       allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
@@ -125,7 +151,8 @@ export class StaticSiteStack extends Stack {
         'upload': auth.createProtectedBehavior(authLambdas, s3Origin, protectedPageBehavior),
         'uploadclip': auth.createProtectedBehavior(authLambdas, s3Origin, uploadBehavior),
         'clipdata': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior), // pathPattern matches API endpoint
-        'clipcomments': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior) // pathPattern matches API endpoint
+        'clipcomments': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior), // pathPattern matches API endpoint
+        'player/*': linkPreviewBehavior // Adds Edge Lambda for link previews for player/* URIs
       },
       certificate: props.hostedDomain.cert,
       defaultBehavior: defaultBehavior,
@@ -154,9 +181,9 @@ export class StaticSiteStack extends Stack {
   }
 
   getAuthLambdaFnVersions(): AuthLambdaFnVersions {
-    function fn(scope: Stack, name: string): lambda.IVersion {
+    function fn(scope: Stack, name: string): IVersion {
       const value = StringParameter.valueForStringParameter(scope, `/HMC/lambdas/${name}Arn`)
-      return lambda.Version.fromVersionArn(scope, name, value)
+      return Version.fromVersionArn(scope, name, value)
     }
 
     return {
@@ -166,5 +193,41 @@ export class StaticSiteStack extends Stack {
       refreshAuthFn: fn(this, 'RefreshAuthFn'),
       signOutFn: fn(this, 'SignOutFn'),
     }
+  }
+
+  getLinkPreviewEdgeLambda(): EdgeLambda{
+    const s3PolicyStatement = new PolicyStatement({
+      actions: [
+        's3:GetObject*',
+        's3:GetObjectAcl*',
+      ],
+      resources: ['arn:aws:s3:::hold-my-clips/*'],
+    })
+
+    const role = new Role(this, 'Role', {
+      roleName: 'hold-my-clips-preview-lambda-role',
+      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+      managedPolicies: [
+        ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+      ],
+      inlinePolicies: {
+        'HMC-preview-lambda-s3-access': new PolicyDocument({
+          statements: [s3PolicyStatement]
+        })
+      }
+    });
+  
+    const previewLambda = new Function(this, 'LinkPreviewFunction', {
+      runtime: Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: Code.fromAsset(path.join(__dirname, '../services/preview/')),
+      role,
+      timeout: Duration.seconds(5),
+    });
+  
+    return {
+      eventType: LambdaEdgeEventType.ORIGIN_RESPONSE,
+      functionVersion: previewLambda.currentVersion,
+    };
   }
 }
