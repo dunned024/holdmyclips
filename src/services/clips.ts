@@ -20,7 +20,7 @@ export async function getClipMetadata(id: string): Promise<Clip> {
   //  https://stackoverflow.com/a/53455443
   // Need a state store, like https://redux.js.org/api/store
   //  https://stackoverflow.com/q/31168014
-  const res = await fetch(`${ENDPOINT}/clips/${id}/${id}.json`);
+  const res = await fetch(`${ENDPOINT}/clip/${id}`);
   const data = await res.json();
 
   return parseClip(data);
