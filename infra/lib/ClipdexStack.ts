@@ -190,23 +190,17 @@ function getSingleClipIntegration(role: Role, tableName: string) {
       },
       integrationResponses: [{ 
         statusCode: '200', 
-        // responseTemplates: {
-        //   'application/json': `
-        //     #set($inputRoot = $input.path('$'))
-        //     {
-        //       "clips": [
-        //           #foreach($elem in $inputRoot.Items) {
-        //               "id": "$elem.id.S",
-        //               "duration": "$elem.duration.N",
-        //               "description": "$util.escapeJavaScript($elem.description.S).replaceAll("\\\\'","'")",
-        //               "uploader": "$elem.uploader.S",
-        //               "title": "$util.escapeJavaScript($elem.title.S).replaceAll("\\\\'","'")"
-        //             }#if($foreach.hasNext),#end
-        //           #end
-        //         ]
-        //     }
-        //   `
-        // } 
+        responseTemplates: {
+          'application/json': `
+            {
+              "id": "$input.path('$.Item.id.S')",
+              "duration": "$input.path('$.Item.duration.N')",
+              "description": "$util.escapeJavaScript($input.path('$.Item.description.S')).replaceAll("\\\\'","'")",
+              "uploader": "$input.path('$.Item.uploader.S')",
+              "title": "$util.escapeJavaScript($input.path('$.Item.title.S')).replaceAll("\\\\'","'")"
+            }
+          `
+        } 
       }],
     }
   })
