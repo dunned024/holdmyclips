@@ -164,6 +164,7 @@ export class StaticSiteStack extends Stack {
 
     // This path is responsible for returning data from the clipdex
     distribution.addBehavior('clips', apiOrigin, apiBehavior) // pathPattern matches API endpoint
+    distribution.addBehavior('clip/*', apiOrigin, apiBehavior) // pathPattern matches API endpoint
 
     new ARecord(this, 'DnsRecord', {
       recordName: props.fqdn,

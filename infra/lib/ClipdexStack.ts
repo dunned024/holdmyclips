@@ -13,7 +13,12 @@ export class ClipdexStack extends Stack {
 
   constructor(scope: Construct, id: string, props: ConfiguredStackProps) {
     super(scope, id, props);
+    // Create DynamoDB table to act as metadata index
+    const clipdexTable = new Table(this, 'ClipdexTable', {
+      partitionKey: {name:'id', type: AttributeType.STRING},
+    });
 
+    // Create REST API Gateway for querying table & uploading things
     const logGroup = new LogGroup(this, "APILogs");
     this.apiGateway = new RestApi(this, "RestApi", {
       cloudWatchRole: true,
@@ -36,13 +41,26 @@ export class ClipdexStack extends Stack {
       },
     });
 
-    const lambdaRole = getLambdaRole(this)
-
-    const integrationRole = new Role(this, 'IntegrationRole', {
+    // Create IAM Role for reading from table
+    const readTableRole = new Role(this, 'IntegrationRole', {
       assumedBy: new ServicePrincipal('apigateway.amazonaws.com'),
     })
+    clipdexTable.grantReadData(readTableRole);
+  
+    // Create 'clips' resource for querying clip metadata
+    const clipsResource = this.apiGateway.root.addResource('clips');
+    clipsResource.addMethod('GET', getAllClipsIntegration(readTableRole, clipdexTable.tableName), {
+      methodResponses: [{ statusCode: '200' }],
+    })
 
+    const clipResource = this.apiGateway.root.addResource('clip');
+    const singleClipResource = clipResource.addResource('{id}');
+    singleClipResource.addMethod('GET', getSingleClipIntegration(readTableRole, clipdexTable.tableName), {
+      methodResponses: [{ statusCode: '200' }],
+    })
+  
     // Add Lambda integration for uploading clips
+    const lambdaRole = getLambdaRole(this)
     const clipDataResource = this.apiGateway.root.addResource('clipdata');
     const uploadLambda = new Function(this, 'UploadFunction', {
       runtime: Runtime.NODEJS_18_X,
@@ -53,6 +71,7 @@ export class ClipdexStack extends Stack {
     });
     const uploadIntegration = new LambdaIntegration(uploadLambda)
     clipDataResource.addMethod('PUT', uploadIntegration)  // PUT /clipdata
+    clipdexTable.grantReadWriteData(uploadLambda);
 
     // Add Lambda integration for managing comments
     const clipCommentsResource = this.apiGateway.root.addResource('clipcomments');
@@ -67,55 +86,6 @@ export class ClipdexStack extends Stack {
     clipCommentsResource.addMethod('POST', commentsIntegration)  // POST /clipcomments
     clipCommentsResource.addMethod('DELETE', commentsIntegration)  // DELETE /clipcomments
 
-    // Create DynamoDB table to act as metadata index
-    const clipdexTable = new Table(this, 'ClipdexTable', {
-      partitionKey: {name:'id', type: AttributeType.STRING},
-    });
-
-    // GET Integration with DynamoDb
-    const dynamoQueryIntegration = new AwsIntegration({
-      service: 'dynamodb',
-      action: 'Scan',
-      options: {
-        passthroughBehavior: PassthroughBehavior.WHEN_NO_TEMPLATES,
-        credentialsRole: integrationRole,
-        requestTemplates: {
-          'application/json': JSON.stringify({
-              'TableName': clipdexTable.tableName,
-          }),
-        },
-        integrationResponses: [{ 
-          statusCode: '200', 
-          responseTemplates: {
-            'application/json': `
-              #set($inputRoot = $input.path('$'))
-              {
-                "clips": [
-                    #foreach($elem in $inputRoot.Items) {
-                        "id": "$elem.id.S",
-                        "duration": "$elem.duration.N",
-                        "description": "$util.escapeJavaScript($elem.description.S).replaceAll("\\\\'","'")",
-                        "uploader": "$elem.uploader.S",
-                        "title": "$util.escapeJavaScript($elem.title.S).replaceAll("\\\\'","'")"
-                      }#if($foreach.hasNext),#end
-                    #end
-                  ]
-              }
-            `
-          } 
-        }],
-      }
-    })
-
-    // Create 'clips' resource for uploading & querying clip metadata
-    const clipsResource = this.apiGateway.root.addResource('clips');
-    clipsResource.addMethod('GET', dynamoQueryIntegration, {
-      methodResponses: [{ statusCode: '200' }],
-    })
-
-    clipdexTable.grantReadData(integrationRole);
-    clipdexTable.grantReadWriteData(uploadLambda);
-  
     new CfnOutput(this, 'ClipdexTableName', { value: clipdexTable.tableName });
   }
 }
@@ -161,3 +131,83 @@ function getLambdaRole(scope: Construct) {
     }
   });
 } 
+
+
+function getAllClipsIntegration(role: Role, tableName: string) {
+  // GET Integration with DynamoDb for all clips
+  return new AwsIntegration({
+    service: 'dynamodb',
+    action: 'Scan',
+    options: {
+      passthroughBehavior: PassthroughBehavior.WHEN_NO_TEMPLATES,
+      credentialsRole: role,
+      requestTemplates: {
+        'application/json': JSON.stringify({
+            'TableName': tableName,
+        }),
+      },
+      integrationResponses: [{ 
+        statusCode: '200', 
+        responseTemplates: {
+          'application/json': `
+              #set($inputRoot = $input.path('$'))
+              {
+                "clips": [
+                    #foreach($elem in $inputRoot.Items) {
+                        "id": "$elem.id.S",
+                        "duration": "$elem.duration.N",
+                        "description": "$util.escapeJavaScript($elem.description.S).replaceAll("\\\\'","'")",
+                        "uploader": "$elem.uploader.S",
+                        "title": "$util.escapeJavaScript($elem.title.S).replaceAll("\\\\'","'")"
+                      }#if($foreach.hasNext),#end
+                    #end
+                  ]
+              }
+            `
+        } 
+      }],
+    }
+  })
+}
+
+function getSingleClipIntegration(role: Role, tableName: string) {
+  // GET Integration with DynamoDb for single clip
+  return new AwsIntegration({
+    service: 'dynamodb',
+    action: 'GetItem',
+    options: {
+      passthroughBehavior: PassthroughBehavior.WHEN_NO_TEMPLATES,
+      credentialsRole: role,
+      requestTemplates: {
+        'application/json': `{
+          "Key": {
+            "id": {
+              "S": "$method.request.path.id"
+            }
+          },
+          "TableName": "${tableName}"
+        }`,
+      },
+      integrationResponses: [{ 
+        statusCode: '200', 
+        // responseTemplates: {
+        //   'application/json': `
+        //     #set($inputRoot = $input.path('$'))
+        //     {
+        //       "clips": [
+        //           #foreach($elem in $inputRoot.Items) {
+        //               "id": "$elem.id.S",
+        //               "duration": "$elem.duration.N",
+        //               "description": "$util.escapeJavaScript($elem.description.S).replaceAll("\\\\'","'")",
+        //               "uploader": "$elem.uploader.S",
+        //               "title": "$util.escapeJavaScript($elem.title.S).replaceAll("\\\\'","'")"
+        //             }#if($foreach.hasNext),#end
+        //           #end
+        //         ]
+        //     }
+        //   `
+        // } 
+      }],
+    }
+  })
+}

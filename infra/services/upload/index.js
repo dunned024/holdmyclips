@@ -3,7 +3,6 @@ import { CloudFormation } from '@aws-sdk/client-cloudformation'
 import { CloudFront } from '@aws-sdk/client-cloudfront'
 import { DynamoDB } from '@aws-sdk/client-dynamodb'
 import { S3 } from '@aws-sdk/client-s3'
-import * as parser from 'aws-lambda-multipart-parser';
 
 
 export const handler = async (event, context, callback) => {

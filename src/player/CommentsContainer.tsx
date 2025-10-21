@@ -1,45 +1,32 @@
 import React, { ChangeEvent, useEffect, useState } from 'react';
-import { Clip, Comment } from '../types';
-import './Player.css';
-import { useParams } from 'react-router-dom';
+import { Comment } from '../types';
+import './CommentsContainer.css';
 import { Grid, Stack } from '@mui/material';
-import { VideoComponent } from './VideoController';
 import { palette } from '../assets/themes/theme';
-import { readableTimestamp, secondsToMMSS } from '../services/time';
-import { getClipMetadata } from '../services/clips';
+import { readableTimestamp } from '../services/time';
 import { FaPlusCircle } from 'react-icons/fa';
-import { getUsername } from '../services/cognito';
 import * as CommentService from '../services/comments';
 import { FaGear } from 'react-icons/fa6';
 import { FaRegTrashAlt } from 'react-icons/fa';
 import { MdOutlineClose } from 'react-icons/md';
 
-export function Player() {
-  const { clipId } = useParams();
+interface CommentsContainerProps {
+  clipId: string;
+  username?: string;
+}
 
-  const [clip, setClip] = useState<Clip>();
-  const [maxDuration, setMaxDuration] = useState(0);
+export function CommentsContainer(props: CommentsContainerProps) {
+  const { clipId, username } = props;
+
   const [comments, setComments] = useState<Comment[]>([]);
-
-  const username = getUsername();
-
   useEffect(() => {
-    async function getClip(id: string) {
-      const clipMetadata = await getClipMetadata(id);
-      setClip(clipMetadata);
-
+    async function getComments(id: string) {
       const clipComments = await CommentService.getComments(id);
       setComments(clipComments);
     }
 
-    if (!clip && clipId) {
-      getClip(clipId);
-    }
-  }, [clipId, clip]);
-
-  if (!clipId || !clip) {
-    return <span />;
-  }
+    getComments(clipId);
+  }, [clipId]);
 
   async function postComment(commentText: string) {
     console.log(username);
@@ -86,79 +73,31 @@ export function Player() {
   }
 
   return (
-    <div id='player-container'>
-      <Stack id='player' direction='row'>
-        <Stack id='clip-container'>
-          <VideoComponent
-            sourceUrl={`https://clips.dunned024.com/clips/${clipId}/${clipId}.mp4`}
-            maxDuration={maxDuration}
-            loadClipDuration={setMaxDuration}
-          />
-          <h1 id='title'>{clip?.title}</h1>
-        </Stack>
-        <Stack id='sidebar'>
-          <ClipDetails clip={clip} />
-          <Stack
-            id='comments-container'
-            sx={{ backgroundColor: palette.secondary.light }}
-          >
-            <div>Comments</div>
-            <Stack
-              id='comments-box'
-              sx={{
-                backgroundColor: palette.secondary.main,
-                border: `1px solid ${palette.primary.light}`,
-                overflow: 'auto'
-              }}
-            >
-              {comments.map((comment) => (
-                <CommentCard
-                  key={comment.commentId}
-                  comment={comment}
-                  username={username}
-                  deleteComment={deleteComment}
-                />
-              ))}
-              {username !== undefined && (
-                <AddCommentContainer postComment={postComment} />
-              )}
-            </Stack>
-          </Stack>
-        </Stack>
-      </Stack>
-    </div>
-  );
-}
-
-function ClipDetails(props: { clip: Clip }) {
-  return (
     <Stack
-      id='details-container'
+      id='comments-container'
       sx={{ backgroundColor: palette.secondary.light }}
-      direction='column'
-      spacing={2}
     >
-      <Grid id='stats-container' container textAlign='left' spacing={1}>
-        <Grid id='uploader-text' item xs={12}>
-          <span>
-            Uploader: <b>{props.clip.uploader}</b>
-          </span>
-        </Grid>
-        <Grid id='duration-text' item xs={6}>
-          Duration: <b>{secondsToMMSS(props.clip.duration)}</b>
-        </Grid>
-        <Grid id='views-text' item textAlign='right' xs={6}>
-          <b>{props.clip.views ?? '?'}</b> views
-        </Grid>
-      </Grid>
-      {props.clip.description && (
-        <Stack
-          id='description-container'
-          sx={{ backgroundColor: palette.secondary.main }}
-        >
-          {props.clip.description}
-        </Stack>
-      )}
+      <div>Comments</div>
+      <Stack
+        id='comments-box'
+        sx={{
+          backgroundColor: palette.secondary.main,
+          border: `1px solid ${palette.primary.light}`,
+          overflow: 'auto'
+        }}
+      >
+        {comments.map((comment) => (
+          <CommentCard
+            key={comment.commentId}
+            comment={comment}
+            username={username}
+            deleteComment={deleteComment}
+          />
+        ))}
+        {username !== undefined && (
+          <AddCommentContainer postComment={postComment} />
+        )}
+      </Stack>
     </Stack>
   );
 }
