@@ -29,14 +29,11 @@ export class ClipdexStack extends Stack {
   constructor(scope: Construct, id: string, props: ConfiguredStackProps) {
     super(scope, id, props);
 
-<<<<<<< HEAD
-=======
     // Create DynamoDB table to act as metadata index
     const clipdexTable = new Table(this, "ClipdexTable", {
       partitionKey: { name: "id", type: AttributeType.STRING },
     });
 
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
     // Create REST API Gateway for querying table & uploading things
     const logGroup = new LogGroup(this, "APILogs");
     this.apiGateway = new RestApi(this, "RestApi", {
@@ -60,27 +57,6 @@ export class ClipdexStack extends Stack {
       },
     });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    // Create IAM Role for reading from table
-    const readTableRole = new Role(this, 'IntegrationRole', {
-      assumedBy: new ServicePrincipal('apigateway.amazonaws.com'),
-    })
-    clipdexTable.grantReadData(readTableRole);
-  
-    // Create 'clips' resource for querying clip metadata
-    const clipsResource = this.apiGateway.root.addResource('clips');
-    clipsResource.addMethod('GET', getAllClipsIntegration(readTableRole, clipdexTable.tableName), {
-      methodResponses: [{ statusCode: '200' }],
-    })
-=======
-    const lambdaRole = getLambdaRole(this);
-
-    const integrationRole = new Role(this, "IntegrationRole", {
-      assumedBy: new ServicePrincipal("apigateway.amazonaws.com"),
-    });
->>>>>>> 5c65b63 (use biome)
-=======
     // Create IAM Role for reading from table
     const readTableRole = new Role(this, "IntegrationRole", {
       assumedBy: new ServicePrincipal("apigateway.amazonaws.com"),
@@ -106,39 +82,20 @@ export class ClipdexStack extends Stack {
         methodResponses: [{ statusCode: "200" }],
       },
     );
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
 
     // Add Lambda integration for uploading clips
-<<<<<<< HEAD
-<<<<<<< HEAD
-    const lambdaRole = getLambdaRole(this)
-    const clipDataResource = this.apiGateway.root.addResource('clipdata');
-    const uploadLambda = new Function(this, 'UploadFunction', {
-=======
-=======
     const lambdaRole = getLambdaRole(this);
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
     const clipDataResource = this.apiGateway.root.addResource("clipdata");
     const uploadLambda = new Function(this, "UploadFunction", {
->>>>>>> 5c65b63 (use biome)
       runtime: Runtime.NODEJS_18_X,
       handler: "index.handler",
       code: Code.fromAsset(path.join(__dirname, "../services/upload/")),
       role: lambdaRole,
       timeout: Duration.minutes(2),
     });
-<<<<<<< HEAD
-    const uploadIntegration = new LambdaIntegration(uploadLambda)
-    clipDataResource.addMethod('PUT', uploadIntegration)  // PUT /clipdata
-    clipdexTable.grantReadWriteData(uploadLambda);
-=======
     const uploadIntegration = new LambdaIntegration(uploadLambda);
     clipDataResource.addMethod("PUT", uploadIntegration); // PUT /clipdata
-<<<<<<< HEAD
->>>>>>> 5c65b63 (use biome)
-=======
     clipdexTable.grantReadWriteData(uploadLambda);
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
 
     // Add Lambda integration for managing comments
     const clipCommentsResource =
@@ -154,65 +111,7 @@ export class ClipdexStack extends Stack {
     clipCommentsResource.addMethod("POST", commentsIntegration); // POST /clipcomments
     clipCommentsResource.addMethod("DELETE", commentsIntegration); // DELETE /clipcomments
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    new CfnOutput(this, 'ClipdexTableName', { value: clipdexTable.tableName });
-=======
-    // Create DynamoDB table to act as metadata index
-    const clipdexTable = new Table(this, "ClipdexTable", {
-      partitionKey: { name: "id", type: AttributeType.STRING },
-    });
-
-    // GET Integration with DynamoDb
-    const dynamoQueryIntegration = new AwsIntegration({
-      service: "dynamodb",
-      action: "Scan",
-      options: {
-        passthroughBehavior: PassthroughBehavior.WHEN_NO_TEMPLATES,
-        credentialsRole: integrationRole,
-        requestTemplates: {
-          "application/json": JSON.stringify({
-            TableName: clipdexTable.tableName,
-          }),
-        },
-        integrationResponses: [
-          {
-            statusCode: "200",
-            responseTemplates: {
-              "application/json": `
-              #set($inputRoot = $input.path('$'))
-              {
-                "clips": [
-                    #foreach($elem in $inputRoot.Items) {
-                        "id": "$elem.id.S",
-                        "duration": "$elem.duration.N",
-                        "description": "$util.escapeJavaScript($elem.description.S).replaceAll("\\\\'","'")",
-                        "uploader": "$elem.uploader.S",
-                        "title": "$util.escapeJavaScript($elem.title.S).replaceAll("\\\\'","'")"
-                      }#if($foreach.hasNext),#end
-                    #end
-                  ]
-              }
-            `,
-            },
-          },
-        ],
-      },
-    });
-
-    // Create 'clips' resource for uploading & querying clip metadata
-    const clipsResource = this.apiGateway.root.addResource("clips");
-    clipsResource.addMethod("GET", dynamoQueryIntegration, {
-      methodResponses: [{ statusCode: "200" }],
-    });
-
-    clipdexTable.grantReadData(integrationRole);
-    clipdexTable.grantReadWriteData(uploadLambda);
-
-=======
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
     new CfnOutput(this, "ClipdexTableName", { value: clipdexTable.tableName });
->>>>>>> 5c65b63 (use biome)
   }
 }
 
@@ -258,85 +157,6 @@ function getLambdaRole(scope: Construct) {
       "HMC-lambda-s3-access": uploadPolicy,
     },
   });
-<<<<<<< HEAD
-} 
-
-
-function getAllClipsIntegration(role: Role, tableName: string) {
-  // GET Integration with DynamoDb for all clips
-  return new AwsIntegration({
-    service: 'dynamodb',
-    action: 'Scan',
-    options: {
-      passthroughBehavior: PassthroughBehavior.WHEN_NO_TEMPLATES,
-      credentialsRole: role,
-      requestTemplates: {
-        'application/json': JSON.stringify({
-            'TableName': tableName,
-        }),
-      },
-      integrationResponses: [{ 
-        statusCode: '200', 
-        responseTemplates: {
-          'application/json': `
-              #set($inputRoot = $input.path('$'))
-              {
-                "clips": [
-                    #foreach($elem in $inputRoot.Items) {
-                        "id": "$elem.id.S",
-                        "duration": "$elem.duration.N",
-                        "description": "$util.escapeJavaScript($elem.description.S).replaceAll("\\\\'","'")",
-                        "uploader": "$elem.uploader.S",
-                        "uploadedOn": "$elem.uploadedOn.N",
-                        "title": "$util.escapeJavaScript($elem.title.S).replaceAll("\\\\'","'")"
-                      }#if($foreach.hasNext),#end
-                    #end
-                  ]
-              }
-            `
-        } 
-      }],
-    }
-  })
-}
-
-function getSingleClipIntegration(role: Role, tableName: string) {
-  // GET Integration with DynamoDb for single clip
-  return new AwsIntegration({
-    service: 'dynamodb',
-    action: 'GetItem',
-    options: {
-      passthroughBehavior: PassthroughBehavior.WHEN_NO_TEMPLATES,
-      credentialsRole: role,
-      requestTemplates: {
-        'application/json': `{
-          "Key": {
-            "id": {
-              "S": "$method.request.path.id"
-            }
-          },
-          "TableName": "${tableName}"
-        }`,
-      },
-      integrationResponses: [{ 
-        statusCode: '200', 
-        responseTemplates: {
-          'application/json': `
-            {
-              "id": "$input.path('$.Item.id.S')",
-              "duration": "$input.path('$.Item.duration.N')",
-              "description": "$util.escapeJavaScript($input.path('$.Item.description.S')).replaceAll("\\\\'","'")",
-              "uploader": "$input.path('$.Item.uploader.S')",
-              "uploadedOn": "$input.path('$.Item.uploadedOn.N')",
-              "title": "$util.escapeJavaScript($input.path('$.Item.title.S')).replaceAll("\\\\'","'")"
-            }
-          `
-        } 
-      }],
-    }
-  })
-=======
->>>>>>> 5c65b63 (use biome)
 }
 
 function getAllClipsIntegration(role: Role, tableName: string) {

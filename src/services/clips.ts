@@ -30,16 +30,8 @@ export function parseClip(rawClip: Record<string, string>): Clip {
     title: rawClip.title,
     uploader: rawClip.uploader,
     description: rawClip.description,
-<<<<<<< HEAD
-    duration: parseInt(rawClip.duration),
-    uploadedOn: parseInt(rawClip.uploadedOn)
-=======
     duration: Number.parseInt(rawClip.duration),
-<<<<<<< HEAD
->>>>>>> 5c65b63 (use biome)
-=======
     uploadedOn: Number.parseInt(rawClip.uploadedOn),
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
     // views: parseInt(rawClip.views),
     // comments: JSON.parse(rawClip.comments)
   };

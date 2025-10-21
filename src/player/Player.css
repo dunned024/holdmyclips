@@ -1,19 +1,8 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-#player-container {
-	height: 100%;
-}
-
->>>>>>> 5c65b63 (use biome)
-=======
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
 #player {
 	height: 100%;
 	display: flex;
 	flex-direction: row;
 }
-
 
 #clip-container {
 	width: calc(75% - 40px);
@@ -41,19 +30,9 @@
 }
 
 #details-container {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    max-height: 30%;
-    padding: 10px;
-    color: black;
-=======
-	max-height: 20%;
-=======
 	max-height: 30%;
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
 	padding: 10px;
 	color: black;
->>>>>>> 5c65b63 (use biome)
 
 	border-radius: 4px;
 
@@ -75,21 +54,10 @@
 }
 
 #comments-container {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    min-height: calc(70% - 50px);
-    padding: 10px;
-    margin: 10px 0 0 0;
-    color: black;
-=======
-	min-height: calc(80% - 50px);
-=======
 	min-height: calc(70% - 50px);
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
 	padding: 10px;
 	margin: 10px 0 0 0;
 	color: black;
->>>>>>> 5c65b63 (use biome)
 
 	flex: 1;
 	border-radius: 4px;
@@ -98,157 +66,6 @@
 	font-size: 16px;
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-@media only screen and (max-width: 1024px) {
-    #player {
-        flex-direction: column;
-    }
-    
-    #clip-container {
-        width: calc(100% - 20px);
-    }
-
-    #sidebar {
-        width: calc(100% - 20px);
-    }
-    #details-container {
-        max-height: 100%;
-    }
-=======
-#comments-box {
-	height: 100%;
-	margin: 10px 0 0 0;
-	border-radius: 4px;
-
-	overflow: auto;
-}
-
-#add-comment-container {
-	height: 140px;
-	min-height: 100px;
-	width: calc(100% - 8px);
-
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding: 4px;
-}
-
-#add-comment-button {
-	height: 70px;
-	width: 70%;
-	border-radius: 8px;
-
-	margin: 10px 0;
-
-	background-color: #23aca0;
-	color: #374153;
-
-	font-size: 32px;
-}
-
-#add-comment-button:hover:enabled {
-	transition-duration: 0.1s;
-	background-color: #21cea3;
-	color: #37635a;
-}
-
-#adding-comment-container {
-	height: 100%;
-	width: 100%;
-
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-}
-
-#comment-box {
-	width: 95%;
-	height: calc(70% - 6px);
-	margin-block: 3px;
-}
-
-#adding-comment-control {
-	width: 95%;
-	height: calc(30% - 6px);
-	display: flex;
-	flex-direction: row;
-	justify-content: right;
-
-	padding: 3px;
-}
-
-#adding-comment-control button {
-	width: 20%;
-	margin: 0 4px;
-}
-
-.comment {
-	color: #eee6ed;
-}
-
-.comment .header {
-	padding: 4px 8px;
-	font-weight: 500;
-}
-
-.comment .options {
-	height: 22px;
-	display: flex;
-	flex-direction: row;
-	justify-content: right;
-}
-
-.comment .options button {
-	height: 22px;
-	background-color: #37635a;
-	font-size: 20px;
-}
-
-.comment .options button:hover {
-	background-color: #37635a;
-	color: #67b1a8;
-	transition-duration: 0.1s;
-}
-
-.comment .gear {
-	width: 22px;
-	padding: 0;
-	margin: 0 4px;
-}
-
-.comment .options-buttons {
-	display: flex;
-	flex-direction: row;
-	justify-content: right;
-}
-
-.comment .close {
-	width: 22px;
-	padding: 0;
-	margin: 0 4px 0 0;
-}
-
-.comment .posted-at {
-	margin-left: 10px;
-	font-weight: 200;
-}
-
-.comment .separator {
-	margin: 2px 12px;
-	border-top: 0px;
-}
-
-.comment .text {
-	padding: 8px 20px 10px 20px;
-	text-align: left;
-	white-space: pre-line;
-	font-weight: 350;
-	color: #eee6ed;
->>>>>>> 5c65b63 (use biome)
-=======
 @media only screen and (max-width: 1024px) {
 	#player {
 			flex-direction: column;
@@ -264,5 +81,4 @@
 	#details-container {
 			max-height: 100%;
 	}
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
 }

@@ -1,17 +1,8 @@
-<<<<<<< HEAD
-'use strict';
-import { CloudFormation } from '@aws-sdk/client-cloudformation'
-import { CloudFront } from '@aws-sdk/client-cloudfront'
-import { DynamoDB } from '@aws-sdk/client-dynamodb'
-import { S3 } from '@aws-sdk/client-s3'
-
-=======
 import { CloudFormation } from "@aws-sdk/client-cloudformation";
 import { CloudFront } from "@aws-sdk/client-cloudfront";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { S3 } from "@aws-sdk/client-s3";
 import * as parser from "aws-lambda-multipart-parser";
->>>>>>> 5c65b63 (use biome)
 
 export const handler = async (event, context, callback) => {
   console.log({ event });
@@ -62,21 +53,12 @@ const storeIndexRecord = async (id, parsedData) => {
   );
   console.log({ parsedTitle: parsedData["title"], sanitizedTitle });
 
-<<<<<<< HEAD
-    indexItem['id'] = {S: id};
-    indexItem['title'] = {S: sanitizedTitle};
-    indexItem['uploader'] = {S: parsedData['uploader']};
-    indexItem['uploadedOn'] = {N: parsedData['uploadedOn']};
-    indexItem['description'] = {S: sanitizedDescription};
-    indexItem['duration'] = {N: parsedData['duration']};
-=======
   indexItem["id"] = { S: id };
   indexItem["title"] = { S: sanitizedTitle };
   indexItem["uploader"] = { S: parsedData["uploader"] };
   indexItem["uploadedOn"] = { N: parsedData["uploadedOn"] };
   indexItem["description"] = { S: sanitizedDescription };
   indexItem["duration"] = { N: parsedData["duration"] };
->>>>>>> 5c65b63 (use biome)
 
   const tableName = await _getStackOutput("HMCClipdex", "ClipdexTableName");
   console.log({ tableName });

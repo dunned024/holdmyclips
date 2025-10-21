@@ -13,23 +13,11 @@ import {
   LambdaEdgeEventType,
   OriginAccessIdentity,
   OriginRequestPolicy,
-<<<<<<< HEAD
-<<<<<<< HEAD
-  BehaviorOptions,
-  AddBehaviorOptions,
-  ResponseHeadersPolicy,
-  PriceClass
-} from 'aws-cdk-lib/aws-cloudfront';
-import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
-=======
-=======
   PriceClass,
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
   ResponseHeadersPolicy,
   ViewerProtocolPolicy,
 } from "aws-cdk-lib/aws-cloudfront";
 import { RestApiOrigin, S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
->>>>>>> 5c65b63 (use biome)
 import {
   ManagedPolicy,
   PolicyDocument,
@@ -198,15 +186,6 @@ export class StaticSiteStack extends Stack {
     const distribution = new Distribution(this, "Distribution", {
       additionalBehaviors: {
         ...auth.createAuthPagesBehaviors(authLambdas, s3Origin),
-<<<<<<< HEAD
-        'signedin': auth.createProtectedBehavior(authLambdas, s3Origin, protectedPageBehavior),
-        'upload': auth.createProtectedBehavior(authLambdas, s3Origin, protectedPageBehavior),
-        'uploadclip': auth.createProtectedBehavior(authLambdas, s3Origin, uploadBehavior),
-        'clipdata': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior), // pathPattern matches API endpoint
-        'clipcomments': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior), // pathPattern matches API endpoint
-        // 'preupload': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior), // pathPattern matches API endpoint
-        'player/*': linkPreviewBehavior // Adds Edge Lambda for link previews for player/* URIs
-=======
         signedin: auth.createProtectedBehavior(
           authLambdas,
           s3Origin,
@@ -233,7 +212,6 @@ export class StaticSiteStack extends Stack {
           uploadBehavior,
         ), // pathPattern matches API endpoint
         "player/*": linkPreviewBehavior, // Adds Edge Lambda for link previews for player/* URIs
->>>>>>> 5c65b63 (use biome)
       },
       certificate: props.hostedDomain.cert,
       defaultBehavior: defaultBehavior,
@@ -245,16 +223,8 @@ export class StaticSiteStack extends Stack {
     });
 
     // This path is responsible for returning data from the clipdex
-<<<<<<< HEAD
-    distribution.addBehavior('clips', apiOrigin, apiBehavior) // pathPattern matches API endpoint
-    distribution.addBehavior('clip/*', apiOrigin, apiBehavior) // pathPattern matches API endpoint
-=======
     distribution.addBehavior("clips", apiOrigin, apiBehavior); // pathPattern matches API endpoint
-<<<<<<< HEAD
->>>>>>> 5c65b63 (use biome)
-=======
     distribution.addBehavior("clip/*", apiOrigin, apiBehavior); // pathPattern matches API endpoint
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
 
     new ARecord(this, "DnsRecord", {
       recordName: props.fqdn,

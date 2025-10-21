@@ -207,25 +207,12 @@ export function Uploader() {
       currentMsg = `Uploading clip data - ID: ${id}`;
       setUploadProgressMsg(currentMsg);
 
-<<<<<<< HEAD
-      const dataRes = await fetch(`/clipdata`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          ...uploadData,
-          uploadedOn: Date.now().toString()
-        }),
-=======
       const dataRes = await fetch("/clipdata", {
         method: "PUT",
-<<<<<<< HEAD
-        body: JSON.stringify(uploadData),
->>>>>>> 5c65b63 (use biome)
-=======
         body: JSON.stringify({
           ...uploadData,
           uploadedOn: Date.now().toString(),
         }),
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",

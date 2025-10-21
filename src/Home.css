@@ -5,19 +5,6 @@
 }
 
 #home-control-bar {
-<<<<<<< HEAD
-    justify-content: space-between;
-}
-
-.control-container {
-    width: 33%;
-    justify-content: center;
-    align-items: center;
-}
-
-#sort-select-box {
-    width: 33%;
-=======
 	justify-content: space-between;
 }
 
@@ -29,7 +16,6 @@
 
 #sort-select-box {
 	width: 33%;
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
 }
 
 .link button {
@@ -113,26 +99,6 @@
 }
 
 .time-since-upload {
-<<<<<<< HEAD
-    z-index: 2;
-    position: absolute;
-    
-    height: 30px;
-    width: 100px;
-    left: -3px;
-    bottom: -3px;
-
-    background-color: black;
-    border-radius: 4px;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-
-    color: white;
-    text-align: center;
-    font-size: 10px;
-=======
 	z-index: 2;
 	position: absolute;
 
@@ -151,22 +117,11 @@
 	color: white;
 	text-align: center;
 	font-size: 10px;
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
 }
 
 .clip-duration {
-<<<<<<< HEAD
-    z-index: 2;
-    position: absolute;
-    
-    height: 30px;
-    width: 70px;
-    right: -3px;
-    bottom: -3px;
-=======
 	z-index: 2;
 	position: absolute;
->>>>>>> 5c65b63 (use biome)
 
 	height: 30px;
 	width: 70px;

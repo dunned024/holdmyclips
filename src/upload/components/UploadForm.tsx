@@ -86,16 +86,8 @@ export function FormAccordian(props: FormAccordianProps) {
       title,
       duration: props.clipDuration.toString(),
       uploader: props.username,
-<<<<<<< HEAD
-<<<<<<< HEAD
       uploadedOn: Date.now(),
-      description
-=======
-=======
-      uploadedOn: Date.now(),
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
       description,
->>>>>>> 5c65b63 (use biome)
       // views: 0,
       // comments: '[]'
     };

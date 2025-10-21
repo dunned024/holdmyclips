@@ -1,20 +1,8 @@
 {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    "/clip/goofy-share": "/goofy-share",
-    "/clips/goofy-share/goofy-share\\.json": "/goofy-share",
-    "/clips/goofy-share/goofy-share\\.comments\\.json": "/goofy-share-comments",
-    "/clip/hurricane-anemone": "/hurricane-anemone",
-    "/clips/hurricane-anemone/hurricane-anemone\\.json": "/hurricane-anemone",
-    "/clips/hurricane-anemone/hurricane-anemone\\.comments\\.json": "/hurricane-anemone-comments"
-=======
-=======
 	"/clip/goofy-share": "/goofy-share",
->>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
 	"/clips/goofy-share/goofy-share\\.json": "/goofy-share",
 	"/clips/goofy-share/goofy-share\\.comments\\.json": "/goofy-share-comments",
 	"/clip/hurricane-anemone": "/hurricane-anemone",
 	"/clips/hurricane-anemone/hurricane-anemone\\.json": "/hurricane-anemone",
 	"/clips/hurricane-anemone/hurricane-anemone\\.comments\\.json": "/hurricane-anemone-comments"
->>>>>>> 5c65b63 (use biome)
 }
