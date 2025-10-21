@@ -15,11 +15,10 @@ export async function getClips(): Promise<ClipDex> {
 }
 
 export async function getClipMetadata(id: string): Promise<Clip> {
-  // Note: can't persist this info from when it's first fetched on homepage
+  // TODO: Get this by fetching the ClipDex (maybe? still true?)
+  //  Note: can't persist this info from when it's first fetched
   //  https://stackoverflow.com/a/53455443
-  // Need a state store, like https://redux.js.org/api/store
-  //  https://stackoverflow.com/q/31168014
-  const res = await fetch(`${ENDPOINT}/clip/${id}`);
+  const res = await fetch(`${ENDPOINT}/clips/${id}/${id}.json`);
   const data = await res.json();
 
   return parseClip(data);
@@ -42,5 +41,6 @@ export function parseClip(rawClip: Record<string, string>): Clip {
     uploadedOn: Number.parseInt(rawClip.uploadedOn),
 >>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
     // views: parseInt(rawClip.views),
+    // comments: JSON.parse(rawClip.comments)
   };
 }

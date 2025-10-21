@@ -28,10 +28,6 @@ export class ClipdexStack extends Stack {
 
   constructor(scope: Construct, id: string, props: ConfiguredStackProps) {
     super(scope, id, props);
-    // Create DynamoDB table to act as metadata index
-    const clipdexTable = new Table(this, 'ClipdexTable', {
-      partitionKey: {name:'id', type: AttributeType.STRING},
-    });
 
 <<<<<<< HEAD
 =======
@@ -112,12 +108,6 @@ export class ClipdexStack extends Stack {
     );
 >>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
 
-    const clipResource = this.apiGateway.root.addResource('clip');
-    const singleClipResource = clipResource.addResource('{id}');
-    singleClipResource.addMethod('GET', getSingleClipIntegration(readTableRole, clipdexTable.tableName), {
-      methodResponses: [{ statusCode: '200' }],
-    })
-  
     // Add Lambda integration for uploading clips
 <<<<<<< HEAD
 <<<<<<< HEAD
