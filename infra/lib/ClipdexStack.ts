@@ -158,6 +158,7 @@ function getAllClipsIntegration(role: Role, tableName: string) {
                         "duration": "$elem.duration.N",
                         "description": "$util.escapeJavaScript($elem.description.S).replaceAll("\\\\'","'")",
                         "uploader": "$elem.uploader.S",
+                        "uploadedOn": "$elem.uploadedOn.N",
                         "title": "$util.escapeJavaScript($elem.title.S).replaceAll("\\\\'","'")"
                       }#if($foreach.hasNext),#end
                     #end
@@ -197,6 +198,7 @@ function getSingleClipIntegration(role: Role, tableName: string) {
               "duration": "$input.path('$.Item.duration.N')",
               "description": "$util.escapeJavaScript($input.path('$.Item.description.S')).replaceAll("\\\\'","'")",
               "uploader": "$input.path('$.Item.uploader.S')",
+              "uploadedOn": "$input.path('$.Item.uploadedOn.N')",
               "title": "$util.escapeJavaScript($input.path('$.Item.title.S')).replaceAll("\\\\'","'")"
             }
           `
