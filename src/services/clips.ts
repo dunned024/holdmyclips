@@ -15,7 +15,6 @@ export async function getClips(): Promise<ClipDex> {
 }
 
 export async function getClipMetadata(id: string): Promise<Clip> {
-  // TODO: Get this by fetching the ClipDex (maybe? still true?)
   // Note: can't persist this info from when it's first fetched on homepage
   //  https://stackoverflow.com/a/53455443
   // Need a state store, like https://redux.js.org/api/store

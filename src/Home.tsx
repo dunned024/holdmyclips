@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import './Home.css';
 import { Link } from 'react-router-dom';
+import { Stack } from '@mui/material';
 import { Clip, ClipDex } from './types';
 import { getClips } from './services/clips';
 import { getUsername } from './services/cognito';
 import { secondsToMMSS } from './services/time';
+import { SORT_KEY_MAP, SortSelect } from './components/SortSelect';
 
 export function Home() {
+  const [sortKey, setSortKey] =
+    useState<keyof typeof SORT_KEY_MAP>('Title (A-Z)');
+  const sortFunction = SORT_KEY_MAP[sortKey];
+
   const [clipDex, setClipDex] = useState<ClipDex>({});
   const username = getUsername();
 
@@ -23,26 +29,39 @@ export function Home() {
 
   return (
     <div id='home'>
-      <div className='upload-button-row'>
-        {username ? (
-          <a className='link' id='upload-link' href='/upload' rel='noreferrer'>
-            <button>Upload clip</button>
-          </a>
-        ) : (
-          <a
-            className='link'
-            id='signin-link'
-            href='/signedin'
-            rel='noreferrer'
-          >
-            <button>Sign in</button>
-          </a>
-        )}
-      </div>
+      <Stack id='home-control-bar' direction='row'>
+        <Stack className='control-container'>
+          <SortSelect sortKey={sortKey} setSortKey={setSortKey} />
+        </Stack>
+        <Stack className='control-container'>
+          {username ? (
+            <a
+              className='link'
+              id='upload-link'
+              href='/upload'
+              rel='noreferrer'
+            >
+              <button>Upload clip</button>
+            </a>
+          ) : (
+            <a
+              className='link'
+              id='signin-link'
+              href='/signedin'
+              rel='noreferrer'
+            >
+              <button>Sign in</button>
+            </a>
+          )}
+        </Stack>
+        <Stack className='control-container' />
+      </Stack>
       <div className='clip-rows'>
-        {Object.entries(clipDex).map(([clipId, clip]) => (
-          <ClipCard key={clipId} clip={clip} />
-        ))}
+        {Object.entries(clipDex)
+          .sort(sortFunction)
+          .map(([clipId, clip]) => (
+            <ClipCard key={clipId} clip={clip} />
+          ))}
       </div>
     </div>
   );
