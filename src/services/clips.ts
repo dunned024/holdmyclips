@@ -1,15 +1,15 @@
-import { ENDPOINT } from '../config';
-import { Clip, ClipDex } from '../types';
+import { ENDPOINT } from "src/config";
+import type { Clip, ClipDex } from "src/types";
 
 export async function getClips(): Promise<ClipDex> {
   const res = await fetch(`${ENDPOINT}/clips`);
   const data = await res.json();
 
   const clipList: ClipDex = {};
-  data.clips.forEach((rawClip: Record<string, string>) => {
+  for (const rawClip of data.clips) {
     const clip = parseClip(rawClip);
     clipList[clip.id] = clip;
-  });
+  }
 
   return clipList;
 }
@@ -31,8 +31,16 @@ export function parseClip(rawClip: Record<string, string>): Clip {
     title: rawClip.title,
     uploader: rawClip.uploader,
     description: rawClip.description,
+<<<<<<< HEAD
     duration: parseInt(rawClip.duration),
     uploadedOn: parseInt(rawClip.uploadedOn)
+=======
+    duration: Number.parseInt(rawClip.duration),
+<<<<<<< HEAD
+>>>>>>> 5c65b63 (use biome)
+=======
+    uploadedOn: Number.parseInt(rawClip.uploadedOn),
+>>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
     // views: parseInt(rawClip.views),
   };
 }

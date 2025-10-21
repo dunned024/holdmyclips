@@ -1,110 +1,109 @@
-
 #thumbnail-container {
-    border-radius: 4px;
-    padding: 10px;
-    justify-content: center;
-    align-items: center;
+	border-radius: 4px;
+	padding: 10px;
+	justify-content: center;
+	align-items: center;
 }
 
 #thumbnail-container button {
-    width: 100%;
-    padding: 4px;
+	width: 100%;
+	padding: 4px;
 }
 
 #thumbnail-button-container {
-    margin: 5px 0 0 0;
-    width: 100%;
+	margin: 5px 0 0 0;
+	width: 100%;
 }
 
 #capture-frame-button {
-    height: 100%;
+	height: 100%;
 }
 
 #thumbnail-filename-field {
-    background-color: #949494;
-    padding: 2px;
-    margin: 5px 0;
+	background-color: #949494;
+	padding: 2px;
+	margin: 5px 0;
 }
 
 #thumbnail-filename-field::placeholder {
-    opacity: 1;
+	opacity: 1;
 }
 
 #cropping-overlay {
-    z-index: 2;
-    position: fixed;
-    background-color: rgba(0, 0, 0, 0.90);
-    width: 100vw;
-    height: 100vh;
-    padding: 0;
-    margin: 0;
-    top: 0;
-    left: 0;
+	z-index: 2;
+	position: fixed;
+	background-color: rgba(0, 0, 0, 0.9);
+	width: 100vw;
+	height: 100vh;
+	padding: 0;
+	margin: 0;
+	top: 0;
+	left: 0;
 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
 }
 
 #cropping-overlay-element-container {
-    width: 100%;
-    height: 100%;
+	width: 100%;
+	height: 100%;
 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
 }
 
 #cropping-close-button {
-    position: absolute;
-    top: 2%;
-    left: 90%;
+	position: absolute;
+	top: 2%;
+	left: 90%;
 
-    height: 80px;
-    width: 80px;
-    max-height: 80px;
-    max-width: 80px;
+	height: 80px;
+	width: 80px;
+	max-height: 80px;
+	max-width: 80px;
 
-    border-radius: 50%;
+	border-radius: 50%;
 }
 
 #cropping-button-grid-container {
-    width: 100%;
-    display: flex;
-    justify-content: center;
+	width: 100%;
+	display: flex;
+	justify-content: center;
 
-    margin: 20px 0;
+	margin: 20px 0;
 }
 
 #cropping-button-grid-container button {
-    height: 30px;
-    font-size: 20px
+	height: 30px;
+	font-size: 20px;
 }
 
 #cropping-button-grid {
-    width: 50%;
+	width: 50%;
 }
 
 .react-crop {
-    max-height: 800px;
+	max-height: 800px;
 }
 
 #crop-instruct {
-    position: absolute;
-    height: 30px;
+	position: absolute;
+	height: 30px;
 
-    left: 0;
-    right: 0;
-    margin-left: auto;
-    margin-right: auto;
+	left: 0;
+	right: 0;
+	margin-left: auto;
+	margin-right: auto;
 
-    top: calc(50% - 15px);
+	top: calc(50% - 15px);
 
-    background-color: rgba(0, 0, 0, 0.50);
-    color: #fff;
+	background-color: rgba(0, 0, 0, 0.5);
+	color: #fff;
 }
 
 #cropping-canvas {
-    max-height: 800px;
+	max-height: 800px;
 }

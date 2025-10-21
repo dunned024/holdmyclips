@@ -1,25 +1,25 @@
-import React, {
-  ChangeEvent,
-  FormEvent,
-  MutableRefObject,
-  ReactElement,
-  useState
-} from 'react';
-import './UploadForm.css';
-import { randomId } from '../../services/clipIdentifiers';
-import { styled } from '@mui/material/styles';
-import { ClipUploadData } from '../../types';
-import Grid from '@mui/material/Unstable_Grid2';
-import TextField from '@mui/material/TextField';
-import 'react-image-crop/dist/ReactCrop.css';
-import ReactPlayer from 'react-player';
-import Accordion, { AccordionProps } from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import Stack from '@mui/material/Stack';
-import { palette } from '../../assets/themes/theme';
-import { ThumbnailSetter } from './Thumbnail';
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import Accordion, { type AccordionProps } from "@mui/material/Accordion";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Grid from "@mui/material/Unstable_Grid2";
+import { styled } from "@mui/material/styles";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  type MutableRefObject,
+  type ReactElement,
+  useState,
+} from "react";
+import type ReactPlayer from "react-player";
+import "react-image-crop/dist/ReactCrop.css";
+import { palette } from "src/assets/themes/theme";
+import { randomId } from "src/services/clipIdentifiers";
+import type { ClipUploadData } from "src/types";
+import { ThumbnailSetter } from "src/upload/components/Thumbnail";
+import "src/upload/components/UploadForm.css";
 
 interface FormAccordianProps {
   id?: string;
@@ -36,13 +36,13 @@ const StyledAccordion = styled((props: AccordionProps) => (
 ))(({ theme }) => ({
   backgroundColor: palette.secondary.light,
   border: `1px solid ${theme.palette.divider}`,
-  '&:not(:last-child)': {
-    borderBottom: 0
-  }
+  "&:not(:last-child)": {
+    borderBottom: 0,
+  },
 }));
 
 export function FormAccordian(props: FormAccordianProps) {
-  const [expanded, setExpanded] = useState<string | false>('panel1');
+  const [expanded, setExpanded] = useState<string | false>("panel1");
   const duration = `${Math.ceil(props.clipDuration).toString()}s`;
 
   const [title, setTitle] = useState<string>(props.source.name);
@@ -52,8 +52,8 @@ export function FormAccordian(props: FormAccordianProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
 
   const handleTitleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value === '') {
-      setTitleError('Title cannot be empty');
+    if (e.target.value === "") {
+      setTitleError("Title cannot be empty");
     } else {
       setTitleError(undefined);
     }
@@ -68,16 +68,16 @@ export function FormAccordian(props: FormAccordianProps) {
     setExpanded(panel);
   };
 
-  const handleSubmit = function (e: FormEvent) {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
     if (!title) {
-      console.log('error: must include title');
+      console.log("error: must include title");
       return;
     }
 
     if (!props.username) {
-      console.log('error: are you logged in??');
+      console.log("error: are you logged in??");
       return;
     }
 
@@ -86,8 +86,16 @@ export function FormAccordian(props: FormAccordianProps) {
       title,
       duration: props.clipDuration.toString(),
       uploader: props.username,
+<<<<<<< HEAD
+<<<<<<< HEAD
       uploadedOn: Date.now(),
       description
+=======
+=======
+      uploadedOn: Date.now(),
+>>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
+      description,
+>>>>>>> 5c65b63 (use biome)
       // views: 0,
       // comments: '[]'
     };
@@ -98,23 +106,23 @@ export function FormAccordian(props: FormAccordianProps) {
 
   return (
     <div id={props.id}>
-      <Stack id='form-container'>
+      <Stack id="form-container">
         <StyledAccordion
-          expanded={expanded === 'panel1'}
-          onChange={handlePanelChange('panel1')}
+          expanded={expanded === "panel1"}
+          onChange={handlePanelChange("panel1")}
           defaultExpanded={true}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             Details
           </AccordionSummary>
           <AccordionDetails sx={{ flexGrow: 1 }}>
-            <Grid id='form-grid' container spacing={2}>
-              <Grid xs={12} className='field'>
+            <Grid id="form-grid" container spacing={2}>
+              <Grid xs={12} className="field">
                 <TextField
-                  label='Title'
-                  color='primary'
+                  label="Title"
+                  color="primary"
                   fullWidth
-                  type='text'
+                  type="text"
                   InputLabelProps={{ shrink: true }}
                   value={title}
                   onChange={handleTitleInputChange}
@@ -123,30 +131,30 @@ export function FormAccordian(props: FormAccordianProps) {
                   required
                 />
               </Grid>
-              <Grid xs={4} className='field'>
+              <Grid xs={4} className="field">
                 <TextField
-                  label='Duration'
-                  color='primary'
+                  label="Duration"
+                  color="primary"
                   disabled
                   InputLabelProps={{ shrink: true }}
                   value={duration}
                 />
               </Grid>
-              <Grid xs={8} className='field'>
+              <Grid xs={8} className="field">
                 <TextField
-                  label='Uploader'
+                  label="Uploader"
                   fullWidth
-                  color='primary'
-                  type='text'
+                  color="primary"
+                  type="text"
                   disabled
                   InputLabelProps={{ shrink: true }}
-                  defaultValue={props.username || ''}
+                  defaultValue={props.username || ""}
                 />
               </Grid>
-              <Grid xs={12} className='field'>
+              <Grid xs={12} className="field">
                 <TextField
-                  label='Description'
-                  color='primary'
+                  label="Description"
+                  color="primary"
                   fullWidth
                   multiline
                   rows={2}
@@ -159,8 +167,8 @@ export function FormAccordian(props: FormAccordianProps) {
           </AccordionDetails>
         </StyledAccordion>
         <StyledAccordion
-          expanded={expanded === 'panel2'}
-          onChange={handlePanelChange('panel2')}
+          expanded={expanded === "panel2"}
+          onChange={handlePanelChange("panel2")}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             Thumbnail
@@ -173,8 +181,8 @@ export function FormAccordian(props: FormAccordianProps) {
           </AccordionDetails>
         </StyledAccordion>
         <StyledAccordion
-          expanded={expanded === 'panel3'}
-          onChange={handlePanelChange('panel3')}
+          expanded={expanded === "panel3"}
+          onChange={handlePanelChange("panel3")}
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             Trimming
@@ -182,7 +190,7 @@ export function FormAccordian(props: FormAccordianProps) {
           <AccordionDetails>{props.TrimComponent}</AccordionDetails>
         </StyledAccordion>
       </Stack>
-      <button id='submit-button' onClick={handleSubmit}>
+      <button id="submit-button" onClick={handleSubmit} type="button">
         Upload!
       </button>
     </div>

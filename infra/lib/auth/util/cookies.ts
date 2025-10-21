@@ -1,14 +1,14 @@
-import { CloudFrontHeaders } from "aws-lambda"
-import { parse } from "cookie"
-import { decodeIdToken } from "./jwt"
+import type { CloudFrontHeaders } from "aws-lambda";
+import { parse } from "cookie";
+import { decodeIdToken } from "./jwt";
 
-type Cookies = Record<string, string | undefined>
+type Cookies = Record<string, string | undefined>;
 
 export interface CookieSettings {
-  idToken: string
-  accessToken: string
-  refreshToken: string
-  nonce: string
+  idToken: string;
+  accessToken: string;
+  refreshToken: string;
+  nonce: string;
 }
 
 /**
@@ -20,7 +20,7 @@ export interface CookieSettings {
  */
 function extractCookiesFromHeaders(headers: CloudFrontHeaders): Cookies {
   if (!headers["cookie"]) {
-    return {}
+    return {};
   }
   const cookies = headers["cookie"].reduce<Cookies>(
     (reduced, header) => ({
@@ -28,9 +28,9 @@ function extractCookiesFromHeaders(headers: CloudFrontHeaders): Cookies {
       ...(parse(header.value) as Cookies),
     }),
     {},
-  )
+  );
 
-  return cookies
+  return cookies;
 }
 
 function withCookieDomain(
@@ -39,31 +39,31 @@ function withCookieDomain(
 ) {
   if (cookieSettings.toLowerCase().indexOf("domain") === -1) {
     // Add leading dot for compatibility with Amplify (or js-cookie really).
-    return `${cookieSettings}; Domain=.${distributionDomainName}`
+    return `${cookieSettings}; Domain=.${distributionDomainName}`;
   }
-  return cookieSettings
+  return cookieSettings;
 }
 
 export function extractAndParseCookies(
   headers: CloudFrontHeaders,
   clientId: string,
 ): {
-  tokenUserName?: string
-  idToken?: string
-  accessToken?: string
-  refreshToken?: string
-  scopes?: string
-  nonce?: string
-  nonceHmac?: string
-  pkce?: string
+  tokenUserName?: string;
+  idToken?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  scopes?: string;
+  nonce?: string;
+  nonceHmac?: string;
+  pkce?: string;
 } {
-  const cookies = extractCookiesFromHeaders(headers)
+  const cookies = extractCookiesFromHeaders(headers);
   if (!cookies) {
-    return {}
+    return {};
   }
 
-  const keyPrefix = `CognitoIdentityServiceProvider.${clientId}`
-  const tokenUserName = cookies[`${keyPrefix}.LastAuthUser`]
+  const keyPrefix = `CognitoIdentityServiceProvider.${clientId}`;
+  const tokenUserName = cookies[`${keyPrefix}.LastAuthUser`];
 
   return {
     tokenUserName,
@@ -74,33 +74,33 @@ export function extractAndParseCookies(
     nonce: cookies["spa-auth-edge-nonce"],
     nonceHmac: cookies["spa-auth-edge-nonce-hmac"],
     pkce: cookies["spa-auth-edge-pkce"],
-  }
+  };
 }
 
 export function generateCookies(param: {
-  event: "newTokens" | "signOut" | "refreshFailed"
-  clientId: string
-  oauthScopes: string[]
-  domainName: string
-  cookieSettings: CookieSettings
+  event: "newTokens" | "signOut" | "refreshFailed";
+  clientId: string;
+  oauthScopes: string[];
+  domainName: string;
+  cookieSettings: CookieSettings;
   tokens: {
-    idToken: string
-    accessToken: string
-    refreshToken: string
-  }
+    idToken: string;
+    accessToken: string;
+    refreshToken: string;
+  };
 }): string[] {
   // Set cookies with the exact names and values Amplify uses
   // for seamless interoperability with Amplify.
-  const decodedIdToken = decodeIdToken(param.tokens.idToken)
-  const tokenUserName = decodedIdToken["cognito:username"] as string
-  const keyPrefix = `CognitoIdentityServiceProvider.${param.clientId}`
-  const idTokenKey = `${keyPrefix}.${tokenUserName}.idToken`
-  const accessTokenKey = `${keyPrefix}.${tokenUserName}.accessToken`
-  const refreshTokenKey = `${keyPrefix}.${tokenUserName}.refreshToken`
-  const lastUserKey = `${keyPrefix}.LastAuthUser`
-  const scopeKey = `${keyPrefix}.${tokenUserName}.tokenScopesString`
-  const scopesString = param.oauthScopes.join(" ")
-  const userDataKey = `${keyPrefix}.${tokenUserName}.userData`
+  const decodedIdToken = decodeIdToken(param.tokens.idToken);
+  const tokenUserName = decodedIdToken["cognito:username"] as string;
+  const keyPrefix = `CognitoIdentityServiceProvider.${param.clientId}`;
+  const idTokenKey = `${keyPrefix}.${tokenUserName}.idToken`;
+  const accessTokenKey = `${keyPrefix}.${tokenUserName}.accessToken`;
+  const refreshTokenKey = `${keyPrefix}.${tokenUserName}.refreshToken`;
+  const lastUserKey = `${keyPrefix}.LastAuthUser`;
+  const scopeKey = `${keyPrefix}.${tokenUserName}.tokenScopesString`;
+  const scopesString = param.oauthScopes.join(" ");
+  const userDataKey = `${keyPrefix}.${tokenUserName}.userData`;
   const userData = JSON.stringify({
     UserAttributes: [
       {
@@ -113,7 +113,7 @@ export function generateCookies(param: {
       },
     ],
     Username: tokenUserName,
-  })
+  });
 
   // Construct object with the cookies
   const cookies = {
@@ -145,28 +145,27 @@ export function generateCookies(param: {
       param.domainName,
       param.cookieSettings.accessToken,
     )}`,
-  }
+  };
 
   if (param.event === "signOut") {
     // Expire all cookies
     Object.keys(cookies).forEach(
       (key) => (cookies[key] = expireCookie(cookies[key])),
-    )
+    );
   } else if (param.event === "refreshFailed") {
     // Expire refresh token (so the browser will not send it in vain again)
-    cookies[refreshTokenKey] = expireCookie(cookies[refreshTokenKey])
+    cookies[refreshTokenKey] = expireCookie(cookies[refreshTokenKey]);
   }
-
   // Nonce, nonceHmac and pkce are only used during login phase.
-  ;[
+  [
     "spa-auth-edge-nonce",
     "spa-auth-edge-nonce-hmac",
     "spa-auth-edge-pkce",
   ].forEach((key) => {
-    cookies[key] = expireCookie(cookies[key])
-  })
+    cookies[key] = expireCookie(cookies[key]);
+  });
 
-  return Object.entries(cookies).map(([k, v]) => `${k}=${v}`)
+  return Object.entries(cookies).map(([k, v]) => `${k}=${v}`);
 }
 
 function expireCookie(cookie = "") {
@@ -174,8 +173,8 @@ function expireCookie(cookie = "") {
     .split(";")
     .map((part) => part.trim())
     .filter((part) => !part.toLowerCase().startsWith("max-age"))
-    .filter((part) => !part.toLowerCase().startsWith("expires"))
-  const expires = `Expires=${new Date(0).toUTCString()}`
+    .filter((part) => !part.toLowerCase().startsWith("expires"));
+  const expires = `Expires=${new Date(0).toUTCString()}`;
   // First part is the cookie value, which we'll clear.
-  return ["", ...cookieParts.slice(1), expires].join("; ")
+  return ["", ...cookieParts.slice(1), expires].join("; ");
 }

@@ -1,4 +1,4 @@
-import {
+import type {
   CloudFrontHeaders,
   CloudFrontRequestEvent,
   CloudFrontRequestHandler,
@@ -6,10 +6,10 @@ import {
   CloudFrontResponseEvent,
   CloudFrontResponseHandler,
   CloudFrontResponseResult,
-} from "aws-lambda"
-import { Config, getConfig } from "./config"
+} from "aws-lambda";
+import { type Config, getConfig } from "./config";
 
-export type HttpHeaders = Record<string, string>
+export type HttpHeaders = Record<string, string>;
 
 const html = `
   <!DOCTYPE html>
@@ -32,7 +32,7 @@ const html = `
       </p>
     </body>
   </html>
-`
+`;
 
 function asCloudFrontHeaders(headers: HttpHeaders): CloudFrontHeaders {
   return Object.entries(headers).reduce(
@@ -46,13 +46,13 @@ function asCloudFrontHeaders(headers: HttpHeaders): CloudFrontHeaders {
         ],
       }),
     {} as CloudFrontHeaders,
-  )
+  );
 }
 
 export function redirectTo(
   path: string,
   props?: {
-    cookies?: string[]
+    cookies?: string[];
   },
 ): CloudFrontResponseResult {
   const headers: CloudFrontHeaders = props?.cookies
@@ -62,7 +62,7 @@ export function redirectTo(
           value,
         })),
       }
-    : {}
+    : {};
 
   return {
     status: "307",
@@ -76,16 +76,16 @@ export function redirectTo(
       ],
       ...headers,
     },
-  }
+  };
 }
 
 export function staticPage(props: {
-  title: string
-  message: string
-  details: string
-  linkHref: string
-  linkText: string
-  statusCode?: string
+  title: string;
+  message: string;
+  details: string;
+  linkHref: string;
+  linkText: string;
+  statusCode?: string;
 }): CloudFrontResponseResult {
   return {
     body: createErrorHtml(props),
@@ -98,28 +98,28 @@ export function staticPage(props: {
         },
       ],
     },
-  }
+  };
 }
 
 function createErrorHtml(props: {
-  title: string
-  message: string
-  details: string
-  linkHref: string
-  linkText: string
+  title: string;
+  message: string;
+  details: string;
+  linkHref: string;
+  linkText: string;
 }): string {
-  const params = { ...props, region: process.env.AWS_REGION }
+  const params = { ...props, region: process.env.AWS_REGION };
   return html.replace(
     /\\\${([^}]*)}/g,
     (_, v: keyof typeof params) => params[v] || "",
-  )
+  );
 }
 
 function addCloudFrontHeaders<
   T extends CloudFrontRequestResult | CloudFrontResponseResult,
 >(config: Config, response: T): T {
   if (!response) {
-    throw new Error("Expected response value")
+    throw new Error("Expected response value");
   }
 
   return {
@@ -128,31 +128,31 @@ function addCloudFrontHeaders<
       ...(response.headers ?? {}),
       ...asCloudFrontHeaders(config.httpHeaders),
     },
-  }
+  };
 }
 
 export type RequestHandler = (
   config: Config,
   event: CloudFrontRequestEvent,
-) => Promise<CloudFrontRequestResult>
+) => Promise<CloudFrontRequestResult>;
 
 export function createRequestHandler(
   inner: RequestHandler,
 ): CloudFrontRequestHandler {
-  let config: Config
+  let config: Config;
 
   return async (event) => {
     if (!config) {
-      config = getConfig()
+      config = getConfig();
     }
 
-    config.logger.debug("Handling event:", event)
+    config.logger.debug("Handling event:", event);
 
-    const response = addCloudFrontHeaders(config, await inner(config, event))
+    const response = addCloudFrontHeaders(config, await inner(config, event));
 
-    config.logger.debug("Returning response:", response)
-    return response
-  }
+    config.logger.debug("Returning response:", response);
+    return response;
+  };
 }
 
 export function createResponseHandler(
@@ -161,18 +161,18 @@ export function createResponseHandler(
     event: CloudFrontResponseEvent,
   ) => Promise<CloudFrontResponseResult>,
 ): CloudFrontResponseHandler {
-  let config: Config
+  let config: Config;
 
   return async (event) => {
     if (!config) {
-      config = getConfig()
+      config = getConfig();
     }
 
-    config.logger.debug("Handling event:", event)
+    config.logger.debug("Handling event:", event);
 
-    const response = addCloudFrontHeaders(config, await inner(config, event))
+    const response = addCloudFrontHeaders(config, await inner(config, event));
 
-    config.logger.debug("Returning response:", response)
-    return response
-  }
+    config.logger.debug("Returning response:", response);
+    return response;
+  };
 }

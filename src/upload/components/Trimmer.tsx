@@ -1,11 +1,11 @@
-import React, { ChangeEvent, ReactElement } from 'react';
-import '../Previewer.css';
-import { styled } from '@mui/material/styles';
-import TextField from '@mui/material/TextField';
-import Slider, { SliderProps } from '@mui/material/Slider';
-import 'react-image-crop/dist/ReactCrop.css';
-import Stack from '@mui/material/Stack';
-import { palette } from '../../assets/themes/theme';
+import Slider, { type SliderProps } from "@mui/material/Slider";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import { styled } from "@mui/material/styles";
+import type { ChangeEvent, ReactElement } from "react";
+import "react-image-crop/dist/ReactCrop.css";
+import { palette } from "src/assets/themes/theme";
+import "src/upload/Previewer.css";
 
 export interface TrimProps {
   TrimSlider: ReactElement;
@@ -18,27 +18,27 @@ export interface TrimSliderProps extends SliderProps {
 }
 
 export const TrimSlider = styled(Slider, {
-  shouldForwardProp: (prop) => prop !== 'isTrimming'
+  shouldForwardProp: (prop) => prop !== "isTrimming",
 })<TrimSliderProps>(({ isTrimming }) => ({
   color: palette.secondary.main,
-  padding: '13px 0',
-  'pointer-events': 'none !important',
-  '& .MuiSlider-track': {
+  padding: "13px 0",
+  "pointer-events": "none !important",
+  "& .MuiSlider-track": {
     height: 10,
-    borderRadius: 0
+    borderRadius: 0,
   },
-  '& .MuiSlider-rail': {
+  "& .MuiSlider-rail": {
     height: 10,
-    borderRadius: 0
+    borderRadius: 0,
   },
-  '& .MuiSlider-thumb': {
-    'pointer-events': 'all !important',
+  "& .MuiSlider-thumb": {
+    "pointer-events": "all !important",
     color: palette.secondary.dark,
     height: 24,
     width: 5,
     borderRadius: 0,
-    display: isTrimming ? 'flex' : 'none'
-  }
+    display: isTrimming ? "flex" : "none",
+  },
 }));
 
 export interface TrimSetterProps {
@@ -57,48 +57,49 @@ export interface TrimSetterProps {
 
 export function TrimSetter(props: TrimSetterProps) {
   return (
-    <Stack id='trim-inputs-container' spacing={2}>
+    <Stack id="trim-inputs-container" spacing={2}>
       <button
-        id='trim-clip-button'
+        id="trim-clip-button"
         onClick={() => props.setIsTrimming(!props.isTrimming)}
         style={
           props.isTrimming ? { backgroundColor: palette.secondary.dark } : {}
         }
+        type="button"
       >
         Show trim sliders
       </button>
 
       <TextField
-        id='trim-start-field'
-        label='Start'
-        type='number'
-        color='secondary'
-        size='small'
-        error={props.trimStartError !== ''}
+        id="trim-start-field"
+        label="Start"
+        type="number"
+        color="secondary"
+        size="small"
+        error={props.trimStartError !== ""}
         helperText={props.trimStartError}
         InputLabelProps={{ shrink: true }}
         onChange={props.handleTrimStartInput}
         value={props.trimPips[0] / 1000}
         onBlur={(e) => {
           e.target.value = (props.trimPips[0] / 1000).toString();
-          props.setTrimStartError('');
+          props.setTrimStartError("");
         }}
       />
 
       <TextField
-        id='trim-end-field'
-        label='End'
-        type='number'
-        color='secondary'
-        size='small'
-        error={props.trimEndError !== ''}
+        id="trim-end-field"
+        label="End"
+        type="number"
+        color="secondary"
+        size="small"
+        error={props.trimEndError !== ""}
         helperText={props.trimEndError}
         InputLabelProps={{ shrink: true }}
         onChange={props.handleTrimEndInput}
         value={props.trimPips[1] / 1000}
         onBlur={(e) => {
           e.target.value = (props.trimPips[1] / 1000).toString();
-          props.setTrimEndError('');
+          props.setTrimEndError("");
         }}
       />
     </Stack>

@@ -1,61 +1,62 @@
 .app-header {
-  padding: 2px 10px;
-  height: 24px;
+	padding: 2px 10px;
+	height: 24px;
 
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	justify-content: space-between;
 
-  color: white;
-  text-align: center;
-  font-size: 16px;
+	color: white;
+	text-align: center;
+	font-size: 16px;
 }
 .header-container {
-  flex-grow: 1;
-  width: 33%;
+	flex-grow: 1;
+	width: 33%;
 }
 
 #header-container-ghlink {
-  text-align: left;
+	text-align: left;
 }
 #header-container-homelink {
-  text-align: center;
+	text-align: center;
 }
 #header-container-user {
-  display: flex;
-  text-align: right;
-  justify-content: right;
-  justify-items: right;
+	display: flex;
+	text-align: right;
+	justify-content: right;
+	justify-items: right;
 }
 
 .link {
-  color: white;
-  text-decoration: none
+	color: white;
+	text-decoration: none;
 }
 
 .link:hover {
-  text-decoration: underline
+	text-decoration: underline;
 }
 
 #github-link {
-  float: left;
-  display: flex;
-  align-items: center;
+	float: left;
+	display: flex;
+	align-items: center;
 }
 
 #github-icon {
-  padding-right: 2px;
+	padding-right: 2px;
 }
 
 .app {
-  height: calc(100vh - 28px);
+	height: calc(100vh - 28px);
 
-  color: white;
-  text-align: center;
-  background-size: cover;
+	color: white;
+	text-align: center;
+	background-size: cover;
 }
 
-button, input {
-  font-family: inherit;
+button,
+input {
+	font-family: inherit;
 }

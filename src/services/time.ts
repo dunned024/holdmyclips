@@ -5,17 +5,17 @@ export function formatTime(value: number) {
 export function secondsToMMSS(value: number) {
   const secondsPastMinute = Math.floor(value % 60)
     .toString()
-    .padStart(2, '0');
+    .padStart(2, "0");
   const minutes = Math.floor(value / 60)
     .toString()
-    .padStart(2, '0');
+    .padStart(2, "0");
   return `${minutes}:${secondsPastMinute}`;
 }
 
 export function readableTimestamp(timestamp: number) {
   const date = new Date(timestamp);
-  const yyyymmdd = date.toISOString().split('T')[0];
-  const hhmmss = date.toTimeString().split(' ')[0];
+  const yyyymmdd = date.toISOString().split("T")[0];
+  const hhmmss = date.toTimeString().split(" ")[0];
   return `${yyyymmdd} @ ${hhmmss}`;
 }
 
@@ -29,6 +29,7 @@ export function getTimeSinceString(timestamp: number) {
     DAY_IN_SECONDS,
     WEEK_IN_SECONDS,
     MONTH_IN_SECONDS,
+<<<<<<< HEAD
     YEAR_IN_SECONDS
   ] = [3600, 86400, 604800, 2592000, 31536000];
 
@@ -50,4 +51,35 @@ export function getTimeSinceString(timestamp: number) {
     const years = Math.floor(timeDiff / YEAR_IN_SECONDS);
     return `${years} year${years > 1 ? 's' : ''} ago`;
   }
+=======
+    YEAR_IN_SECONDS,
+  ] = [3600, 86400, 604800, 2592000, 31536000];
+
+  if (timeDiff <= HOUR_IN_SECONDS) {
+    return "< 1 hour ago";
+  }
+
+  if (timeDiff <= DAY_IN_SECONDS) {
+    const hours = Math.floor(timeDiff / HOUR_IN_SECONDS);
+    return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+  }
+
+  if (timeDiff <= WEEK_IN_SECONDS) {
+    const days = Math.floor(timeDiff / DAY_IN_SECONDS);
+    return `${days} day${days > 1 ? "s" : ""} ago`;
+  }
+
+  if (timeDiff <= MONTH_IN_SECONDS) {
+    const weeks = Math.floor(timeDiff / WEEK_IN_SECONDS);
+    return `${weeks} week${weeks > 1 ? "s" : ""} ago`;
+  }
+
+  if (timeDiff <= YEAR_IN_SECONDS) {
+    const months = Math.floor(timeDiff / MONTH_IN_SECONDS);
+    return `${months} month${months > 1 ? "s" : ""} ago`;
+  }
+
+  const years = Math.floor(timeDiff / YEAR_IN_SECONDS);
+  return `${years} year${years > 1 ? "s" : ""} ago`;
+>>>>>>> 9a64e6b (I made a terrible mistake (handle merge conflicts))
 }

@@ -1,23 +1,23 @@
-import { createRequestHandler, redirectTo } from "./util/cloudfront"
-import { extractAndParseCookies, generateCookies } from "./util/cookies"
+import { createRequestHandler, redirectTo } from "./util/cloudfront";
+import { extractAndParseCookies, generateCookies } from "./util/cookies";
 
 // eslint-disable-next-line @typescript-eslint/require-await
 export const handler = createRequestHandler(async (config, event) => {
-  const request = event.Records[0].cf.request
-  const domainName = request.headers["host"][0].value
+  const request = event.Records[0].cf.request;
+  const domainName = request.headers["host"][0].value;
   const { idToken, accessToken, refreshToken } = extractAndParseCookies(
     request.headers,
     config.clientId,
-  )
+  );
 
   if (!idToken) {
-    return redirectTo(`https://${domainName}${config.signOutRedirectTo}`)
+    return redirectTo(`https://${domainName}${config.signOutRedirectTo}`);
   }
 
   const qs = new URLSearchParams({
     logout_uri: `https://${domainName}${config.signOutRedirectTo}`,
     client_id: config.clientId,
-  }).toString()
+  }).toString();
 
   return redirectTo(`https://${config.cognitoAuthDomain}/logout?${qs}`, {
     cookies: generateCookies({
@@ -30,5 +30,5 @@ export const handler = createRequestHandler(async (config, event) => {
       domainName,
       ...config,
     }),
-  })
-})
+  });
+});

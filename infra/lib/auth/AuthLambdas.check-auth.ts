@@ -1,20 +1,24 @@
-import { CloudFrontRequestResult } from "aws-lambda"
-import { createHash, randomBytes } from "crypto"
-import { safeBase64Stringify } from "./util/base64"
-import { createRequestHandler, redirectTo, staticPage } from "./util/cloudfront"
-import { Config } from "./util/config"
-import { extractAndParseCookies } from "./util/cookies"
-import { decodeIdToken, IdTokenPayload, validate } from "./util/jwt"
-import { createNonceHmac, generateNonce } from "./util/nonce"
+import { createHash, randomBytes } from "crypto";
+import type { CloudFrontRequestResult } from "aws-lambda";
+import { safeBase64Stringify } from "./util/base64";
+import {
+  createRequestHandler,
+  redirectTo,
+  staticPage,
+} from "./util/cloudfront";
+import type { Config } from "./util/config";
+import { extractAndParseCookies } from "./util/cookies";
+import { type IdTokenPayload, decodeIdToken, validate } from "./util/jwt";
+import { createNonceHmac, generateNonce } from "./util/nonce";
 
 export const handler = createRequestHandler(async (config, event) => {
-  const request = event.Records[0].cf.request
-  const domainName = request.headers["host"][0].value
-  
+  const request = event.Records[0].cf.request;
+  const domainName = request.headers["host"][0].value;
+
   let uploadTargetUri = undefined;
-  if (request.method === 'PUT' && request.uri === '/uploadclip') {
-    const filename = validateUploadFilename(request.querystring) // ensure filename is in querystring and has a value
-    config.logger.info({filename})
+  if (request.method === "PUT" && request.uri === "/uploadclip") {
+    const filename = validateUploadFilename(request.querystring); // ensure filename is in querystring and has a value
+    config.logger.info({ filename });
     if (filename === undefined) {
       return staticPage({
         title: "Invalid filename",
@@ -22,12 +26,12 @@ export const handler = createRequestHandler(async (config, event) => {
         message: "The provided filename is invalid.",
         details:
           "The filename parameter was not provided or not assigned a value.",
-        linkHref: `https://${domainName}${config.signOutPath}`,  // TODO: generalize staticPage
+        linkHref: `https://${domainName}${config.signOutPath}`, // TODO: generalize staticPage
         linkText: "Sign out",
-      })
+      });
     }
-    uploadTargetUri = constructUploadTargetUri(filename)
-    config.logger.info("uploadTargetUri:", uploadTargetUri)
+    uploadTargetUri = constructUploadTargetUri(filename);
+    config.logger.info("uploadTargetUri:", uploadTargetUri);
   }
 
   // TODO: this logic can be cleaned up
@@ -35,21 +39,25 @@ export const handler = createRequestHandler(async (config, event) => {
   //  For uploads, figure out some graceful redirect? Or show an error?
   const requestedUri = `${request.uri}${
     request.querystring ? "?" + request.querystring : ""
-  }`
+  }`;
 
   const { idToken, refreshToken, nonce, nonceHmac } = extractAndParseCookies(
     request.headers,
     config.clientId,
-  )
+  );
   config.logger.debug("Extracted cookies:", {
     idToken,
     refreshToken,
     nonce,
     nonceHmac,
-  })
+  });
 
   if (!idToken) {
-    return redirectToSignIn({ config, domainName, requestedUri: uploadTargetUri ? "/" : requestedUri })
+    return redirectToSignIn({
+      config,
+      domainName,
+      requestedUri: uploadTargetUri ? "/" : requestedUri,
+    });
   }
 
   // If the ID token has expired or expires in less than 10 minutes
@@ -57,32 +65,41 @@ export const handler = createRequestHandler(async (config, event) => {
   // This is done by redirecting the user to the refresh endpoint.
   // After the tokens are refreshed the user is redirected back here
   // (probably without even noticing this double redirect).
-  const idTokenPayload = decodeIdToken(idToken)
-  const { exp } = idTokenPayload
-  config.logger.debug("ID token exp:", exp, new Date(exp * 1000).toISOString())
-  
-  const tokenIsExpiring = Date.now() / 1000 > exp - 60 * 10
+  const idTokenPayload = decodeIdToken(idToken);
+  const { exp } = idTokenPayload;
+  config.logger.debug("ID token exp:", exp, new Date(exp * 1000).toISOString());
+
+  const tokenIsExpiring = Date.now() / 1000 > exp - 60 * 10;
   // Hacky way to refresh auth prior to upload
-  const preuploadTokenIsExpiring = Date.now() / 1000 > exp - 60 * 7 && request.uri === "/preupload"
+  const preuploadTokenIsExpiring =
+    Date.now() / 1000 > exp - 60 * 7 && request.uri === "/preupload";
   if ((tokenIsExpiring || preuploadTokenIsExpiring) && refreshToken) {
-    return redirectToRefresh({ config, domainName, requestedUri: uploadTargetUri ?? requestedUri })
+    return redirectToRefresh({
+      config,
+      domainName,
+      requestedUri: uploadTargetUri ?? requestedUri,
+    });
   }
 
   // Check that the ID token is valid.
-  config.logger.info("Validating JWT")
+  config.logger.info("Validating JWT");
   const validateResult = await validate(
     idToken,
     config.tokenJwksUri,
     config.tokenIssuer,
     config.clientId,
-  )
+  );
 
   if (validateResult !== undefined) {
-    config.logger.debug("ID token not valid:", validateResult.validationError)
-    return redirectToSignIn({ config, domainName, requestedUri: uploadTargetUri ? "/" : requestedUri })
+    config.logger.debug("ID token not valid:", validateResult.validationError);
+    return redirectToSignIn({
+      config,
+      domainName,
+      requestedUri: uploadTargetUri ? "/" : requestedUri,
+    });
   }
 
-  config.logger.info("JWT is valid")
+  config.logger.info("JWT is valid");
 
   if (!isAuthorized(config, idTokenPayload)) {
     return staticPage({
@@ -93,25 +110,25 @@ export const handler = createRequestHandler(async (config, event) => {
         "Your sign in was successful, but your user is not allowed to access this resource.",
       linkHref: `https://${domainName}${config.signOutPath}`,
       linkText: "Sign out",
-    })
+    });
   }
-  
+
   request.uri = uploadTargetUri ?? requestedUri;
-  return request
-})
+  return request;
+});
 
 /**
  * Check if the user is authorized to access the resource.
  */
 export function isAuthorized(config: Config, idToken: IdTokenPayload): boolean {
   if (config.requireGroupAnyOf) {
-    const inGroups = idToken["cognito:groups"] || []
+    const inGroups = idToken["cognito:groups"] || [];
     if (!config.requireGroupAnyOf.some((group) => inGroups.includes(group))) {
-      return false
+      return false;
     }
   }
 
-  return true
+  return true;
 }
 
 function redirectToRefresh({
@@ -119,16 +136,16 @@ function redirectToRefresh({
   domainName,
   requestedUri,
 }: {
-  config: Config
-  domainName: string
-  requestedUri: string
+  config: Config;
+  domainName: string;
+  requestedUri: string;
 }): CloudFrontRequestResult {
-  config.logger.info("Redirecting to refresh endpoint")
-  const nonce = generateNonce()
+  config.logger.info("Redirecting to refresh endpoint");
+  const nonce = generateNonce();
   const qs = new URLSearchParams({
     requestedUri,
     nonce,
-  }).toString()
+  }).toString();
   return redirectTo(`https://${domainName}${config.refreshAuthPath}?${qs}`, {
     cookies: [
       `spa-auth-edge-nonce=${encodeURIComponent(nonce)}; ${
@@ -138,7 +155,7 @@ function redirectToRefresh({
         createNonceHmac(nonce, config),
       )}; ${config.cookieSettings.nonce}`,
     ],
-  })
+  });
 }
 
 function redirectToSignIn({
@@ -146,17 +163,17 @@ function redirectToSignIn({
   domainName,
   requestedUri,
 }: {
-  config: Config
-  domainName: string
-  requestedUri: string
+  config: Config;
+  domainName: string;
+  requestedUri: string;
 }): CloudFrontRequestResult {
-  const nonce = generateNonce()
+  const nonce = generateNonce();
   const state = {
     nonce,
     nonceHmac: createNonceHmac(nonce, config),
     ...generatePkceVerifier(config),
-  }
-  config.logger.debug("Using new state:", state)
+  };
+  config.logger.debug("Using new state:", state);
 
   // Encode the state variable as base64 to avoid a bug in Cognito hosted UI
   // when using multiple identity providers.
@@ -174,7 +191,7 @@ function redirectToSignIn({
     scope: config.oauthScopes.join(" "),
     code_challenge_method: "S256",
     code_challenge: state.pkceHash,
-  }).toString()
+  }).toString();
 
   // Return redirect to Cognito Hosted UI for sign-in
   return redirectTo(
@@ -192,39 +209,39 @@ function redirectToSignIn({
         }`,
       ],
     },
-  )
+  );
 }
 
 function generatePkceVerifier(config: Config) {
   // Should be between 43 and 128.
   // This gives a string on 52 chars.
-  const pkce = randomBytes(26).toString("hex")
+  const pkce = randomBytes(26).toString("hex");
 
   const verifier = {
     pkce,
     pkceHash: safeBase64Stringify(
       createHash("sha256").update(pkce, "utf8").digest("base64"),
     ),
-  }
-  config.logger.debug("Generated PKCE verifier:", verifier)
-  return verifier
+  };
+  config.logger.debug("Generated PKCE verifier:", verifier);
+  return verifier;
 }
 
 function validateUploadFilename(queryString: string): string | undefined {
-  const vars = queryString.split('&');
+  const vars = queryString.split("&");
   for (let i = 0; i < vars.length; i++) {
-    const pair = vars[i].split('=');
-    if (decodeURIComponent(pair[0]) === 'filename') {
+    const pair = vars[i].split("=");
+    if (decodeURIComponent(pair[0]) === "filename") {
       if (pair.length < 2 || !pair[1]) {
         return;
       }
-      return decodeURIComponent(pair[1])
+      return decodeURIComponent(pair[1]);
     }
   }
   return;
 }
 
 function constructUploadTargetUri(filename: string): string {
-  const id = filename.replace(/\.[^/.]+$/, "")
-  return `/clips/${id}/${filename}`
+  const id = filename.replace(/\.[^/.]+$/, "");
+  return `/clips/${id}/${filename}`;
 }

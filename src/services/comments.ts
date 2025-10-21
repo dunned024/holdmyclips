@@ -1,13 +1,13 @@
-import { ENDPOINT } from '../config';
-import { Comment } from '../types';
+import { ENDPOINT } from "src/config";
+import type { Comment } from "src/types";
 
 export async function getComments(id: string): Promise<Comment[]> {
   const res = await fetch(`${ENDPOINT}/clips/${id}/${id}.comments.json`);
   const data = await res.json();
 
-  return data['comments'].map((c: Record<string, any>) => {
-    c.commentId = parseInt(c.commentId);
-    c.postedAt = parseInt(c.postedAt);
+  return data.comments.map((c: Record<string, any>) => {
+    c.commentId = Number.parseInt(c.commentId);
+    c.postedAt = Number.parseInt(c.postedAt);
     return c;
   });
 }
@@ -18,18 +18,18 @@ export async function sendComment(props: {
   commentText: string;
   postedAt: number;
 }) {
-  const res = await fetch(`/clipcomments`, {
+  const res = await fetch("/clipcomments", {
     headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
     },
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify({
       clipId: props.clipId,
       author: props.author,
       commentText: props.commentText,
-      postedAt: props.postedAt
-    })
+      postedAt: props.postedAt,
+    }),
   });
   console.log(res);
 }
@@ -39,17 +39,17 @@ export async function deleteComment(props: {
   author: string;
   commentId: number;
 }) {
-  const res = await fetch(`/clipcomments`, {
+  const res = await fetch("/clipcomments", {
     headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*'
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
     },
-    method: 'DELETE',
+    method: "DELETE",
     body: JSON.stringify({
       clipId: props.clipId,
       author: props.author,
-      commentId: props.commentId
-    })
+      commentId: props.commentId,
+    }),
   });
   console.log(res);
 }

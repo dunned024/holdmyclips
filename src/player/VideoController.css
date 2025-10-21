@@ -1,51 +1,51 @@
 #aspect-ratio-wrapper {
-    position: relative;
-    padding-top: 56.25%;
+	position: relative;
+	padding-top: 56.25%;
 }
 
 #paused-button {
-    height: 100px;
-    width: 100px;
-    z-index: 1;
-    position: absolute;
-    font-size: 128px;
-    top: calc(50% - 64px);
-    left: calc(50% - 64px);
+	height: 100px;
+	width: 100px;
+	z-index: 1;
+	position: absolute;
+	font-size: 128px;
+	top: calc(50% - 64px);
+	left: calc(50% - 64px);
 }
 
 #video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    background-color: black;
+	position: absolute;
+	top: 0;
+	left: 0;
+	background-color: black;
 }
 
 #controller {
-    width: 100%;
-    border-radius: 0 0 4px 4px;
+	width: 100%;
+	border-radius: 0 0 4px 4px;
 }
 
 #controller-stack {
-    display: flex;
-    margin: 10px;
+	display: flex;
+	margin: 10px;
 }
 
 #slider-stack {
-    flex-grow: 1;
-    display: flex;
-    font-size: 14px;
+	flex-grow: 1;
+	display: flex;
+	font-size: 14px;
 }
 
 #slider-container {
-    flex-grow: 1;
-    display: grid
+	flex-grow: 1;
+	display: grid;
 }
 
 #seeker {
-    grid-column: 1;
-    grid-row: 1;
+	grid-column: 1;
+	grid-row: 1;
 }
 
-#volume-slider{
-    width: 50px
+#volume-slider {
+	width: 50px;
 }

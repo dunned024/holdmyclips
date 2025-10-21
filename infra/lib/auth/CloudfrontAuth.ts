@@ -1,22 +1,21 @@
-import * as cloudfront from "aws-cdk-lib/aws-cloudfront"
+import { LambdaConfig } from "@henrist/cdk-lambda-config";
+import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
 import {
-  AddBehaviorOptions,
-  BehaviorOptions,
-  IOrigin,
+  type AddBehaviorOptions,
+  type BehaviorOptions,
+  type IOrigin,
   ViewerProtocolPolicy,
-} from "aws-cdk-lib/aws-cloudfront"
-import * as cognito from "aws-cdk-lib/aws-cognito"
-import * as lambda from "aws-cdk-lib/aws-lambda"
-import { IVersion } from "aws-cdk-lib/aws-lambda"
-import { LambdaConfig } from "@henrist/cdk-lambda-config"
-import { StoredConfig } from "./util/config"
-import { AuthLambdas } from "./AuthLambdas"
-import { Construct } from "constructs"
+} from "aws-cdk-lib/aws-cloudfront";
+import type * as cognito from "aws-cdk-lib/aws-cognito";
+import type * as lambda from "aws-cdk-lib/aws-lambda";
+import type { IVersion } from "aws-cdk-lib/aws-lambda";
+import { Construct } from "constructs";
+import type { AuthLambdas } from "./AuthLambdas";
+import type { StoredConfig } from "./util/config";
 
-import { StringParameter } from 'aws-cdk-lib/aws-ssm';
-import { ConfigureNatOptions } from "aws-cdk-lib/aws-ec2"
-import { Stack, Token } from "aws-cdk-lib"
-
+import { Stack, Token } from "aws-cdk-lib";
+import { ConfigureNatOptions } from "aws-cdk-lib/aws-ec2";
+import { StringParameter } from "aws-cdk-lib/aws-ssm";
 
 export interface ConfiguredAuthLambdaParams {
   checkAuthFn: StringParameter;
@@ -43,7 +42,7 @@ export interface CloudFrontAuthProps {
    *
    * @default - a new client will be generated
    */
-  userPool: cognito.IUserPool
+  userPool: cognito.IUserPool;
   /**
    * The domain that is used for Cognito Auth.
    *
@@ -51,29 +50,29 @@ export interface CloudFrontAuthProps {
    *
    * @example `${domain.domainName}.auth.${region}.amazoncognito.com`
    */
-  client: cognito.IUserPoolClient
-  cognitoAuthDomain: string
-  authLambdas: AuthLambdas
+  client: cognito.IUserPoolClient;
+  cognitoAuthDomain: string;
+  authLambdas: AuthLambdas;
   /**
    * Fully-qualified domain name
    */
-  fqdn: string
+  fqdn: string;
   /**
    * @default /auth/callback
    */
-  callbackPath?: string
+  callbackPath?: string;
   /**
    * @default /
    */
-  signOutRedirectTo?: string
+  signOutRedirectTo?: string;
   /**
    * @default /auth/sign-out
    */
-  signOutPath?: string
+  signOutPath?: string;
   /**
    * @default /auth/refresh
    */
-  refreshAuthPath?: string
+  refreshAuthPath?: string;
   /**
    * Log level.
    *
@@ -82,12 +81,12 @@ export interface CloudFrontAuthProps {
    *
    * @default warn
    */
-  logLevel?: "none" | "error" | "warn" | "info" | "debug"
+  logLevel?: "none" | "error" | "warn" | "info" | "debug";
   /**
    * Require the user to be part of a specific Cognito group to
    * access any resource.
    */
-  requireGroupAnyOf?: string[]
+  requireGroupAnyOf?: string[];
 }
 
 /**
@@ -95,22 +94,22 @@ export interface CloudFrontAuthProps {
  * and CloudFront distribution.
  */
 export class CloudFrontAuth extends Construct {
-  public readonly callbackPath: string
-  public readonly signOutRedirectTo: string
-  public readonly signOutPath: string
-  public readonly refreshAuthPath: string
+  public readonly callbackPath: string;
+  public readonly signOutRedirectTo: string;
+  public readonly signOutPath: string;
+  public readonly refreshAuthPath: string;
 
-  public readonly authLambdaParams: ConfiguredAuthLambdaParams
+  public readonly authLambdaParams: ConfiguredAuthLambdaParams;
 
-  private readonly oauthScopes: string[]
+  private readonly oauthScopes: string[];
 
   constructor(scope: Construct, id: string, props: CloudFrontAuthProps) {
-    super(scope, id)
+    super(scope, id);
 
-    this.callbackPath = props.callbackPath ?? "/auth/callback"
-    this.signOutRedirectTo = props.signOutRedirectTo ?? "/"
-    this.signOutPath = props.signOutPath ?? "/auth/sign-out"
-    this.refreshAuthPath = props.refreshAuthPath ?? "/auth/refresh"
+    this.callbackPath = props.callbackPath ?? "/auth/callback";
+    this.signOutRedirectTo = props.signOutRedirectTo ?? "/";
+    this.signOutPath = props.signOutPath ?? "/auth/sign-out";
+    this.refreshAuthPath = props.refreshAuthPath ?? "/auth/refresh";
 
     this.oauthScopes = [
       "phone",
@@ -118,11 +117,16 @@ export class CloudFrontAuth extends Construct {
       "profile",
       "openid",
       "aws.cognito.signin.user.admin",
-    ]
+    ];
 
-    const nonceSigningSecret = StringParameter.valueForStringParameter(this, 'hmc-nonce')
-  
-    const clientSecretValue = props.client.userPoolClientSecret.unsafeUnwrap().toString()
+    const nonceSigningSecret = StringParameter.valueForStringParameter(
+      this,
+      "hmc-nonce",
+    );
+
+    const clientSecretValue = props.client.userPoolClientSecret
+      .unsafeUnwrap()
+      .toString();
 
     const config: StoredConfig = {
       httpHeaders: {
@@ -161,47 +165,51 @@ export class CloudFrontAuth extends Construct {
         nonce: "Path=/; Secure; HttpOnly; SameSite=Lax",
       },
       nonceSigningSecret,
-    }
+    };
 
     this.authLambdaParams = {
       checkAuthFn: this.createConfiguredLambdaSsmParameter(
         "CheckAuthFn",
         props.authLambdas.checkAuthFn,
-        config
+        config,
       ),
       httpHeadersFn: this.createConfiguredLambdaSsmParameter(
         "HttpHeadersFn",
         props.authLambdas.httpHeadersFn,
-        config
+        config,
       ),
       parseAuthFn: this.createConfiguredLambdaSsmParameter(
         "ParseAuthFn",
         props.authLambdas.parseAuthFn,
-        config
+        config,
       ),
       refreshAuthFn: this.createConfiguredLambdaSsmParameter(
         "RefreshAuthFn",
         props.authLambdas.refreshAuthFn,
-        config
+        config,
       ),
       signOutFn: this.createConfiguredLambdaSsmParameter(
         "SignOutFn",
         props.authLambdas.signOutFn,
-        config
+        config,
       ),
-    }
+    };
   }
 
-  createConfiguredLambdaSsmParameter(name: string, fn: lambda.Function, config: StoredConfig) {
+  createConfiguredLambdaSsmParameter(
+    name: string,
+    fn: lambda.Function,
+    config: StoredConfig,
+  ) {
     const fnVersion = new LambdaConfig(this, name, {
       function: fn.currentVersion,
       config,
-    }).version
-  
+    }).version;
+
     return new StringParameter(this, `${name}SsmParam`, {
       parameterName: `/HMC/lambdas/${name}Arn`,
       stringValue: fnVersion.edgeArn,
-    })
+    });
   }
 
   /**
@@ -228,14 +236,14 @@ export class CloudFrontAuth extends Construct {
             },
           ],
         },
-      }
+      };
     }
 
     return {
       ...path(this.callbackPath, authLambdas.parseAuthFn),
       ...path(this.refreshAuthPath, authLambdas.refreshAuthFn),
       ...path(this.signOutPath, authLambdas.signOutFn),
-    }
+    };
   }
 
   /**
@@ -261,6 +269,6 @@ export class CloudFrontAuth extends Construct {
         },
       ],
       ...options,
-    }
+    };
   }
 }

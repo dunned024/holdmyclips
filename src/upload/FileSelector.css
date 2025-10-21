@@ -1,60 +1,60 @@
 #file-selector {
-    margin: 20px;
-    display: flex;
-    justify-content: center;
+	margin: 20px;
+	display: flex;
+	justify-content: center;
 }
 
 #file-selector-form {
-    height: 26vh;
-    width: 30vw;
-    max-width: 100%;
-    text-align: center;
-    position: relative;
-    border-style: dashed;
-    transition: 0.25s ease;
-    border-color: #282c34;
-    background-color: #f8fafc;
-    border-width: 4px;
-    border-radius: 1rem;
+	height: 26vh;
+	width: 30vw;
+	max-width: 100%;
+	text-align: center;
+	position: relative;
+	border-style: dashed;
+	transition: 0.25s ease;
+	border-color: #282c34;
+	background-color: #f8fafc;
+	border-width: 4px;
+	border-radius: 1rem;
 }
 
 #file-selector-form:hover {
-    transition: 0.25s ease;
-    background-color: #21cea3;
+	transition: 0.25s ease;
+	background-color: #21cea3;
 }
 
 #file-selector-input {
-    display: none;
+	display: none;
 }
 
 #drag-drop-label {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: black;
-    border-width: 2px;
-    border-radius: 1rem;
-    font-size: 28px;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: black;
+	border-width: 2px;
+	border-radius: 1rem;
+	font-size: 28px;
 }
 
 #click-label {
-    font-size: 16px;
+	font-size: 16px;
 }
 
 #file-selector-button {
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    cursor: pointer;
-    border: none;
-    background-color: transparent;
-    
-    width: calc(100% + 8px);
-    height: calc(100% + 8px);
-    border-radius: 1rem;
-    top: -4px;
-    left: -4px;
+	position: absolute;
+	height: 100%;
+	width: 100%;
+	cursor: pointer;
+	border: none;
+	background-color: transparent;
+
+	width: calc(100% + 8px);
+	height: calc(100% + 8px);
+	border-radius: 1rem;
+	top: -4px;
+	left: -4px;
 }
 
 /* #file-selector-button:after {
@@ -90,15 +90,15 @@
   } */
 
 #drag-file-element {
-    position: absolute;
-    background-color: #21cea3;
-    transition: 0.25s ease;
-    opacity: 0.35;
-    width: calc(100% + 8px);
-    height: calc(100% + 8px);
-    border-radius: 1rem;
-    top: -4px;
-    left: -4px;
-    bottom: 0px;
-    right: 0px;
+	position: absolute;
+	background-color: #21cea3;
+	transition: 0.25s ease;
+	opacity: 0.35;
+	width: calc(100% + 8px);
+	height: calc(100% + 8px);
+	border-radius: 1rem;
+	top: -4px;
+	left: -4px;
+	bottom: 0px;
+	right: 0px;
 }

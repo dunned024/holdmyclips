@@ -1,14 +1,18 @@
-import React, { ChangeEvent, MutableRefObject, useRef, useState } from 'react';
-import './Thumbnail.css';
-// import * as defaultThumbnail from '../assets/default_thumbnail.jpg';
-import Grid from '@mui/material/Unstable_Grid2';
-import TextField from '@mui/material/TextField';
-import ReactCrop, { type Crop } from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
-import ReactPlayer from 'react-player';
-import CloseIcon from '@mui/icons-material/Close';
-import Stack from '@mui/material/Stack';
-import { palette } from '../../assets/themes/theme';
+import CloseIcon from "@mui/icons-material/Close";
+import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
+import Grid from "@mui/material/Unstable_Grid2";
+import {
+  type ChangeEvent,
+  type MutableRefObject,
+  useRef,
+  useState,
+} from "react";
+import ReactCrop, { type Crop } from "react-image-crop";
+import type ReactPlayer from "react-player";
+import "react-image-crop/dist/ReactCrop.css";
+import { palette } from "src/assets/themes/theme";
+import "src/upload/components/Thumbnail.css";
 
 // const defaultThumbnailBlob = new Blob([ defaultThumbnail ], { type: 'image/jpg' });
 
@@ -18,9 +22,9 @@ export function ThumbnailSetter(props: {
 }) {
   const [canClear, setCanClear] = useState<boolean>(false);
   const [uploadedImage, setUploadedImage] = useState<HTMLImageElement | null>(
-    null
+    null,
   );
-  const [thumbnailFilename, setThumbnailFilename] = useState<string>('');
+  const [thumbnailFilename, setThumbnailFilename] = useState<string>("");
 
   const [cropping, setCropping] = useState<boolean>(false);
   const [crop, setCrop] = useState<Crop | null>(null);
@@ -33,28 +37,28 @@ export function ThumbnailSetter(props: {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const croppingCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  const clear = function () {
+  const clear = () => {
     const canvas = canvasRef.current;
     if (!canvas) {
       return;
     }
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext("2d");
     if (!context) {
       return;
     }
     context.clearRect(0, 0, canvas.width, canvas.height);
     setUploadedImage(null);
-    setThumbnailFilename('');
+    setThumbnailFilename("");
     setCrop(null);
     setAcceptedCrop(null);
     setCanClear(false);
     props.setThumbnailUrl(null);
     if (inputRef.current) {
-      (inputRef.current as HTMLInputElement).value = '';
+      (inputRef.current as HTMLInputElement).value = "";
     }
   };
 
-  const handleToggleAspectClick = function () {
+  const handleToggleAspectClick = () => {
     const croppingCanvas = croppingCanvasRef.current;
     if (!croppingCanvas) {
       return;
@@ -67,7 +71,7 @@ export function ThumbnailSetter(props: {
     }
   };
 
-  const centerCrop = function () {
+  const centerCrop = () => {
     const croppingCanvas = croppingCanvasRef.current;
     if (!croppingCanvas) {
       return;
@@ -77,16 +81,16 @@ export function ThumbnailSetter(props: {
     const dx = (width - scale) / 2;
     const dy = (height - scale) / 2;
 
-    setCrop({ unit: 'px', x: dx, y: dy, width: scale, height: scale });
+    setCrop({ unit: "px", x: dx, y: dy, width: scale, height: scale });
   };
 
-  const acceptCrop = function () {
+  const acceptCrop = () => {
     const thumbnailCanvas = canvasRef.current;
     const croppingCanvas = croppingCanvasRef.current;
     if (!thumbnailCanvas || !croppingCanvas || !crop) {
       return;
     }
-    const thumbnailContext = thumbnailCanvas.getContext('2d');
+    const thumbnailContext = thumbnailCanvas.getContext("2d");
     if (thumbnailContext === null) {
       return;
     }
@@ -97,7 +101,7 @@ export function ThumbnailSetter(props: {
     // screen) to the "actual" dimensions of the croppings canvas (defined
     // in the element declaration below -- probably 1920 x 1080)
     const cropCanvasBoundRect = new Rect(
-      croppingCanvas.getBoundingClientRect()
+      croppingCanvas.getBoundingClientRect(),
     );
     const cropCanvasRect = new Rect(croppingCanvas);
     const cropScaling = cropCanvasBoundRect.getScaleValues(cropCanvasRect);
@@ -121,28 +125,28 @@ export function ThumbnailSetter(props: {
       thumbRect.x,
       thumbRect.y,
       thumbRect.width,
-      thumbRect.height
+      thumbRect.height,
     );
     setAcceptedCrop(crop);
     setCropping(false);
     setCanClear(true);
-    props.setThumbnailUrl(thumbnailCanvas.toDataURL('image/png'));
+    props.setThumbnailUrl(thumbnailCanvas.toDataURL("image/png"));
   };
 
-  const acceptAndFitCrop = function () {
+  const acceptAndFitCrop = () => {
     const thumbnailCanvas = canvasRef.current;
     const croppingCanvas = croppingCanvasRef.current;
     if (!thumbnailCanvas || !croppingCanvas || !crop) {
       return;
     }
-    const thumbnailContext = thumbnailCanvas.getContext('2d');
+    const thumbnailContext = thumbnailCanvas.getContext("2d");
     if (thumbnailContext === null) {
       return;
     }
 
     // Find "visual" to "actual" canvas scaling values
     const cropCanvasBoundRect = new Rect(
-      croppingCanvas.getBoundingClientRect()
+      croppingCanvas.getBoundingClientRect(),
     );
     const cropCanvasRect = new Rect(croppingCanvas);
     const cropScaling = cropCanvasBoundRect.getScaleValues(cropCanvasRect);
@@ -156,7 +160,7 @@ export function ThumbnailSetter(props: {
     const destRect = scaledCropRect.fitTo(thumbRect);
 
     // Fill empty space with black and draw the final image on the thumbnail canvas
-    thumbnailContext.fillStyle = 'black';
+    thumbnailContext.fillStyle = "black";
     thumbnailContext.fillRect(0, 0, thumbRect.width, thumbRect.height);
     thumbnailContext.drawImage(
       croppingCanvas,
@@ -167,15 +171,15 @@ export function ThumbnailSetter(props: {
       destRect.x,
       destRect.y,
       destRect.width,
-      destRect.height
+      destRect.height,
     );
     setAcceptedCrop(crop);
     setCropping(false);
     setCanClear(true);
-    props.setThumbnailUrl(thumbnailCanvas.toDataURL('image/png'));
+    props.setThumbnailUrl(thumbnailCanvas.toDataURL("image/png"));
   };
 
-  const closeCrop = function () {
+  const closeCrop = () => {
     setCropping(false);
     if (acceptedCrop) {
       setCrop(acceptedCrop);
@@ -187,9 +191,9 @@ export function ThumbnailSetter(props: {
     }
   };
 
-  const openCropOverlay = function (
-    sourceImage: HTMLImageElement | HTMLVideoElement
-  ) {
+  const openCropOverlay = (
+    sourceImage: HTMLImageElement | HTMLVideoElement,
+  ) => {
     const croppingCanvas = croppingCanvasRef.current;
     if (!croppingCanvas) {
       return;
@@ -209,7 +213,7 @@ export function ThumbnailSetter(props: {
     const canvasRect = new Rect(croppingCanvas);
     const destRect = sourceRect.fitTo(canvasRect);
 
-    const context = croppingCanvas.getContext('2d');
+    const context = croppingCanvas.getContext("2d");
     if (!context) {
       return;
     }
@@ -222,21 +226,21 @@ export function ThumbnailSetter(props: {
       destRect.x,
       destRect.y,
       destRect.width,
-      destRect.height
+      destRect.height,
     );
     setCropping(true);
   };
 
-  const handleUpload = function (event: ChangeEvent<HTMLInputElement>) {
+  const handleUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const reader = new FileReader();
-    reader.onload = function () {
+    reader.onload = () => {
       const img = new Image();
       img.onload = () => {
         const thumbnailCanvas = canvasRef.current;
         if (!thumbnailCanvas) {
           return;
         }
-        const context = thumbnailCanvas.getContext('2d');
+        const context = thumbnailCanvas.getContext("2d");
         if (!context) {
           return;
         }
@@ -253,17 +257,17 @@ export function ThumbnailSetter(props: {
           destRect.x,
           destRect.y,
           destRect.width,
-          destRect.height
+          destRect.height,
         );
         setUploadedImage(img);
         setCanClear(true);
-        props.setThumbnailUrl(thumbnailCanvas.toDataURL('image/png'));
+        props.setThumbnailUrl(thumbnailCanvas.toDataURL("image/png"));
       };
       if (reader.result) {
         img.src = reader.result as string;
       }
     };
-    if (event.target.files && event.target.files[0]) {
+    if (event.target.files?.[0]) {
       reader.readAsDataURL(event.target.files[0]);
       setThumbnailFilename(event.target.files[0].name);
     }
@@ -290,39 +294,48 @@ export function ThumbnailSetter(props: {
 
   return (
     <Stack
-      id='thumbnail-container'
+      id="thumbnail-container"
       sx={{ backgroundColor: palette.secondary.dark }}
     >
       <div
-        id='cropping-overlay'
-        style={{ display: cropping ? 'block' : 'none' }}
+        id="cropping-overlay"
+        style={{ display: cropping ? "block" : "none" }}
       >
-        <div id='cropping-overlay-element-container'>
-          <button id='cropping-close-button' onClick={closeCrop}>
+        <div id="cropping-overlay-element-container">
+          <button id="cropping-close-button" onClick={closeCrop} type="button">
             <CloseIcon />
           </button>
-          <div id='cropping-button-grid-container'>
-            <Grid id='cropping-button-grid' container spacing={1}>
+          <div id="cropping-button-grid-container">
+            <Grid id="cropping-button-grid" container spacing={1}>
               <Grid xs={6}>
                 <button
-                  id='cropping-toggle-aspect'
+                  id="cropping-toggle-aspect"
                   onClick={handleToggleAspectClick}
+                  type="button"
                 >
-                  Toggle 1:1 aspect ratio {fixedAspect ? 'off' : 'on'}
+                  Toggle 1:1 aspect ratio {fixedAspect ? "off" : "on"}
                 </button>
               </Grid>
               <Grid xs={6}>
-                <button id='cropping-center-selection' onClick={centerCrop}>
+                <button
+                  id="cropping-center-selection"
+                  onClick={centerCrop}
+                  type="button"
+                >
                   Center
                 </button>
               </Grid>
               <Grid xs={6}>
-                <button id='cropping-accept' onClick={acceptCrop}>
+                <button id="cropping-accept" onClick={acceptCrop} type="button">
                   Accept
                 </button>
               </Grid>
               <Grid xs={6}>
-                <button id='cropping-accept-fit' onClick={acceptAndFitCrop}>
+                <button
+                  id="cropping-accept-fit"
+                  onClick={acceptAndFitCrop}
+                  type="button"
+                >
                   Accept & Fit
                 </button>
               </Grid>
@@ -332,59 +345,59 @@ export function ThumbnailSetter(props: {
             crop={crop ?? undefined}
             onChange={(c) => setCrop(c)}
             aspect={Number(fixedAspect)}
-            className='react-crop'
+            className="react-crop"
             maxHeight={croppingCanvasRef.current?.height}
           >
             {!crop && (
-              <div id='crop-instruct'>Click and drag to crop image</div>
+              <div id="crop-instruct">Click and drag to crop image</div>
             )}
-            <canvas id='cropping-canvas' ref={croppingCanvasRef} />
+            <canvas id="cropping-canvas" ref={croppingCanvasRef} />
           </ReactCrop>
-          <div id='cropping-dimensions'>
-            Dimensions: {crop?.width || 0}px {'\u00d7'} {crop?.height || 0}px
+          <div id="cropping-dimensions">
+            Dimensions: {crop?.width || 0}px {"\u00d7"} {crop?.height || 0}px
           </div>
         </div>
       </div>
-      <canvas id='thumbnail-canvas' width='400' height='400' ref={canvasRef} />
-      <Stack id='thumbnail-button-container' direction='column' spacing={1}>
+      <canvas id="thumbnail-canvas" width="400" height="400" ref={canvasRef} />
+      <Stack id="thumbnail-button-container" direction="column" spacing={1}>
         <Grid container spacing={1}>
           <Grid xs={6}>
             <button
-              id='capture-frame-button'
-              type='button'
+              id="capture-frame-button"
+              type="button"
               onClick={handleCaptureFrame}
             >
               Capture frame
             </button>
           </Grid>
           <Grid xs={6}>
-            <Stack id='file-crop-button-container' direction='column'>
+            <Stack id="file-crop-button-container" direction="column">
               <input
                 ref={inputRef}
-                type='file'
-                accept='.jpg,.png'
-                id='file-selector-input'
+                type="file"
+                accept=".jpg,.png"
+                id="file-selector-input"
                 multiple={false}
                 onChange={handleUpload}
               />
-              <button type='button' onClick={onButtonClick}>
+              <button type="button" onClick={onButtonClick}>
                 Upload from file...
               </button>
               <TextField
-                id='thumbnail-filename-field'
-                size='small'
+                id="thumbnail-filename-field"
+                size="small"
                 style={{ margin: 0 }}
                 fullWidth
                 hiddenLabel
-                color='primary'
-                type='text'
+                color="primary"
+                type="text"
                 disabled
                 InputLabelProps={{ shrink: true }}
-                placeholder='Filename'
+                placeholder="Filename"
                 value={thumbnailFilename}
               />
               <button
-                type='button'
+                type="button"
                 disabled={!uploadedImage}
                 onClick={handleCropUploadedImage}
               >
@@ -393,7 +406,7 @@ export function ThumbnailSetter(props: {
             </Stack>
           </Grid>
         </Grid>
-        <button type='button' disabled={!canClear} onClick={clear}>
+        <button type="button" disabled={!canClear} onClick={clear}>
           Clear
         </button>
       </Stack>
@@ -408,19 +421,19 @@ class Rect {
   public readonly height: number;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(s: any, keepCoords: boolean = false) {
+  constructor(s: any, keepCoords = false) {
     [this.width, this.height] =
       s instanceof HTMLVideoElement
         ? [s.videoWidth, s.videoHeight]
         : [s.width, s.height];
     [this.x, this.y] =
       // eslint-disable-next-line no-prototype-builtins
-      keepCoords && s.hasOwnProperty('x') ? [s.x, s.y] : [0, 0];
+      keepCoords && s.hasOwnPropert("x") ? [s.x, s.y] : [0, 0];
   }
 
   getScaleValues(
     dest: Rect,
-    keepAspect: boolean = false
+    keepAspect = false,
   ): { wRatio: number; hRatio: number } {
     let wRatio = dest.width / this.width;
     let hRatio = dest.height / this.height;
@@ -443,9 +456,9 @@ class Rect {
         width: this.width * wRatio,
         height: this.height * hRatio,
         x: this.x * wRatio,
-        y: this.y * hRatio
+        y: this.y * hRatio,
       },
-      true
+      true,
     );
   }
 
@@ -456,9 +469,9 @@ class Rect {
         width: this.width * ratio,
         height: this.height * ratio,
         x: (dest.width - this.width * ratio) / 2,
-        y: (dest.height - this.height * ratio) / 2
+        y: (dest.height - this.height * ratio) / 2,
       },
-      true
+      true,
     );
   }
 }

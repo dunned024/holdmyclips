@@ -1,4 +1,4 @@
-import words from 'friendly-words';
+import words from "friendly-words";
 
 export function randomId() {
   const { predicates, objects } = words;

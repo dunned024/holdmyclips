@@ -1,24 +1,20 @@
 {
-  "name": "holdmyclips-server",
-  "version": "1.0.0",
-  "private": true,
-  "devDependencies": {
-    "json-server": "^0.17.3"
-  },
-  "scripts": {
-    "server": "json-server --watch ./db.json --port 4000 --routes ./routes.json --host 0.0.0.0"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "proxy": "https://clips.dunned024.com"
+	"name": "holdmyclips-server",
+	"version": "1.0.0",
+	"private": true,
+	"devDependencies": {
+		"json-server": "^0.17.3"
+	},
+	"scripts": {
+		"server": "json-server --watch ./db.json --port 4000 --routes ./routes.json --host 0.0.0.0"
+	},
+	"browserslist": {
+		"production": [">0.2%", "not dead", "not op_mini all"],
+		"development": [
+			"last 1 chrome version",
+			"last 1 firefox version",
+			"last 1 safari version"
+		]
+	},
+	"proxy": "https://clips.dunned024.com"
 }

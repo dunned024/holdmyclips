@@ -1,30 +1,31 @@
 @font-face {
-  font-family: "NotoSansMono";
-  src: local("NotoSansMono"),
-   url("./assets/fonts/NotoSansMono/NotoSansMono.ttf") format("truetype");
- }
+	font-family: "NotoSansMono";
+	src: local("NotoSansMono"),
+		url("./assets/fonts/NotoSansMono/NotoSansMono.ttf") format("truetype");
+}
 
-header, footer {
-  background-color: #374153;
-  text-align: center;
-  color: white;
-  padding: 10px 0;
+header,
+footer {
+	background-color: #374153;
+	text-align: center;
+	color: white;
+	padding: 10px 0;
 }
 
 header {
-  margin-bottom: 50px;
-  font-size: 28px;
+	margin-bottom: 50px;
+	font-size: 28px;
 }
 
 footer {
-  margin-top: 50px;
-  font-size: 14px;
+	margin-top: 50px;
+	font-size: 14px;
 }
 
 body {
-  margin: 0;
-  font-family: 'NotoSansMono';
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #374153;
+	margin: 0;
+	font-family: "NotoSansMono";
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	background-color: #374153;
 }

@@ -1,29 +1,55 @@
-import { CfnOutput, Duration, Stack, StackProps } from 'aws-cdk-lib';
-import { Bucket, BlockPublicAccess, CorsRule, HttpMethods, CfnBucket } from 'aws-cdk-lib/aws-s3';
-import { AllowedMethods, CacheHeaderBehavior, CachePolicy, CachedMethods, Distribution, ErrorResponse, OriginAccessIdentity, ViewerProtocolPolicy, OriginRequestPolicy, BehaviorOptions, IDistribution } from 'aws-cdk-lib/aws-cloudfront';
-import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
-import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
-import { experimental } from 'aws-cdk-lib/aws-cloudfront';
-import { Code, Runtime } from 'aws-cdk-lib/aws-lambda';
-import { Role, ManagedPolicy, ServicePrincipal } from 'aws-cdk-lib/aws-iam';
-import path from 'path';
+import path from "path";
+import { CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
+import { LambdaRestApi } from "aws-cdk-lib/aws-apigateway";
+import { Certificate } from "aws-cdk-lib/aws-certificatemanager";
+import {
+  AllowedMethods,
+  BehaviorOptions,
+  CacheHeaderBehavior,
+  CachePolicy,
+  CachedMethods,
+  Distribution,
+  ErrorResponse,
+  IDistribution,
+  OriginAccessIdentity,
+  OriginRequestPolicy,
+  ViewerProtocolPolicy,
+} from "aws-cdk-lib/aws-cloudfront";
+import { experimental } from "aws-cdk-lib/aws-cloudfront";
+import { RestApiOrigin, S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
+import {
+  OAuthScope,
+  UserPool,
+  UserPoolClient,
+  UserPoolClientIdentityProvider,
+  VerificationEmailStyle,
+} from "aws-cdk-lib/aws-cognito";
+import { ManagedPolicy, Role, ServicePrincipal } from "aws-cdk-lib/aws-iam";
+import { Code, Runtime } from "aws-cdk-lib/aws-lambda";
 import {
   ARecord,
   PublicHostedZone,
-  RecordTarget
-} from 'aws-cdk-lib/aws-route53';
-import { CloudFrontTarget, UserPoolDomainTarget } from 'aws-cdk-lib/aws-route53-targets';
-import { Construct } from 'constructs';
-import { LambdaRestApi } from 'aws-cdk-lib/aws-apigateway';
-import { OAuthScope, UserPool, UserPoolClient, VerificationEmailStyle } from 'aws-cdk-lib/aws-cognito';
-import { HostedDomain } from './HostedDomainStack';
-import { ConfiguredStackProps } from './config';
-import { CloudFrontAuth } from './auth/CloudfrontAuth';
-import { AuthLambdas } from './auth/AuthLambdas';
-
+  RecordTarget,
+} from "aws-cdk-lib/aws-route53";
+import {
+  CloudFrontTarget,
+  UserPoolDomainTarget,
+} from "aws-cdk-lib/aws-route53-targets";
+import {
+  BlockPublicAccess,
+  Bucket,
+  CfnBucket,
+  CorsRule,
+  HttpMethods,
+} from "aws-cdk-lib/aws-s3";
+import type { Construct } from "constructs";
+import type { HostedDomain } from "./HostedDomainStack";
+import { AuthLambdas } from "./auth/AuthLambdas";
+import { CloudFrontAuth } from "./auth/CloudfrontAuth";
+import type { ConfiguredStackProps } from "./config";
 
 export interface AuthStackProps extends ConfiguredStackProps {
-  hostedDomain: HostedDomain
+  hostedDomain: HostedDomain;
 }
 
 export class AuthStack extends Stack {
@@ -33,9 +59,9 @@ export class AuthStack extends Stack {
   constructor(scope: Construct, id: string, props: AuthStackProps) {
     super(scope, id, props);
 
-    this.userPool = new UserPool(this, 'UserPool', {
+    this.userPool = new UserPool(this, "UserPool", {
       autoVerify: { email: true },
-      userPoolName: 'hold-my-clips-user-pool',
+      userPoolName: "hold-my-clips-user-pool",
       selfSignUpEnabled: true,
       signInAliases: {
         username: true,
@@ -54,12 +80,14 @@ export class AuthStack extends Stack {
         },
       },
       userInvitation: {
-        emailSubject: 'Please come hold clips',
-        emailBody: '{username}, your time has come. You must sign in to Hold My Clips and hold some clips. Your temporary password is {####}',
+        emailSubject: "Please come hold clips",
+        emailBody:
+          "{username}, your time has come. You must sign in to Hold My Clips and hold some clips. Your temporary password is {####}",
       },
       userVerification: {
-        emailSubject: 'Verify your email to hold clips',
-        emailBody: 'Thanks for signing up to hold some clips. Your verification code is {####}',
+        emailSubject: "Verify your email to hold clips",
+        emailBody:
+          "Thanks for signing up to hold some clips. Your verification code is {####}",
         emailStyle: VerificationEmailStyle.CODE,
       },
     });
@@ -74,20 +102,44 @@ export class AuthStack extends Stack {
           authorizationCodeGrant: true,
         },
         callbackUrls: [`https://${props.fqdn}${props.authPaths.callbackPath}`],
-        logoutUrls: [`https://${props.fqdn}${props.authPaths.signOutRedirectTo}`]
+        logoutUrls: [
+          `https://${props.fqdn}${props.authPaths.signOutRedirectTo}`,
+        ],
       },
       preventUserExistenceErrors: true,
       generateSecret: true,
-    })
+    });
 
-    const authDomainName = `oauth.${props.fqdn}`
-    const domain = this.userPool.addDomain('Domain', {
+    const userPoolClientV2 = this.userPool.addClient("UserPoolClientV2", {
+      authFlows: {
+        userPassword: false, // Disable direct password auth for SPA
+        userSrp: true,
+      },
+      oAuth: {
+        flows: {
+          authorizationCodeGrant: true,
+        },
+        callbackUrls: [`https://${props.fqdn}/`, "http://localhost:3000/"],
+        logoutUrls: [`https://${props.fqdn}/`, "http://localhost:3000/"],
+        scopes: [OAuthScope.OPENID, OAuthScope.EMAIL, OAuthScope.PROFILE],
+      },
+      preventUserExistenceErrors: true,
+      generateSecret: false,
+      supportedIdentityProviders: [UserPoolClientIdentityProvider.COGNITO],
+    });
+
+    new CfnOutput(this, "UserPoolClientV2Id", {
+      value: userPoolClientV2.userPoolClientId,
+    });
+
+    const authDomainName = `oauth.${props.fqdn}`;
+    const domain = this.userPool.addDomain("Domain", {
       customDomain: {
         domainName: authDomainName,
         certificate: props.hostedDomain.cert,
       },
     });
-    
+
     // "You must create an A record for the parent domain in your DNS
     // configuration" before creating an A Record for a custom domain. I
     // had already created an A Record for the FQDN when standing up the
@@ -95,20 +147,20 @@ export class AuthStack extends Stack {
     // I would need to create a 'dummy' A Record (that could later be
     // deleted).
     // See: https://repost.aws/knowledge-center/cognito-custom-domain-errors
-    new ARecord(this, 'DnsRecord', {
+    new ARecord(this, "DnsRecord", {
       recordName: authDomainName,
       target: RecordTarget.fromAlias(new UserPoolDomainTarget(domain)),
-      zone: props.hostedDomain.hostedZone
+      zone: props.hostedDomain.hostedZone,
     });
 
-    this.cloudFrontAuth = new CloudFrontAuth(this, 'Auth', {
+    this.cloudFrontAuth = new CloudFrontAuth(this, "Auth", {
       cognitoAuthDomain: authDomainName,
-      authLambdas: new AuthLambdas(this, 'AuthLambdas'),
+      authLambdas: new AuthLambdas(this, "AuthLambdas"),
       fqdn: props.fqdn,
-      logLevel: 'info',
+      logLevel: "info",
       userPool: this.userPool,
       client: userPoolClient,
-      ...props.authPaths
-    })
+      ...props.authPaths,
+    });
   }
 }
