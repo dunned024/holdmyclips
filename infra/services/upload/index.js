@@ -46,6 +46,7 @@ const storeIndexRecord = async (id, parsedData) => {
     indexItem['id'] = {S: id};
     indexItem['title'] = {S: sanitizedTitle};
     indexItem['uploader'] = {S: parsedData['uploader']};
+    indexItem['uploadedOn'] = {N: parsedData['uploadedOn']};
     indexItem['description'] = {S: sanitizedDescription};
     indexItem['duration'] = {N: parsedData['duration']};
 
