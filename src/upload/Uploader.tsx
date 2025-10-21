@@ -208,7 +208,10 @@ export function Uploader() {
 
       const dataRes = await fetch(`/clipdata`, {
         method: 'PUT',
-        body: JSON.stringify({ ...uploadData, uploadedOn: Date.now() }),
+        body: JSON.stringify({
+          ...uploadData,
+          uploadedOn: Date.now().toString()
+        }),
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
