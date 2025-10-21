@@ -7,52 +7,62 @@
                 "description": "nothing to see here\n\ndescription with newline",
                 "uploader": "",
                 "title": "fast splatter",
-                "views": 0
+                "views": 0,
+                "uploadedOn": "1706883212825"
             },
             {
                 "id": "hurricane-anemone2",
                 "title": "test-clip-2",
-                "duration": "6.45"
+                "duration": "6.45",
+                "uploadedOn": "1706883212825"
             },
             {
                 "id": "hurricane-anemone3",
                 "title": "test-clip-3",
-                "duration": "6.45"
+                "duration": "6.45",
+                "uploadedOn": "1700893212825"
             },
             {
                 "id": "hurricane-anemone4",
                 "title": "test-clip-4",
-                "duration": "6.45"
+                "duration": "6.45",
+                "uploadedOn": "1686886212825"
             },
             {
                 "id": "hurricane-anemone5",
                 "title": "test-clip-5",
-                "duration": "6.45"
+                "duration": "6.45",
+                "uploadedOn": "1606883242825"
             },
             {
                 "id": "hurricane-anemone6",
                 "title": "test-clip-6",
-                "duration": "6.45"
+                "duration": "6.45",
+                "uploadedOn": "1706883212825"
             },
             {
                 "id": "hurricane-anemone7",
                 "title": "test-clip-7",
-                "duration": "6.45"
+                "duration": "6.45",
+                "uploadedOn": "1716883212825"
             },
             {
                 "id": "hurricane-anemone8",
                 "title": "test-clip-8",
-                "duration": "6.45"
+                "duration": "6.45",
+                "uploadedOn": "1707883212825"
             },
             {
                 "id": "hurricane-anemone9",
                 "title": "test-clip-9",
-                "duration": "6.45"
+                "duration": "6.45",
+                "uploadedOn": "1706983212825"
             },
             {
                 "id": "hurricane-anemone0",
                 "title": "test-clip-0",
-                "duration": "6.45"
+                "duration": "6.45",
+                "uploadedOn": "1706883212825"
             },
             {
                 "id": "goofy-share",
@@ -60,7 +70,8 @@
                 "description": "",
                 "uploader": "",
                 "title": "foolish lifeline cannot escape death",
-                "views": 0
+                "views": 0,
+                "uploadedOn": "1706883212825"
             }
         ]
     },
@@ -70,7 +81,8 @@
         "description": "nothing to see here\n\ndescription with newline\n\nadding a longer description to see if it scrolls\n\nand again",
         "uploader": "Dennis Person",
         "title": "fast splatter",
-        "views": 0
+        "views": 0,
+        "uploadedOn": "1706883212825"
     },
     "hurricane-anemone-comments": {
         "comments": [
@@ -94,7 +106,8 @@
         "description": "nothing to see here",
         "uploader": "Dennis Person 2",
         "title": "foolish lifeline cannot escape death",
-        "views": 0
+        "views": 0,
+        "uploadedOn": "1695477444000"
     },
     "goofy-share-comments": {
         "comments": [

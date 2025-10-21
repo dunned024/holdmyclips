@@ -6,7 +6,7 @@ export interface Clip {
   id: string;
   title: string;
   uploader: string;
-  // uploadedAt: Date
+  uploadedOn: number;
   description: string;
   duration: number;
   views?: number;
@@ -26,6 +26,7 @@ export interface ClipUploadData {
   title: string;
   duration: string; // TODO: use proper types. Mapping this to string while I figure out DynamoDB typing
   uploader: string;
+  uploadedOn: number;
   description?: string;
   views?: number;
   comments?: string;

@@ -86,6 +86,7 @@ export function FormAccordian(props: FormAccordianProps) {
       title,
       duration: props.clipDuration.toString(),
       uploader: props.username,
+      uploadedOn: Date.now(),
       description
       // views: 0,
       // comments: '[]'

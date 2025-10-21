@@ -31,7 +31,8 @@ export function parseClip(rawClip: Record<string, string>): Clip {
     title: rawClip.title,
     uploader: rawClip.uploader,
     description: rawClip.description,
-    duration: parseInt(rawClip.duration)
+    duration: parseInt(rawClip.duration),
+    uploadedOn: parseInt(rawClip.uploadedOn)
     // views: parseInt(rawClip.views),
   };
 }

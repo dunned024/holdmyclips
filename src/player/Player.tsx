@@ -5,7 +5,7 @@ import { useParams } from 'react-router-dom';
 import { Grid, Stack } from '@mui/material';
 import { VideoComponent } from './VideoController';
 import { palette } from '../assets/themes/theme';
-import { secondsToMMSS } from '../services/time';
+import { readableTimestamp, secondsToMMSS } from '../services/time';
 import { getClipMetadata } from '../services/clips';
 import { getUsername } from '../services/cognito';
 import { CommentsContainer } from './CommentsContainer';
@@ -63,6 +63,11 @@ function ClipDetails(props: { clip: Clip }) {
         <Grid id='uploader-text' item xs={12}>
           <span>
             Uploader: <b>{props.clip.uploader}</b>
+          </span>
+        </Grid>
+        <Grid id='uploaded-at-text' item xs={12}>
+          <span>
+            Uploaded on: <b>{readableTimestamp(props.clip.uploadedOn)}</b>
           </span>
         </Grid>
         <Grid id='duration-text' item xs={6}>

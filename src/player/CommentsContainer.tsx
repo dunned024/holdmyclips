@@ -29,7 +29,6 @@ export function CommentsContainer(props: CommentsContainerProps) {
   }, [clipId]);
 
   async function postComment(commentText: string) {
-    console.log(username);
     if (username && clipId) {
       const timestamp = Date.now();
       // send comment via comments service
@@ -125,7 +124,6 @@ function AddCommentContainer(props: {
   };
 
   const verifyAndSendComment = () => {
-    console.log(commentText);
     if (commentText !== undefined && commentText !== '' && canSubmit) {
       props.postComment(commentText);
       setIsAddingComment(false);

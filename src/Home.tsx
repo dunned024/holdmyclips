@@ -5,7 +5,7 @@ import { Stack } from '@mui/material';
 import { Clip, ClipDex } from './types';
 import { getClips } from './services/clips';
 import { getUsername } from './services/cognito';
-import { secondsToMMSS } from './services/time';
+import { getTimeSinceString, secondsToMMSS } from './services/time';
 import { SORT_KEY_MAP, SortSelect } from './components/SortSelect';
 
 export function Home() {
@@ -76,6 +76,7 @@ function ClipCard(props: { clip: Clip }) {
 
   const fallback = 'https://clips.dunned024.com/default_thumbnail.png';
   const onError = () => setImgSrc(fallback);
+  console.log(getTimeSinceString(clip.uploadedOn));
 
   return (
     <div
@@ -91,7 +92,14 @@ function ClipCard(props: { clip: Clip }) {
             onError={onError}
             alt={clip.title}
           />
-          <div className='clip-duration'>{secondsToMMSS(clip.duration)}</div>
+          {showDetails && (
+            <div className='time-since-upload'>
+              {getTimeSinceString(clip.uploadedOn)}
+            </div>
+          )}
+          {showDetails && (
+            <div className='clip-duration'>{secondsToMMSS(clip.duration)}</div>
+          )}
           {showDetails && (
             <div className='clip-card-body'>
               <div className='clip-title'>{clip.title}</div>

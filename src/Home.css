@@ -92,6 +92,27 @@
     left: 0;
 }
 
+.time-since-upload {
+    z-index: 2;
+    position: absolute;
+    
+    height: 28px;
+    width: 100px;
+    left: -3px;
+    bottom: -3px;
+
+    background-color: black;
+    border-radius: 4px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    color: white;
+    text-align: center;
+    font-size: 10px;
+}
+
 .clip-duration {
     z-index: 2;
     position: absolute;

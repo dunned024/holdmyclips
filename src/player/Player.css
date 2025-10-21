@@ -31,7 +31,7 @@
 }
 
 #details-container {
-    max-height: 20%;
+    max-height: 30%;
     padding: 10px;
     color: black;
 
@@ -55,7 +55,7 @@
 }
 
 #comments-container {
-    min-height: calc(80% - 50px);
+    min-height: calc(70% - 50px);
     padding: 10px;
     margin: 10px 0 0 0;
     color: black;
