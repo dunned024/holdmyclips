@@ -153,7 +153,7 @@ export class StaticSiteStack extends Stack {
         'uploadclip': auth.createProtectedBehavior(authLambdas, s3Origin, uploadBehavior),
         'clipdata': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior), // pathPattern matches API endpoint
         'clipcomments': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior), // pathPattern matches API endpoint
-        // 'preupload': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior), // pathPattern matches API endpoint
+        'preupload': auth.createProtectedBehavior(authLambdas, apiOrigin, uploadBehavior), // pathPattern matches API endpoint
         'player/*': linkPreviewBehavior // Adds Edge Lambda for link previews for player/* URIs
       },
       certificate: props.hostedDomain.cert,

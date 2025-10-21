@@ -9,8 +9,7 @@ import { getTimeSinceString, secondsToMMSS } from './services/time';
 import { SORT_KEY_MAP, SortSelect } from './components/SortSelect';
 
 export function Home() {
-  const [sortKey, setSortKey] =
-    useState<keyof typeof SORT_KEY_MAP>('Title (A-Z)');
+  const [sortKey, setSortKey] = useState<keyof typeof SORT_KEY_MAP>('Newest');
   const sortFunction = SORT_KEY_MAP[sortKey];
 
   const [clipDex, setClipDex] = useState<ClipDex>({});
@@ -76,7 +75,6 @@ function ClipCard(props: { clip: Clip }) {
 
   const fallback = 'https://clips.dunned024.com/default_thumbnail.png';
   const onError = () => setImgSrc(fallback);
-  console.log(getTimeSinceString(clip.uploadedOn));
 
   return (
     <div

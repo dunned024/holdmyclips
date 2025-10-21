@@ -7,6 +7,8 @@ import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 
 export const SORT_KEY_MAP = {
+  Newest: sortBy('uploadedOn', true),
+  Oldest: sortBy('uploadedOn', false),
   'Title (A-Z)': sortBy('title', false),
   'Title (Z-A)': sortBy('title', true),
   'Duration (Short-Long)': sortBy('duration', false),
