@@ -13,7 +13,8 @@ import {
   OriginRequestPolicy,
   BehaviorOptions,
   AddBehaviorOptions,
-  ResponseHeadersPolicy
+  ResponseHeadersPolicy,
+  PriceClass
 } from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins'
 import {
@@ -160,6 +161,7 @@ export class StaticSiteStack extends Stack {
       domainNames: [props.fqdn],
       errorResponses: errorResponses,
       logBucket: logBucket,
+      priceClass: PriceClass.PRICE_CLASS_100,
     });
 
     // This path is responsible for returning data from the clipdex
