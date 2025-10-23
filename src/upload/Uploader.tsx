@@ -1,11 +1,13 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
 import { useState } from "react";
+import { useAuth } from "react-oidc-context";
 import type { ClipUploadData, TrimDirectives } from "src/types";
 import { FileSelector } from "src/upload/FileSelector";
 import { Previewer } from "src/upload/Previewer";
 import { UploadProgress } from "src/upload/UploadProgress";
 import "src/upload/Uploader.css";
+import { API_ENDPOINT } from "src/config";
 
 enum Pages {
   FileSelector = 0,
@@ -14,6 +16,7 @@ enum Pages {
 }
 
 export function Uploader() {
+  const auth = useAuth();
   const [activePage, setActivePage] = useState<Pages>(Pages.FileSelector);
   const [clipId, setClipId] = useState("");
   const [isFinished, setIsFinished] = useState(false);
@@ -36,16 +39,18 @@ export function Uploader() {
       return;
     }
 
-    try {
-      // Trigger auth refresh before uploading
-      const preupload = await fetch("/preupload", {
-        method: "GET",
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-        },
-      });
-      console.log(preupload);
+    // Check if user is authenticated
+    if (!auth.isAuthenticated || !auth.user?.access_token) {
+      console.error("User not authenticated");
+      alert("You must be signed in to upload clips");
+      return;
+    }
 
+    // Get the access token
+    const accessToken = auth.user.access_token;
+    const authHeader = { Authorization: `Bearer ${accessToken}` };
+
+    try {
       const id = uploadData.id;
       setClipId(id);
 
@@ -84,13 +89,17 @@ export function Uploader() {
         thumbBlob = new Blob([], { type: "image/jpeg" });
       }
 
-      const thumbRes = await fetch(`/uploadclip?filename=${id}.png`, {
-        headers: {
-          "Content-Type": "image/png",
+      const thumbRes = await fetch(
+        `${API_ENDPOINT}/uploadclip?filename=${id}.png`,
+        {
+          headers: {
+            "Content-Type": "image/png",
+            ...authHeader,
+          },
+          method: "PUT",
+          body: thumbBlob,
         },
-        method: "PUT",
-        body: thumbBlob,
-      });
+      );
       console.log(thumbRes);
 
       //---- TRIM ----//
@@ -200,14 +209,15 @@ export function Uploader() {
         }
       };
 
-      xhr.open("PUT", `/uploadclip?filename=${id}.mp4`, true);
+      xhr.open("PUT", `${API_ENDPOINT}/uploadclip?filename=${id}.mp4`, true);
+      xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
       xhr.send(clipUploadForm.get("file"));
 
       //---- UPLOAD CLIP DETAILS ----//
       currentMsg = `Uploading clip data - ID: ${id}`;
       setUploadProgressMsg(currentMsg);
 
-      const dataRes = await fetch("/clipdata", {
+      const dataRes = await fetch(`${API_ENDPOINT}/clipdata`, {
         method: "PUT",
         body: JSON.stringify({
           ...uploadData,
@@ -216,6 +226,7 @@ export function Uploader() {
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
+          ...authHeader,
         },
       });
       console.log(dataRes);

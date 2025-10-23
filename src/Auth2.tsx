@@ -1,9 +1,9 @@
 import { useAuth } from "react-oidc-context";
 import {
-  COGNITO_CLIENT_ID_V2,
+  COGNITO_CLIENT_ID,
   COGNITO_DOMAIN,
   COGNITO_REDIRECT_URI,
-} from "src/services/cognito";
+} from "src/config";
 
 export function Auth2() {
   const auth = useAuth();
@@ -13,7 +13,7 @@ export function Auth2() {
     await auth.removeUser();
 
     // Then redirect to Cognito's logout endpoint with proper parameters
-    const logoutUrl = `https://${COGNITO_DOMAIN}/logout?client_id=${COGNITO_CLIENT_ID_V2}&logout_uri=${encodeURIComponent(COGNITO_REDIRECT_URI)}`;
+    const logoutUrl = `https://${COGNITO_DOMAIN}/logout?client_id=${COGNITO_CLIENT_ID}&logout_uri=${encodeURIComponent(COGNITO_REDIRECT_URI)}`;
     window.location.href = logoutUrl;
   };
 

@@ -27,9 +27,10 @@
         "noConsoleLog": "off"
       },
       "style": {
+        "noUselessElse": "off",
         "useConst": "error",
-        "useTemplate": "warn",
-        "useNodejsImportProtocol": "off"
+        "useNodejsImportProtocol": "off",
+        "useTemplate": "warn"
       },
       "correctness": {
         "noUnusedVariables": "warn",

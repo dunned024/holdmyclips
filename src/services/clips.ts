@@ -1,8 +1,8 @@
-import { ENDPOINT } from "src/config";
+import { API_ENDPOINT } from "src/config";
 import type { Clip, ClipDex } from "src/types";
 
 export async function getClips(): Promise<ClipDex> {
-  const res = await fetch(`${ENDPOINT}/clips`);
+  const res = await fetch(`${API_ENDPOINT}/clips`);
   const data = await res.json();
 
   const clipList: ClipDex = {};
@@ -18,7 +18,7 @@ export async function getClipMetadata(id: string): Promise<Clip> {
   // TODO: Get this by fetching the ClipDex (maybe? still true?)
   //  Note: can't persist this info from when it's first fetched
   //  https://stackoverflow.com/a/53455443
-  const res = await fetch(`${ENDPOINT}/clips/${id}/${id}.json`);
+  const res = await fetch(`${API_ENDPOINT}/clips/${id}/${id}.json`);
   const data = await res.json();
 
   return parseClip(data);

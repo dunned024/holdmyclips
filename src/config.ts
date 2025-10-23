@@ -1,8 +1,9 @@
-export const ENDPOINT =
-  process.env.NODE_ENV === "production"
-    ? "https://clips.dunned024.com"
-    : "http://localhost:4000";
+const env = import.meta.env;
 
-// TODO: Once I can reliably update Lambda@Edge functions,
-// provide client_id as a cookie
-export const COGNITO_CLIENT_ID = "5imfsh8459i8uikndovo268f5b";
+export const API_ENDPOINT = env.VITE_API_ENDPOINT || "http://localhost:4000";
+export const COGNITO_REGION = env.VITE_COGNITO_REGION || "us-east-1";
+export const COGNITO_CLIENT_ID = env.VITE_COGNITO_CLIENT_ID || "";
+export const COGNITO_DOMAIN = env.VITE_COGNITO_DOMAIN || "";
+export const COGNITO_REDIRECT_URI =
+  env.VITE_COGNITO_REDIRECT_URI || "http://localhost:3000/";
+export const COGNITO_USER_POOL_ID = env.VITE_COGNITO_USER_POOL_ID || "";

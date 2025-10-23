@@ -9,7 +9,6 @@ COPY index.html ./
 COPY public/ public
 COPY src/ src
 
-ARG VITE_SERVER_API_ENDPOINT 
-RUN echo "VITE_SERVER_API_ENDPOINT=${VITE_SERVER_API_ENDPOINT}" >> .env
+COPY .env.local.example .env
 
 CMD ["npm", "start"]

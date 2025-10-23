@@ -1,8 +1,8 @@
-import { ENDPOINT } from "src/config";
+import { API_ENDPOINT } from "src/config";
 import type { Comment } from "src/types";
 
 export async function getComments(id: string): Promise<Comment[]> {
-  const res = await fetch(`${ENDPOINT}/clips/${id}/${id}.comments.json`);
+  const res = await fetch(`${API_ENDPOINT}/clips/${id}/${id}.comments.json`);
   const data = await res.json();
 
   return data.comments.map((c: Record<string, any>) => {

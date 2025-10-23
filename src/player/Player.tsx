@@ -9,6 +9,7 @@ import { readableTimestamp, secondsToMMSS } from "src/services/time";
 import type { Clip } from "src/types";
 import "src/player/Player.css";
 import { CommentsContainer } from "src/player/CommentsContainer";
+import { API_ENDPOINT } from "src/config";
 
 export function Player() {
   const { clipId } = useParams();
@@ -37,7 +38,7 @@ export function Player() {
     <Stack id="player">
       <Stack id="clip-container">
         <VideoComponent
-          sourceUrl={`https://clips.dunned024.com/clips/${clipId}/${clipId}.mp4`}
+          sourceUrl={`${API_ENDPOINT}/clips/${clipId}/${clipId}.mp4`}
           maxDuration={maxDuration}
           loadClipDuration={setMaxDuration}
         />

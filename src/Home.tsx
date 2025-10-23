@@ -5,9 +5,17 @@ import { getUsername } from "src/services/cognito";
 import { getTimeSinceString, secondsToMMSS } from "src/services/time";
 import type { Clip, ClipDex } from "src/types";
 import "src/Home.css";
-import { Stack } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
 import { useAuth } from "react-oidc-context";
 import { SORT_KEY_MAP, SortSelect } from "src/SortSelect";
+import {
+  API_ENDPOINT,
+  COGNITO_CLIENT_ID,
+  COGNITO_DOMAIN,
+  COGNITO_REDIRECT_URI,
+  COGNITO_REGION,
+  COGNITO_USER_POOL_ID,
+} from "src/config";
 
 export function Home() {
   const [sortKey, setSortKey] = useState<keyof typeof SORT_KEY_MAP>("Newest");
@@ -34,6 +42,19 @@ export function Home() {
       <Stack id="home-control-bar" direction="row">
         <Stack className="control-container">
           <SortSelect sortKey={sortKey} setSortKey={setSortKey} />
+          <Typography variant="body1">
+            Endpoint: {API_ENDPOINT}
+            <br />
+            Cognito Client ID: {COGNITO_CLIENT_ID}
+            <br />
+            Cognito Domain: {COGNITO_DOMAIN}
+            <br />
+            Cognito Region: {COGNITO_REGION}
+            <br />
+            Cognito Redirect URI: {COGNITO_REDIRECT_URI}
+            <br />
+            Cognito User Pool ID: {COGNITO_USER_POOL_ID}
+          </Typography>
         </Stack>
         <Stack className="control-container">
           {auth.isAuthenticated ? (
@@ -73,10 +94,10 @@ function ClipCard(props: { clip: Clip }) {
   const clip = props.clip;
   const [showDetails, setShowDetails] = useState<boolean>(false);
   const [imgSrc, setImgSrc] = useState<string | undefined>(
-    `https://clips.dunned024.com/clips/${clip.id}/${clip.id}.png`,
+    `${API_ENDPOINT}/clips/${clip.id}/${clip.id}.png`,
   );
 
-  const fallback = "https://clips.dunned024.com/default_thumbnail.png";
+  const fallback = `${API_ENDPOINT}/default_thumbnail.png`;
   const onError = () => setImgSrc(fallback);
 
   return (
