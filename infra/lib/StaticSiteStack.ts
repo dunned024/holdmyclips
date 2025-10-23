@@ -75,7 +75,7 @@ export class StaticSiteStack extends Stack {
 
     const bucket = new Bucket(this, "Bucket", {
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
-      bucketName: "hold-my-clips",
+      bucketName: props.bucketName,
       cors: [corsRule],
       versioned: true,
     });
@@ -92,8 +92,8 @@ export class StaticSiteStack extends Stack {
       this,
       "ResponseHeadersPolicy",
       {
-        responseHeadersPolicyName: "CorsAndCsp",
-        comment: "Policy to allow CORS and CSP for media streaming",
+        responseHeadersPolicyName: `CorsAndCsp-${props.environment}`,
+        comment: `Policy to allow CORS and CSP for media streaming (${props.environment})`,
         corsBehavior: {
           accessControlAllowCredentials: false,
           accessControlAllowMethods: ["GET", "HEAD", "POST", "PUT"],
@@ -136,7 +136,9 @@ export class StaticSiteStack extends Stack {
       origin: s3Origin,
       allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
       cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
-      edgeLambdas: [this.getLinkPreviewEdgeLambda()],
+      edgeLambdas: [
+        this.getLinkPreviewEdgeLambda(props.bucketName, props.environment),
+      ],
       originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
       responseHeadersPolicy,
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -174,43 +176,43 @@ export class StaticSiteStack extends Stack {
     const logBucket = new Bucket(this, "LogBucket", {
       accessControl: BucketAccessControl.BUCKET_OWNER_FULL_CONTROL,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
-      bucketName: "hold-my-clips-distribution-logs",
+      bucketName: `${props.bucketName}-distribution-logs`,
       objectOwnership: ObjectOwnership.OBJECT_WRITER,
     });
 
-    const auth = props.cloudFrontAuth;
-    const authLambdas = this.getAuthLambdaFnVersions();
+    // const auth = props.cloudFrontAuth;
+    // const authLambdas = this.getAuthLambdaFnVersions(props.environment);
     const apiOrigin = new RestApiOrigin(props.apiGateway, {
       originPath: "/prod",
     }); // originPath points to the Stage
     const distribution = new Distribution(this, "Distribution", {
       additionalBehaviors: {
-        ...auth.createAuthPagesBehaviors(authLambdas, s3Origin),
-        signedin: auth.createProtectedBehavior(
-          authLambdas,
-          s3Origin,
-          protectedPageBehavior,
-        ),
-        upload: auth.createProtectedBehavior(
-          authLambdas,
-          s3Origin,
-          protectedPageBehavior,
-        ),
-        uploadclip: auth.createProtectedBehavior(
-          authLambdas,
-          s3Origin,
-          uploadBehavior,
-        ),
-        clipdata: auth.createProtectedBehavior(
-          authLambdas,
-          apiOrigin,
-          uploadBehavior,
-        ), // pathPattern matches API endpoint
-        clipcomments: auth.createProtectedBehavior(
-          authLambdas,
-          apiOrigin,
-          uploadBehavior,
-        ), // pathPattern matches API endpoint
+        // ...auth.createAuthPagesBehaviors(authLambdas, s3Origin),
+        // signedin: auth.createProtectedBehavior(
+        //   authLambdas,
+        //   s3Origin,
+        //   protectedPageBehavior,
+        // ),
+        // upload: auth.createProtectedBehavior(
+        //   authLambdas,
+        //   s3Origin,
+        //   protectedPageBehavior,
+        // ),
+        // uploadclip: auth.createProtectedBehavior(
+        //   authLambdas,
+        //   s3Origin,
+        //   uploadBehavior,
+        // ),
+        // clipdata: auth.createProtectedBehavior(
+        //   authLambdas,
+        //   apiOrigin,
+        //   uploadBehavior,
+        // ), // pathPattern matches API endpoint
+        // clipcomments: auth.createProtectedBehavior(
+        //   authLambdas,
+        //   apiOrigin,
+        //   uploadBehavior,
+        // ), // pathPattern matches API endpoint
         "player/*": linkPreviewBehavior, // Adds Edge Lambda for link previews for player/* URIs
       },
       certificate: props.hostedDomain.cert,
@@ -244,32 +246,35 @@ export class StaticSiteStack extends Stack {
     });
   }
 
-  getAuthLambdaFnVersions(): AuthLambdaFnVersions {
-    function fn(scope: Stack, name: string): IVersion {
+  getAuthLambdaFnVersions(environment: string): AuthLambdaFnVersions {
+    function fn(scope: Stack, name: string, env: string): IVersion {
       const value = StringParameter.valueForStringParameter(
         scope,
-        `/HMC/lambdas/${name}Arn`,
+        `/HMC/${env}/lambdas/${name}Arn`,
       );
       return Version.fromVersionArn(scope, name, value);
     }
 
     return {
-      checkAuthFn: fn(this, "CheckAuthFn"),
-      httpHeadersFn: fn(this, "HttpHeadersFn"),
-      parseAuthFn: fn(this, "ParseAuthFn"),
-      refreshAuthFn: fn(this, "RefreshAuthFn"),
-      signOutFn: fn(this, "SignOutFn"),
+      checkAuthFn: fn(this, "CheckAuthFn", environment),
+      httpHeadersFn: fn(this, "HttpHeadersFn", environment),
+      parseAuthFn: fn(this, "ParseAuthFn", environment),
+      refreshAuthFn: fn(this, "RefreshAuthFn", environment),
+      signOutFn: fn(this, "SignOutFn", environment),
     };
   }
 
-  getLinkPreviewEdgeLambda(): EdgeLambda {
+  getLinkPreviewEdgeLambda(
+    bucketName: string,
+    environment: string,
+  ): EdgeLambda {
     const s3PolicyStatement = new PolicyStatement({
       actions: ["s3:GetObject*", "s3:GetObjectAcl*"],
-      resources: ["arn:aws:s3:::hold-my-clips/*"],
+      resources: [`arn:aws:s3:::${bucketName}/*`],
     });
 
     const role = new Role(this, "Role", {
-      roleName: "hold-my-clips-preview-lambda-role",
+      roleName: `hold-my-clips-preview-lambda-role-${environment}`,
       assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
       managedPolicies: [
         ManagedPolicy.fromAwsManagedPolicyName(

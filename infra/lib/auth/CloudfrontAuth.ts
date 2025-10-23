@@ -58,6 +58,10 @@ export interface CloudFrontAuthProps {
    */
   fqdn: string;
   /**
+   * Environment (prod or dev)
+   */
+  environment: string;
+  /**
    * @default /auth/callback
    */
   callbackPath?: string;
@@ -102,9 +106,12 @@ export class CloudFrontAuth extends Construct {
   public readonly authLambdaParams: ConfiguredAuthLambdaParams;
 
   private readonly oauthScopes: string[];
+  private readonly environment: string;
 
   constructor(scope: Construct, id: string, props: CloudFrontAuthProps) {
     super(scope, id);
+
+    this.environment = props.environment;
 
     this.callbackPath = props.callbackPath ?? "/auth/callback";
     this.signOutRedirectTo = props.signOutRedirectTo ?? "/";
@@ -207,7 +214,7 @@ export class CloudFrontAuth extends Construct {
     }).version;
 
     return new StringParameter(this, `${name}SsmParam`, {
-      parameterName: `/HMC/lambdas/${name}Arn`,
+      parameterName: `/HMC/${this.environment}/lambdas/${name}Arn`,
       stringValue: fnVersion.edgeArn,
     });
   }

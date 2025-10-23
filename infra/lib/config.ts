@@ -1,9 +1,13 @@
 import type { App, Environment, StackProps } from "aws-cdk-lib";
 
+export type EnvironmentType = "prod" | "dev";
+
 export interface ConfiguredStackProps extends StackProps {
   env: Environment;
+  environment: EnvironmentType;
   domainName: string;
   fqdn: string; // Fully qualified domain name
+  bucketName: string;
   certArn: string;
   hostedZoneId: string;
   authPaths: {
@@ -14,13 +18,25 @@ export interface ConfiguredStackProps extends StackProps {
   };
 }
 
-export function loadConfig(app: App, env: Environment): ConfiguredStackProps {
-  const appConfig = app.node.tryGetContext("appConfig");
+export function loadConfig(
+  app: App,
+  env: Environment,
+  environment: EnvironmentType,
+): ConfiguredStackProps {
+  const appConfig = app.node.tryGetContext(`${environment}Config`);
+
+  if (!appConfig) {
+    throw new Error(
+      `Configuration for environment "${environment}" not found in CDK context`,
+    );
+  }
 
   return {
     env,
+    environment,
     domainName: appConfig.domainName,
     fqdn: appConfig.fqdn,
+    bucketName: appConfig.bucketName,
     certArn: appConfig.certArn,
     hostedZoneId: appConfig.hostedZoneId,
     authPaths: appConfig.authPaths,

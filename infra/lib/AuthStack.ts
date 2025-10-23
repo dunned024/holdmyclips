@@ -45,7 +45,7 @@ import {
 import type { Construct } from "constructs";
 import type { HostedDomain } from "./HostedDomainStack";
 import { AuthLambdas } from "./auth/AuthLambdas";
-import { CloudFrontAuth } from "./auth/CloudfrontAuth";
+import type { CloudFrontAuth } from "./auth/CloudfrontAuth";
 import type { ConfiguredStackProps } from "./config";
 
 export interface AuthStackProps extends ConfiguredStackProps {
@@ -61,7 +61,7 @@ export class AuthStack extends Stack {
 
     this.userPool = new UserPool(this, "UserPool", {
       autoVerify: { email: true },
-      userPoolName: "hold-my-clips-user-pool",
+      userPoolName: `hold-my-clips-user-pool-${props.environment}`,
       selfSignUpEnabled: true,
       signInAliases: {
         username: true,
@@ -92,23 +92,23 @@ export class AuthStack extends Stack {
       },
     });
 
-    const userPoolClient = this.userPool.addClient("UserPoolClient", {
-      authFlows: {
-        userPassword: true,
-        userSrp: true,
-      },
-      oAuth: {
-        flows: {
-          authorizationCodeGrant: true,
-        },
-        callbackUrls: [`https://${props.fqdn}${props.authPaths.callbackPath}`],
-        logoutUrls: [
-          `https://${props.fqdn}${props.authPaths.signOutRedirectTo}`,
-        ],
-      },
-      preventUserExistenceErrors: true,
-      generateSecret: true,
-    });
+    // const userPoolClient = this.userPool.addClient("UserPoolClient", {
+    //   authFlows: {
+    //     userPassword: true,
+    //     userSrp: true,
+    //   },
+    //   oAuth: {
+    //     flows: {
+    //       authorizationCodeGrant: true,
+    //     },
+    //     callbackUrls: [`https://${props.fqdn}${props.authPaths.callbackPath}`],
+    //     logoutUrls: [
+    //       `https://${props.fqdn}${props.authPaths.signOutRedirectTo}`,
+    //     ],
+    //   },
+    //   preventUserExistenceErrors: true,
+    //   generateSecret: true,
+    // });
 
     const userPoolClientV2 = this.userPool.addClient("UserPoolClientV2", {
       authFlows: {
@@ -133,6 +133,22 @@ export class AuthStack extends Stack {
     });
 
     const authDomainName = `oauth.${props.fqdn}`;
+
+    // "You must create an A record for the parent domain in your DNS
+    // configuration" before creating an A Record for a custom domain.
+    // For dev (or first-time deployments), create a dummy A record that
+    // will later be replaced by the StaticSiteStack's CloudFront distribution.
+    // See: https://repost.aws/knowledge-center/cognito-custom-domain-errors
+    // let dummyARecord: ARecord | undefined;
+    // dummyARecord = new ARecord(this, "DummyParentARecord", {
+    //   recordName: props.fqdn,
+    //   // Use a dummy IP address (this will be replaced by StaticSiteStack)
+    //   target: RecordTarget.fromIpAddresses("192.0.2.1"), // RFC 5737 TEST-NET-1 address
+    //   zone: props.hostedDomain.hostedZone,
+    //   comment: `Temporary A record for ${props.environment} - will be replaced by StaticSiteStack`,
+    //   ttl: Duration.seconds(60),
+    // });
+
     const domain = this.userPool.addDomain("Domain", {
       customDomain: {
         domainName: authDomainName,
@@ -140,27 +156,28 @@ export class AuthStack extends Stack {
       },
     });
 
-    // "You must create an A record for the parent domain in your DNS
-    // configuration" before creating an A Record for a custom domain. I
-    // had already created an A Record for the FQDN when standing up the
-    // CloudFront distribution, but if I reversed the order of deployment,
-    // I would need to create a 'dummy' A Record (that could later be
-    // deleted).
-    // See: https://repost.aws/knowledge-center/cognito-custom-domain-errors
-    new ARecord(this, "DnsRecord", {
+    // This A record depends on the parent domain A record existing
+    const authARecord = new ARecord(this, "AuthDnsRecord", {
       recordName: authDomainName,
       target: RecordTarget.fromAlias(new UserPoolDomainTarget(domain)),
       zone: props.hostedDomain.hostedZone,
     });
 
-    this.cloudFrontAuth = new CloudFrontAuth(this, "Auth", {
-      cognitoAuthDomain: authDomainName,
-      authLambdas: new AuthLambdas(this, "AuthLambdas"),
-      fqdn: props.fqdn,
-      logLevel: "info",
-      userPool: this.userPool,
-      client: userPoolClient,
-      ...props.authPaths,
-    });
+    // If we created a dummy record, ensure the auth record depends on it
+    // if (dummyARecord) {
+    //   authARecord.node.addDependency(dummyARecord);
+    // }
+
+    //   this.cloudFrontAuth = new CloudFrontAuth(this, "Auth", {
+    //     cognitoAuthDomain: authDomainName,
+    //     authLambdas: new AuthLambdas(this, "AuthLambdas"),
+    //     fqdn: props.fqdn,
+    //     environment: props.environment,
+    //     logLevel: "info",
+    //     userPool: this.userPool,
+    //     client: userPoolClient,
+    //     ...props.authPaths,
+    //   });
+    // }
   }
 }

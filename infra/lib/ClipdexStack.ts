@@ -84,7 +84,7 @@ export class ClipdexStack extends Stack {
     );
 
     // Add Lambda integration for uploading clips
-    const lambdaRole = getLambdaRole(this);
+    const lambdaRole = getLambdaRole(this, props.environment, props.bucketName);
     const clipDataResource = this.apiGateway.root.addResource("clipdata");
     const uploadLambda = new Function(this, "UploadFunction", {
       runtime: Runtime.NODEJS_18_X,
@@ -115,7 +115,11 @@ export class ClipdexStack extends Stack {
   }
 }
 
-function getLambdaRole(scope: Construct) {
+function getLambdaRole(
+  scope: Construct,
+  environment: string,
+  bucketName: string,
+) {
   const s3PolicyStatement = new PolicyStatement({
     actions: [
       "s3:PutObject*",
@@ -124,7 +128,7 @@ function getLambdaRole(scope: Construct) {
       "s3:GetObjectAcl*",
       "s3:DeleteObject",
     ],
-    resources: ["arn:aws:s3:::hold-my-clips/clips/*"],
+    resources: [`arn:aws:s3:::${bucketName}/clips/*`],
   });
 
   const cloudformationPolicyStatement = new PolicyStatement({
@@ -146,7 +150,7 @@ function getLambdaRole(scope: Construct) {
   });
 
   return new Role(scope, "Role", {
-    roleName: "hold-my-clips-lambda-role",
+    roleName: `hold-my-clips-lambda-role-${environment}`,
     assumedBy: new ServicePrincipal("lambda.amazonaws.com"),
     managedPolicies: [
       ManagedPolicy.fromAwsManagedPolicyName(

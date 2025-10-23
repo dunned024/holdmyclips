@@ -1,14 +1,20 @@
-# Welcome to your CDK TypeScript project
+# HMC Infra
 
-This is a blank project for CDK development with TypeScript.
+## How to Use
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
+### Deploy Production (default)
+```
+cdk deploy --all
+```
 
-## Useful commands
+### Deploy Development
+```
+cdk deploy --all --context environment=dev
+```
 
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `cdk deploy`      deploy this stack to your default AWS account/region
-* `cdk diff`        compare deployed stack with current state
-* `cdk synth`       emits the synthesized CloudFormation template
+### Deploy Specific Stack to Dev
+```
+cdk deploy HMCAuthDev --context environment=dev
+cdk deploy HMCClipdexDev --context environment=dev
+cdk deploy HMCStaticSiteDev --context environment=dev
+```
