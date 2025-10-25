@@ -8,6 +8,7 @@ import {
   type EnvironmentType,
   loadConfig,
 } from "./config";
+import { toCamelCase } from "./utils";
 
 export default function createStacks(
   app: App,
@@ -24,7 +25,7 @@ export default function createStacks(
   );
 
   // Environment-specific stack names
-  const envSuffix = environment.charAt(0).toUpperCase() + environment.slice(1);
+  const envSuffix = toCamelCase(environment);
 
   const authStack = new AuthStack(app, `HMCAuth${envSuffix}`, {
     ...config,
@@ -33,6 +34,8 @@ export default function createStacks(
 
   const clipdexStack = new ClipdexStack(app, `HMCClipdex${envSuffix}`, {
     ...config,
+    cognitoUserPoolId: authStack.userPool.userPoolId,
+    cognitoUserPoolClientId: authStack.userPoolClientV2.userPoolClientId,
   });
 
   const staticSiteStack = new StaticSiteStack(

@@ -18,15 +18,21 @@ import {
   ServicePrincipal,
 } from "aws-cdk-lib/aws-iam";
 // biome-ignore lint/suspicious/noShadowRestrictedNames: this ain't the same thing
-import { Code, Function, Runtime } from "aws-cdk-lib/aws-lambda";
+import { Code, Function, LayerVersion, Runtime } from "aws-cdk-lib/aws-lambda";
 import { LogGroup } from "aws-cdk-lib/aws-logs";
 import type { Construct } from "constructs";
 import type { ConfiguredStackProps } from "./config";
+import { toCamelCase } from "./utils";
+
+export interface ClipdexStackProps extends ConfiguredStackProps {
+  cognitoUserPoolId: string;
+  cognitoUserPoolClientId: string;
+}
 
 export class ClipdexStack extends Stack {
   public readonly apiGateway: LambdaRestApi;
 
-  constructor(scope: Construct, id: string, props: ConfiguredStackProps) {
+  constructor(scope: Construct, id: string, props: ClipdexStackProps) {
     super(scope, id, props);
 
     // Create DynamoDB table to act as metadata index
@@ -35,27 +41,43 @@ export class ClipdexStack extends Stack {
     });
 
     // Create REST API Gateway for querying table & uploading things
-    const logGroup = new LogGroup(this, "APILogs");
-    this.apiGateway = new RestApi(this, "RestApi", {
-      cloudWatchRole: true,
-      defaultCorsPreflightOptions: {
-        allowOrigins: ["*"],
+    const logGroup = new LogGroup(
+      this,
+      `HMCClipdexAPILogs${toCamelCase(props.environment)}`,
+    );
+    this.apiGateway = new RestApi(
+      this,
+      `HMCClipdexAPI${toCamelCase(props.environment)}`,
+      {
+        cloudWatchRole: true,
+        defaultCorsPreflightOptions: {
+          allowOrigins: ["*"],
+          allowMethods: ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
+          allowHeaders: [
+            "Content-Type",
+            "Authorization",
+            "X-Amz-Date",
+            "X-Api-Key",
+            "X-Amz-Security-Token",
+          ],
+          allowCredentials: false,
+        },
+        deployOptions: {
+          accessLogDestination: new LogGroupLogDestination(logGroup),
+          accessLogFormat: AccessLogFormat.jsonWithStandardFields({
+            caller: true,
+            httpMethod: true,
+            ip: true,
+            protocol: true,
+            requestTime: true,
+            resourcePath: true,
+            responseLength: true,
+            status: true,
+            user: true,
+          }),
+        },
       },
-      deployOptions: {
-        accessLogDestination: new LogGroupLogDestination(logGroup),
-        accessLogFormat: AccessLogFormat.jsonWithStandardFields({
-          caller: true,
-          httpMethod: true,
-          ip: true,
-          protocol: true,
-          requestTime: true,
-          resourcePath: true,
-          responseLength: true,
-          status: true,
-          user: true,
-        }),
-      },
-    });
+    );
 
     // Create IAM Role for reading from table
     const readTableRole = new Role(this, "IntegrationRole", {
@@ -83,30 +105,67 @@ export class ClipdexStack extends Stack {
       },
     );
 
+    // Define Lambda layer for shared utilities
+    const sharedLayer = new LayerVersion(this, "SharedLayer", {
+      code: Code.fromAsset(path.join(__dirname, "../services/shared/")),
+      compatibleRuntimes: [Runtime.NODEJS_18_X],
+    });
+
     // Add Lambda integration for uploading clips
     const lambdaRole = getLambdaRole(this, props.environment, props.bucketName);
-    const clipDataResource = this.apiGateway.root.addResource("clipdata");
-    const uploadLambda = new Function(this, "UploadFunction", {
-      runtime: Runtime.NODEJS_18_X,
-      handler: "index.handler",
-      code: Code.fromAsset(path.join(__dirname, "../services/upload/")),
-      role: lambdaRole,
-      timeout: Duration.minutes(2),
-    });
+    const uploadLambda = new Function(
+      this,
+      `UploadFunction${toCamelCase(props.environment)}`,
+      {
+        runtime: Runtime.NODEJS_18_X,
+        handler: "index.handler",
+        code: Code.fromAsset(path.join(__dirname, "../services/upload/")),
+        role: lambdaRole,
+        timeout: Duration.minutes(2),
+        layers: [sharedLayer],
+        environment: {
+          USER_POOL_ID: props.cognitoUserPoolId,
+          COGNITO_REGION: "us-east-1",
+          CLIENT_ID: props.cognitoUserPoolClientId,
+          BUCKET_NAME: props.bucketName,
+          ENVIRONMENT: toCamelCase(props.environment),
+        },
+      },
+    );
     const uploadIntegration = new LambdaIntegration(uploadLambda);
+
+    // Create /clipdata resource for metadata uploads
+    const clipDataResource = this.apiGateway.root.addResource("clipdata");
     clipDataResource.addMethod("PUT", uploadIntegration); // PUT /clipdata
+
+    // Create /uploadclip resource for file uploads
+    const uploadClipResource = this.apiGateway.root.addResource("uploadclip");
+    uploadClipResource.addMethod("PUT", uploadIntegration); // PUT /uploadclip
+
     clipdexTable.grantReadWriteData(uploadLambda);
 
     // Add Lambda integration for managing comments
     const clipCommentsResource =
       this.apiGateway.root.addResource("clipcomments");
-    const commentsLambda = new Function(this, "CommentsFunction", {
-      runtime: Runtime.NODEJS_18_X,
-      handler: "index.handler",
-      code: Code.fromAsset(path.join(__dirname, "../services/comments/")),
-      role: lambdaRole,
-      timeout: Duration.minutes(2),
-    });
+    const commentsLambda = new Function(
+      this,
+      `CommentsFunction${toCamelCase(props.environment)}`,
+      {
+        runtime: Runtime.NODEJS_18_X,
+        handler: "index.handler",
+        code: Code.fromAsset(path.join(__dirname, "../services/comments/")),
+        role: lambdaRole,
+        timeout: Duration.minutes(2),
+        layers: [sharedLayer],
+        environment: {
+          USER_POOL_ID: props.cognitoUserPoolId,
+          COGNITO_REGION: "us-east-1",
+          CLIENT_ID: props.cognitoUserPoolClientId,
+          BUCKET_NAME: props.bucketName,
+          ENVIRONMENT: toCamelCase(props.environment),
+        },
+      },
+    );
     const commentsIntegration = new LambdaIntegration(commentsLambda);
     clipCommentsResource.addMethod("POST", commentsIntegration); // POST /clipcomments
     clipCommentsResource.addMethod("DELETE", commentsIntegration); // DELETE /clipcomments

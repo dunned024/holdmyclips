@@ -20,7 +20,7 @@ import { RestApiOrigin, S3Origin } from "aws-cdk-lib/aws-cloudfront-origins";
 import {
   OAuthScope,
   UserPool,
-  UserPoolClient,
+  type UserPoolClient,
   UserPoolClientIdentityProvider,
   VerificationEmailStyle,
 } from "aws-cdk-lib/aws-cognito";
@@ -55,6 +55,7 @@ export interface AuthStackProps extends ConfiguredStackProps {
 export class AuthStack extends Stack {
   public readonly cloudFrontAuth: CloudFrontAuth;
   public readonly userPool: UserPool;
+  public readonly userPoolClientV2: UserPoolClient;
 
   constructor(scope: Construct, id: string, props: AuthStackProps) {
     super(scope, id, props);
@@ -110,7 +111,7 @@ export class AuthStack extends Stack {
     //   generateSecret: true,
     // });
 
-    const userPoolClientV2 = this.userPool.addClient("UserPoolClientV2", {
+    this.userPoolClientV2 = this.userPool.addClient("UserPoolClientV2", {
       authFlows: {
         userPassword: false, // Disable direct password auth for SPA
         userSrp: true,
@@ -129,7 +130,7 @@ export class AuthStack extends Stack {
     });
 
     new CfnOutput(this, "UserPoolClientV2Id", {
-      value: userPoolClientV2.userPoolClientId,
+      value: this.userPoolClientV2.userPoolClientId,
     });
 
     const authDomainName = `oauth.${props.fqdn}`;

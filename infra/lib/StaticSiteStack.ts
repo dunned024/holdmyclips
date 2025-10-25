@@ -159,16 +159,6 @@ export class StaticSiteStack extends Stack {
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     };
 
-    const uploadBehavior: AddBehaviorOptions = {
-      allowedMethods: AllowedMethods.ALLOW_ALL,
-      cachePolicy: new CachePolicy(this, "UploadCachePolicy", {
-        maxTtl: Duration.seconds(0),
-        minTtl: Duration.seconds(0),
-      }),
-      originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
-      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-    };
-
     // Re-evaluate whether or not this is needed, based on how much it
     // costs to store these logs vs. their usefulness.
     // They're also not easy to use, since I'm not spending money on
@@ -185,34 +175,23 @@ export class StaticSiteStack extends Stack {
     const apiOrigin = new RestApiOrigin(props.apiGateway, {
       originPath: "/prod",
     }); // originPath points to the Stage
+
+    const uploadBehavior: BehaviorOptions = {
+      origin: apiOrigin,
+      allowedMethods: AllowedMethods.ALLOW_ALL,
+      cachePolicy: new CachePolicy(this, "UploadCachePolicy", {
+        maxTtl: Duration.seconds(0),
+        minTtl: Duration.seconds(0),
+      }),
+      originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    };
+
     const distribution = new Distribution(this, "Distribution", {
       additionalBehaviors: {
-        // ...auth.createAuthPagesBehaviors(authLambdas, s3Origin),
-        // signedin: auth.createProtectedBehavior(
-        //   authLambdas,
-        //   s3Origin,
-        //   protectedPageBehavior,
-        // ),
-        // upload: auth.createProtectedBehavior(
-        //   authLambdas,
-        //   s3Origin,
-        //   protectedPageBehavior,
-        // ),
-        // uploadclip: auth.createProtectedBehavior(
-        //   authLambdas,
-        //   s3Origin,
-        //   uploadBehavior,
-        // ),
-        // clipdata: auth.createProtectedBehavior(
-        //   authLambdas,
-        //   apiOrigin,
-        //   uploadBehavior,
-        // ), // pathPattern matches API endpoint
-        // clipcomments: auth.createProtectedBehavior(
-        //   authLambdas,
-        //   apiOrigin,
-        //   uploadBehavior,
-        // ), // pathPattern matches API endpoint
+        uploadclip: uploadBehavior,
+        clipdata: uploadBehavior,
+        clipcomments: uploadBehavior,
         "player/*": linkPreviewBehavior, // Adds Edge Lambda for link previews for player/* URIs
       },
       certificate: props.hostedDomain.cert,
