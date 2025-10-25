@@ -144,18 +144,11 @@ export class StaticSiteStack extends Stack {
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     };
 
-    const protectedPageBehavior: AddBehaviorOptions = {
-      allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
-      cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
-      originRequestPolicy: OriginRequestPolicy.CORS_S3_ORIGIN,
-      responseHeadersPolicy,
-      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-    };
-
     const apiBehavior: AddBehaviorOptions = {
       allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
       cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
       originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+      responseHeadersPolicy,
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     };
 
@@ -189,9 +182,9 @@ export class StaticSiteStack extends Stack {
 
     const distribution = new Distribution(this, "Distribution", {
       additionalBehaviors: {
-        uploadclip: uploadBehavior,
         clipdata: uploadBehavior,
         clipcomments: uploadBehavior,
+        presign: uploadBehavior,
         "player/*": linkPreviewBehavior, // Adds Edge Lambda for link previews for player/* URIs
       },
       certificate: props.hostedDomain.cert,

@@ -77,7 +77,7 @@ export function Uploader() {
         });
 
         history = [...history, currentMsg];
-        currentMsg = "Uploading thumbnail";
+        currentMsg = "Requesting presigned URL for thumbnail";
         setUploadProgressHistory(history);
         setUploadProgressMsg(currentMsg);
       } else {
@@ -89,26 +89,55 @@ export function Uploader() {
         thumbBlob = new Blob([], { type: "image/jpeg" });
       }
 
-      const thumbRes = await fetch(
-        `${API_ENDPOINT}/uploadclip?filename=${id}.png`,
-        {
-          headers: {
-            "Content-Type": "image/png",
-            ...authHeader,
-          },
-          method: "PUT",
-          body: thumbBlob,
+      // Get presigned URL for thumbnail
+      history = [...history, currentMsg];
+      currentMsg = "Uploading thumbnail";
+      setUploadProgressHistory(history);
+      setUploadProgressMsg(currentMsg);
+
+      const thumbPresignRes = await fetch(`${API_ENDPOINT}/presign`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader,
         },
-      );
-      console.log(thumbRes);
+        body: JSON.stringify({
+          clipId: id,
+          filename: `${id}.png`,
+          contentType: "image/png",
+        }),
+      });
+
+      if (!thumbPresignRes.ok) {
+        throw new Error("Failed to get presigned URL for thumbnail");
+      }
+
+      const { presignedUrl: thumbPresignedUrl } = await thumbPresignRes.json();
+
+      // Upload thumbnail directly to S3
+      const thumbUploadRes = await fetch(thumbPresignedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "image/png",
+        },
+        body: thumbBlob,
+      });
+
+      if (!thumbUploadRes.ok) {
+        throw new Error("Failed to upload thumbnail");
+      }
+
+      console.log("Thumbnail uploaded successfully");
 
       //---- TRIM ----//
-      const clipUploadForm = new FormData();
-
       history = [...history, currentMsg];
       currentMsg = "Checking for clip trimming";
       setUploadProgressHistory(history);
       setUploadProgressMsg(currentMsg);
+
+      let fileToUpload: File = source;
+      const videoExtension = source.name.split(".").pop() || "mp4";
+      const videoMimeType = source.type || "video/mp4";
 
       if (trimDirectives) {
         const ffmpeg = new FFmpeg();
@@ -136,16 +165,20 @@ export function Uploader() {
           ),
         });
 
-        await ffmpeg.writeFile("input.mp4", await fetchFile(source));
+        // Use original extension for ffmpeg processing
+        const inputFile = `input.${videoExtension}`;
+        const outputFile = `output.${videoExtension}`;
+
+        await ffmpeg.writeFile(inputFile, await fetchFile(source));
 
         history = [...history, currentMsg];
-        currentMsg = "Loading ffmpeg";
+        currentMsg = "Trimming clip";
         setUploadProgressHistory(history);
         setUploadProgressMsg(currentMsg);
 
         await ffmpeg.exec([
           "-i",
-          "input.mp4",
+          inputFile,
           "-ss",
           trimDirectives.startTime,
           "-to",
@@ -158,7 +191,7 @@ export function Uploader() {
           // 'ultrafast',    //  (cheatsheet: https://superuser.com/a/490691)
           // '-c:a',         //  to this page: https://superuser.com/a/459488
           // 'aac',          //  Should prob offer users a choice between the two
-          "output.mp4",
+          outputFile,
         ]);
 
         history = [...history, "Finished trimming"];
@@ -166,18 +199,46 @@ export function Uploader() {
         setUploadProgressHistory(history);
         setUploadProgressMsg(currentMsg);
 
-        // TODO: use variable extensions
-        const data = await ffmpeg.readFile("output.mp4");
-        const fileBlob = new Blob([data], { type: "video/mp4" });
-        const trimmedFile = new File([fileBlob], `${id}.mp4`);
+        const data = await ffmpeg.readFile(outputFile);
+        const fileBlob = new Blob([data as BlobPart], { type: videoMimeType });
+        const trimmedFile = new File([fileBlob], `${id}.${videoExtension}`);
 
         setSource(trimmedFile);
-        clipUploadForm.append("file", trimmedFile);
-      } else {
-        clipUploadForm.append("file", source);
+        fileToUpload = trimmedFile;
       }
 
       //---- UPLOAD VIDEO ----//
+      history = [...history, currentMsg];
+      currentMsg = "Requesting presigned URL for video";
+      setUploadProgressHistory(history);
+      setUploadProgressMsg(currentMsg);
+
+      // Get presigned URL for video upload
+      const videoPresignRes = await fetch(`${API_ENDPOINT}/presign`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader,
+        },
+        body: JSON.stringify({
+          clipId: id,
+          filename: `${id}.${videoExtension}`,
+          contentType: videoMimeType,
+        }),
+      });
+
+      if (!videoPresignRes.ok) {
+        throw new Error("Failed to get presigned URL for video");
+      }
+
+      const { presignedUrl: videoPresignedUrl } = await videoPresignRes.json();
+
+      history = [...history, currentMsg];
+      currentMsg = "Uploading video";
+      setUploadProgressHistory(history);
+      setUploadProgressMsg(currentMsg);
+
+      // Upload video directly to S3 with progress tracking
       const xhr = new XMLHttpRequest();
 
       xhr.upload.addEventListener("progress", (event) => {
@@ -209,9 +270,9 @@ export function Uploader() {
         }
       };
 
-      xhr.open("PUT", `${API_ENDPOINT}/uploadclip?filename=${id}.mp4`, true);
-      xhr.setRequestHeader("Authorization", `Bearer ${accessToken}`);
-      xhr.send(clipUploadForm.get("file"));
+      xhr.open("PUT", videoPresignedUrl, true);
+      xhr.setRequestHeader("Content-Type", videoMimeType);
+      xhr.send(fileToUpload);
 
       //---- UPLOAD CLIP DETAILS ----//
       currentMsg = `Uploading clip data - ID: ${id}`;
@@ -221,11 +282,11 @@ export function Uploader() {
         method: "PUT",
         body: JSON.stringify({
           ...uploadData,
+          fileExtension: videoExtension,
           uploadedOn: Date.now().toString(),
         }),
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
           ...authHeader,
         },
       });

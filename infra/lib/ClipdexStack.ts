@@ -138,11 +138,33 @@ export class ClipdexStack extends Stack {
     const clipDataResource = this.apiGateway.root.addResource("clipdata");
     clipDataResource.addMethod("PUT", uploadIntegration); // PUT /clipdata
 
-    // Create /uploadclip resource for file uploads
-    const uploadClipResource = this.apiGateway.root.addResource("uploadclip");
-    uploadClipResource.addMethod("PUT", uploadIntegration); // PUT /uploadclip
-
     clipdexTable.grantReadWriteData(uploadLambda);
+
+    // Add Lambda integration for generating presigned URLs
+    const presignLambda = new Function(
+      this,
+      `PresignFunction${toCamelCase(props.environment)}`,
+      {
+        runtime: Runtime.NODEJS_18_X,
+        handler: "index.handler",
+        code: Code.fromAsset(path.join(__dirname, "../services/presign/")),
+        role: lambdaRole,
+        timeout: Duration.seconds(30),
+        layers: [sharedLayer],
+        environment: {
+          USER_POOL_ID: props.cognitoUserPoolId,
+          COGNITO_REGION: "us-east-1",
+          CLIENT_ID: props.cognitoUserPoolClientId,
+          BUCKET_NAME: props.bucketName,
+          ENVIRONMENT: toCamelCase(props.environment),
+        },
+      },
+    );
+    const presignIntegration = new LambdaIntegration(presignLambda);
+
+    // Create /presign resource for getting presigned URLs
+    const presignResource = this.apiGateway.root.addResource("presign");
+    presignResource.addMethod("POST", presignIntegration); // POST /presign
 
     // Add Lambda integration for managing comments
     const clipCommentsResource =
@@ -249,7 +271,8 @@ function getAllClipsIntegration(role: Role, tableName: string) {
                         "description": "$util.escapeJavaScript($elem.description.S).replaceAll("\\\\'","'")",
                         "uploader": "$elem.uploader.S",
                         "uploadedOn": "$elem.uploadedOn.N",
-                        "title": "$util.escapeJavaScript($elem.title.S).replaceAll("\\\\'","'")"
+                        "title": "$util.escapeJavaScript($elem.title.S).replaceAll("\\\\'","'")"#if($elem.fileExtension),
+                        "fileExtension": "$elem.fileExtension.S"#end
                       }#if($foreach.hasNext),#end
                     #end
                   ]
@@ -291,7 +314,8 @@ function getSingleClipIntegration(role: Role, tableName: string) {
               "description": "$util.escapeJavaScript($input.path('$.Item.description.S')).replaceAll("\\\\'","'")",
               "uploader": "$input.path('$.Item.uploader.S')",
               "uploadedOn": "$input.path('$.Item.uploadedOn.N')",
-              "title": "$util.escapeJavaScript($input.path('$.Item.title.S')).replaceAll("\\\\'","'")"
+              "title": "$util.escapeJavaScript($input.path('$.Item.title.S')).replaceAll("\\\\'","'")"#if($input.path('$.Item.fileExtension')),
+              "fileExtension": "$input.path('$.Item.fileExtension.S')"#end
             }
           `,
           },

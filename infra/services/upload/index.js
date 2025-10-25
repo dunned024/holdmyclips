@@ -4,7 +4,7 @@ import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { S3 } from "@aws-sdk/client-s3";
 import { verifyToken } from "/opt/nodejs/cognitoAuth.js";
 
-export const handler = async (event, context, callback) => {
+export const handler = async (event) => {
   console.log({ event });
   console.log({ stringEvent: JSON.stringify(event) });
 
@@ -16,7 +16,7 @@ export const handler = async (event, context, callback) => {
         "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "PUT, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        "Access-Control-Max-Age": "86400", // Cache preflight for 24 hours
+        "Access-Control-Max-Age": "86400",
       },
       body: "",
     };
@@ -80,73 +80,16 @@ export const handler = async (event, context, callback) => {
   console.log("Authenticated user:", verification.username);
 
   if (event.httpMethod === "PUT") {
-    // Check if this is a file upload (uploadclip) or metadata (clipdata)
-    const isFileUpload = event.queryStringParameters?.filename;
-
-    if (isFileUpload) {
-      // Handle file upload (video or thumbnail)
-      const filename = event.queryStringParameters.filename;
-      const bucket = process.env.BUCKET_NAME || "hold-my-clips";
-
-      // Extract clip ID from filename (e.g., "abc123.mp4" -> "abc123")
-      const clipId = filename.split(".")[0];
-
-      console.log("File upload:", { filename, clipId, bucket });
-
-      const s3 = new S3();
-
-      // TODO: error occurs after this point
-      /*
-        {
-            "errorType": "TypeError",
-            "errorMessage": "Cannot read properties of null (reading 'readableFlowing')",
-            "stack": [
-                "TypeError: Cannot read properties of null (reading 'readableFlowing')",
-                "    at readableStreamHasher (/var/task/node_modules/@smithy/hash-stream-node/dist-cjs/index.js:48:24)",
-                "    at getAwsChunkedEncodingStream (/var/task/node_modules/@smithy/util-stream/dist-cjs/getAwsChunkedEncodingStream.js:11:39)",
-                "    at /var/task/node_modules/@aws-sdk/middleware-flexible-checksums/dist-cjs/index.js:218:27"
-            ]
-        }
-      */
-      // API Gateway base64 encodes binary data
-      const buffer = event.isBase64Encoded
-        ? Buffer.from(event.body, "base64")
-        : event.body;
-
-      const contentType =
-        event.headers["content-type"] ||
-        event.headers["Content-Type"] ||
-        "application/octet-stream";
-
-      await s3.putObject({
-        Bucket: bucket,
-        Key: `clips/${clipId}/${filename}`,
-        Body: buffer,
-        ContentType: contentType,
-      });
-
-      console.log("File uploaded successfully:", filename);
-
-      return {
-        statusCode: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        body: JSON.stringify({
-          message: "File uploaded successfully",
-          filename: filename,
-        }),
-      };
-    } else {
-      // Handle metadata upload (clipdata)
+    // Handle metadata upload (clipdata)
+    // Note: File uploads now use presigned URLs and go directly to S3
+    try {
       const parsedData = JSON.parse(event.body);
       console.log({ parsedData });
 
       // Override uploader with verified username from token
       parsedData.uploader = verification.username;
 
-      const id = parsedData["id"];
+      const id = parsedData.id;
       const bucket = process.env.BUCKET_NAME || "hold-my-clips";
 
       const s3 = new S3();
@@ -171,6 +114,19 @@ export const handler = async (event, context, callback) => {
           id: id,
         }),
       };
+    } catch (error) {
+      console.error("Error uploading metadata:", error);
+      return {
+        statusCode: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
+        body: JSON.stringify({
+          error: "Failed to upload metadata",
+          details: error.message,
+        }),
+      };
     }
   }
 
@@ -185,21 +141,29 @@ export const handler = async (event, context, callback) => {
 };
 
 const storeIndexRecord = async (id, parsedData) => {
+  console.log(
+    "storeIndexRecord called with:",
+    JSON.stringify(parsedData, null, 2),
+  );
+
   const indexItem = {};
 
-  const sanitizedTitle = parsedData["title"].replace(/"/g, '\\"');
-  const sanitizedDescription = (parsedData["description"] || "").replace(
-    /"/g,
-    '\\"',
-  );
-  console.log({ parsedTitle: parsedData["title"], sanitizedTitle });
+  const sanitizedTitle = parsedData.title.replace(/"/g, '\\"');
 
-  indexItem["id"] = { S: id };
-  indexItem["title"] = { S: sanitizedTitle };
-  indexItem["uploader"] = { S: parsedData["uploader"] };
-  indexItem["uploadedOn"] = { N: parsedData["uploadedOn"] };
-  indexItem["description"] = { S: sanitizedDescription };
-  indexItem["duration"] = { N: parsedData["duration"] };
+  indexItem.id = { S: id };
+  indexItem.title = { S: sanitizedTitle };
+  indexItem.uploader = { S: parsedData.uploader };
+  indexItem.uploadedOn = { N: String(parsedData.uploadedOn) };
+  indexItem.duration = { N: String(parsedData.duration) };
+  indexItem.fileExtension = { S: parsedData.fileExtension || "mp4" };
+
+  // Only add description if it exists and is not empty
+  if (parsedData.description && parsedData.description.trim() !== "") {
+    const sanitizedDescription = parsedData.description.replace(/"/g, '\\"');
+    indexItem.description = { S: sanitizedDescription };
+  }
+
+  console.log("Built indexItem:", JSON.stringify(indexItem, null, 2));
 
   // Get environment-specific stack name
   const environment = process.env.ENVIRONMENT || "Prod";
@@ -211,10 +175,15 @@ const storeIndexRecord = async (id, parsedData) => {
     TableName: tableName,
     Item: indexItem,
   };
-  console.log({ putParams });
 
-  const dynamodb = new DynamoDB();
-  dynamodb.putItem(putParams);
+  try {
+    const dynamodb = new DynamoDB();
+    const result = await dynamodb.putItem(putParams);
+    console.log("DynamoDB putItem success:", JSON.stringify(result, null, 2));
+  } catch (error) {
+    console.error("DynamoDB putItem error:", error);
+    throw error;
+  }
 };
 
 const invalidateDistributionPath = async () => {
@@ -258,9 +227,9 @@ const _getStackOutput = (stackName, outputKey) =>
         reject(err);
       } else {
         const stackOutputs = data.Stacks[0].Outputs;
-        const output = stackOutputs.find((o) => o.OutputKey === outputKey)[
-          "OutputValue"
-        ];
+        const output = stackOutputs.find(
+          (o) => o.OutputKey === outputKey,
+        ).OutputValue;
         resolve(output);
       }
     });

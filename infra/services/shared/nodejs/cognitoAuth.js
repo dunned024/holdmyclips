@@ -38,7 +38,7 @@ export async function verifyToken(token, userPoolId, region, clientId) {
 
     return {
       valid: true,
-      username: verified["cognito:username"],
+      username: verified.username,
       sub: verified.sub,
       email: verified.email,
       claims: verified,

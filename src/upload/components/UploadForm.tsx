@@ -20,6 +20,7 @@ import { randomId } from "src/services/clipIdentifiers";
 import type { ClipUploadData } from "src/types";
 import { ThumbnailSetter } from "src/upload/components/Thumbnail";
 import "src/upload/components/UploadForm.css";
+import { useAuth } from "react-oidc-context";
 
 interface FormAccordianProps {
   id?: string;
@@ -42,6 +43,9 @@ const StyledAccordion = styled((props: AccordionProps) => (
 }));
 
 export function FormAccordian(props: FormAccordianProps) {
+  // const auth = useAuth();
+  // const username = auth.user?.access_token?.username as string | undefined;
+  // console.log({ username, accessToken: auth.user?.access_token });
   const [expanded, setExpanded] = useState<string | false>("panel1");
   const duration = `${Math.ceil(props.clipDuration).toString()}s`;
 
@@ -88,6 +92,10 @@ export function FormAccordian(props: FormAccordianProps) {
       uploader: props.username,
       uploadedOn: Date.now(),
       description,
+      fileExtension: props.source.name.split(".").pop() as
+        | "mp4"
+        | "mov"
+        | "webm",
       // views: 0,
       // comments: '[]'
     };

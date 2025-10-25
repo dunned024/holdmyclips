@@ -9,6 +9,7 @@ export interface Clip {
   uploadedOn: number;
   description: string;
   duration: number;
+  fileExtension?: "mp4" | "mov" | "webm";
   views?: number;
   comments?: Comment[];
 }
@@ -27,6 +28,7 @@ export interface ClipUploadData {
   duration: string; // TODO: use proper types. Mapping this to string while I figure out DynamoDB typing
   uploader: string;
   uploadedOn: number;
+  fileExtension: "mp4" | "mov" | "webm";
   description?: string;
   views?: number;
   comments?: string;
