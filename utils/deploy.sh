@@ -16,7 +16,7 @@ echo "Deploying to $ENV environment..."
 # Set environment-specific variables
 if [[ "$ENV" == "prod" ]]; then
   BUCKET_NAME="hold-my-clips"
-  DISTRIBUTION_ID="EAJEQLV6LELMF"
+  DISTRIBUTION_ID="E7IFJJISZ0BM3"
 else
   BUCKET_NAME="hold-my-clips-dev"
   DISTRIBUTION_ID="EQTDEZTES3QCU"

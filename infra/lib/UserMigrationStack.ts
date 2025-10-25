@@ -59,6 +59,13 @@ export class UserMigrationStack extends Stack {
                 `arn:aws:cognito-idp:${props.env.region}:${props.env.account}:userpool/${props.oldUserPoolId}`,
               ],
             }),
+            // Permission to read secret from Secrets Manager
+            new PolicyStatementClass({
+              actions: ["secretsmanager:GetSecretValue"],
+              resources: [
+                `arn:aws:secretsmanager:${props.env.region}:${props.env.account}:secret:OldCognitoUserPoolSecret*`,
+              ],
+            }),
           ],
         }),
       },
