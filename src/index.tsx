@@ -1,8 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { AuthProvider } from "react-oidc-context";
 import App from "src/App";
-import { cognitoAuthConfig } from "src/services/cognito";
+import { AuthProvider } from "src/context/AuthContext";
 import "src/index.css";
 
 const root = ReactDOM.createRoot(
@@ -11,7 +10,7 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <React.StrictMode>
-    <AuthProvider {...cognitoAuthConfig}>
+    <AuthProvider>
       <App />
     </AuthProvider>
   </React.StrictMode>,

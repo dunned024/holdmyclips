@@ -18,7 +18,7 @@
 	width: 33%;
 }
 
-.link button {
+.control-container button {
 	height: 45px;
 	width: 200px;
 
@@ -28,7 +28,7 @@
 	border-radius: 8px;
 }
 
-.link button:hover {
+.control-container button:hover {
 	transition-duration: 0.1s;
 	background-color: #23aca0;
 }

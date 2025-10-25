@@ -1,21 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getClips } from "src/services/clips";
-import { getUsername } from "src/services/cognito";
 import { getTimeSinceString, secondsToMMSS } from "src/services/time";
 import type { Clip, ClipDex } from "src/types";
 import "src/Home.css";
-import { Stack, Typography } from "@mui/material";
+import { Stack } from "@mui/material";
 import { useAuth } from "react-oidc-context";
 import { SORT_KEY_MAP, SortSelect } from "src/SortSelect";
-import {
-  API_ENDPOINT,
-  COGNITO_CLIENT_ID,
-  COGNITO_DOMAIN,
-  COGNITO_REDIRECT_URI,
-  COGNITO_REGION,
-  COGNITO_USER_POOL_ID,
-} from "src/config";
+import { API_ENDPOINT } from "src/config";
 
 export function Home() {
   const [sortKey, setSortKey] = useState<keyof typeof SORT_KEY_MAP>("Newest");
@@ -23,7 +15,6 @@ export function Home() {
 
   const auth = useAuth();
   const [clipDex, setClipDex] = useState<ClipDex>({});
-  const username = getUsername();
 
   useEffect(() => {
     async function populateClipDex() {
@@ -38,43 +29,17 @@ export function Home() {
 
   return (
     <div id="home">
-      {auth.isAuthenticated && <div>hello hello hello logged in user </div>}
       <Stack id="home-control-bar" direction="row">
         <Stack className="control-container">
           <SortSelect sortKey={sortKey} setSortKey={setSortKey} />
-          <Typography variant="body1">
-            Endpoint: {API_ENDPOINT}
-            <br />
-            Cognito Client ID: {COGNITO_CLIENT_ID}
-            <br />
-            Cognito Domain: {COGNITO_DOMAIN}
-            <br />
-            Cognito Region: {COGNITO_REGION}
-            <br />
-            Cognito Redirect URI: {COGNITO_REDIRECT_URI}
-            <br />
-            Cognito User Pool ID: {COGNITO_USER_POOL_ID}
-          </Typography>
         </Stack>
         <Stack className="control-container">
           {auth.isAuthenticated ? (
-            <a
-              className="link"
-              id="upload-link"
-              href="/upload"
-              rel="noreferrer"
-            >
-              <button type="button">Upload clip</button>
-            </a>
+            <button type="button">Upload clip</button>
           ) : (
-            <a
-              className="link"
-              id="signin-link"
-              href="/signedin"
-              rel="noreferrer"
-            >
-              <button type="button">Sign in</button>
-            </a>
+            <button type="button" onClick={() => auth.signinRedirect()}>
+              Sign in
+            </button>
           )}
         </Stack>
         <Stack className="control-container" />

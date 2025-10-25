@@ -20,7 +20,6 @@ import { randomId } from "src/services/clipIdentifiers";
 import type { ClipUploadData } from "src/types";
 import { ThumbnailSetter } from "src/upload/components/Thumbnail";
 import "src/upload/components/UploadForm.css";
-import { useAuth } from "react-oidc-context";
 
 interface FormAccordianProps {
   id?: string;

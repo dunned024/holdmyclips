@@ -3,7 +3,6 @@ import { type ChangeEvent, useRef, useState } from "react";
 import type ReactPlayer from "react-player";
 import "react-image-crop/dist/ReactCrop.css";
 import { VideoComponent } from "src/player/VideoController";
-import { getUsername } from "src/services/cognito";
 import { formatTime } from "src/services/time";
 import type { ClipUploadData, TrimDirectives } from "src/types";
 import {
@@ -15,6 +14,7 @@ import {
 } from "src/upload/components/Trimmer";
 import { FormAccordian } from "src/upload/components/UploadForm";
 import "src/upload/Previewer.css";
+import { useAuthContext } from "src/context/AuthContext";
 
 export function Previewer(props: {
   source: File;
@@ -36,7 +36,7 @@ export function Previewer(props: {
 
   const minDistance = 5000;
 
-  const username = getUsername();
+  const { username } = useAuthContext();
 
   const handleUpload = (
     clipForm: ClipUploadData,

@@ -1,17 +1,15 @@
 import { Stack, ThemeProvider } from "@mui/material";
 import { AiFillGithub } from "react-icons/ai";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
-import { SignedIn } from "src/Auth";
 import { Home } from "src/Home";
 import { THEME, palette } from "src/assets/themes/theme";
 import { Player } from "src/player/Player";
-import { useGetUsername } from "src/services/cognito";
 import { Uploader } from "src/upload/Uploader";
 import "src/App.css";
-import Auth2 from "src/Auth2";
+import { useAuthContext } from "src/context/AuthContext";
 
 function App() {
-  const username = useGetUsername();
+  const { username, signIn, signOut } = useAuthContext();
 
   return (
     <div>
@@ -38,18 +36,17 @@ function App() {
             </a>
           </div>
           <div className="header-container" id="header-container-user">
-            <Auth2 />
             {username ? (
               <Stack id="username-container" direction="row">
-                Signed in as: {username} |&nbsp;
-                <a className="link" href="/auth/sign-out" rel="noreferrer">
+                Signed in as: {username} |&nbsp;{" "}
+                <button onClick={signOut} type="button">
                   Sign out
-                </a>
+                </button>
               </Stack>
             ) : (
-              <a className="link" href="/signedin" rel="noreferrer">
+              <button onClick={signIn} type="button">
                 Sign in
-              </a>
+              </button>
             )}
           </div>
           <span id="stretch" />
@@ -65,7 +62,6 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/player/:clipId" element={<Player />} />
               <Route path="/upload" element={<Uploader />} />
-              <Route path="/signedin" element={<SignedIn />} />
             </Routes>
           </Router>
         </Stack>

@@ -18,7 +18,7 @@ export async function sendComment(props: {
   commentText: string;
   postedAt: number;
 }) {
-  const res = await fetch("/clipcomments", {
+  const res = await fetch(`${API_ENDPOINT}/clipcomments`, {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
@@ -39,7 +39,7 @@ export async function deleteComment(props: {
   author: string;
   commentId: number;
 }) {
-  const res = await fetch("/clipcomments", {
+  const res = await fetch(`${API_ENDPOINT}/clipcomments`, {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",

@@ -4,11 +4,11 @@ import { useParams } from "react-router-dom";
 import { palette } from "src/assets/themes/theme";
 import { VideoComponent } from "src/player/VideoController";
 import { getClipMetadata } from "src/services/clips";
-import { getUsername } from "src/services/cognito";
 import { readableTimestamp, secondsToMMSS } from "src/services/time";
 import type { Clip } from "src/types";
 import "src/player/Player.css";
 import { API_ENDPOINT } from "src/config";
+import { useAuthContext } from "src/context/AuthContext";
 import { CommentsContainer } from "src/player/CommentsContainer";
 
 export function Player() {
@@ -17,7 +17,7 @@ export function Player() {
   const [clip, setClip] = useState<Clip>();
   const [maxDuration, setMaxDuration] = useState(0);
 
-  const username = getUsername();
+  const { username } = useAuthContext();
 
   useEffect(() => {
     async function getClip(id: string) {

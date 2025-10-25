@@ -86,7 +86,7 @@ export function VideoComponent(props: VideoComponentProps) {
     setIsPlaying(!isPlaying);
   };
 
-  const handleSeekChange = (event: Event, newValue: number | number[]) => {
+  const handleSeekChange = (_event: Event, newValue: number | number[]) => {
     if (Array.isArray(newValue)) {
       return;
     }
@@ -97,7 +97,7 @@ export function VideoComponent(props: VideoComponentProps) {
     }
   };
 
-  const handleVolumeChange = (event: Event, newValue: number | number[]) => {
+  const handleVolumeChange = (_event: Event, newValue: number | number[]) => {
     if (Array.isArray(newValue)) {
       return;
     }
