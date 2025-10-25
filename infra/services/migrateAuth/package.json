@@ -1,0 +1,12 @@
+{
+  "name": "migrateauth",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Just-in-time user migration Lambda for Cognito User Pool migration",
+  "main": "index.js",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.0.0"
+  }
+}

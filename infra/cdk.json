@@ -55,7 +55,12 @@
 				"signOutRedirectTo": "/",
 				"signOutPath": "/auth/sign-out",
 				"refreshAuthPath": "/auth/refresh"
-			}
+			},
+      "migration": {
+        "enabled": true,
+        "oldUserPoolId": "us-east-1_HrQzvjY0F",
+        "oldClientId": "5imfsh8459i8uikndovo268f5b"
+      }
 		},
 		"devConfig": {
 			"domainName": "dunned024.com",

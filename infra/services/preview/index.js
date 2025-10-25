@@ -2,16 +2,23 @@ import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 export const handler = async (event, context, callback) => {
   const request = event.Records[0].cf.request;
-  console.log(request);
+  console.log(JSON.stringify(request, null, 2));
+
+  // Determine bucket name based on the domain
+  const host = request.headers.host[0].value;
+  const bucketName = host.includes("hold-my-clips-dev")
+    ? "hold-my-clips-dev"
+    : "hold-my-clips";
+  console.log(`Using bucket: ${bucketName} for host: ${host}`);
 
   const clipId = request.uri.replace("/player/", "");
   console.log(clipId);
 
   const s3 = new S3Client({});
-  const indexBody = await _get_index_page(s3);
+  const indexBody = await _get_index_page(s3, bucketName);
   console.log(indexBody);
 
-  const clipDetails = await _get_clip_details(s3, clipId);
+  const clipDetails = await _get_clip_details(s3, bucketName, clipId);
   console.log(clipDetails);
 
   const response = event.Records[0].cf.response;
@@ -34,9 +41,9 @@ export const handler = async (event, context, callback) => {
   callback(null, response);
 };
 
-const _get_index_page = async (s3) => {
+const _get_index_page = async (s3, bucketName) => {
   const s3Obj = {
-    Bucket: "hold-my-clips",
+    Bucket: bucketName,
     Key: "index.html",
   };
   const getCommand = new GetObjectCommand(s3Obj);
@@ -44,9 +51,9 @@ const _get_index_page = async (s3) => {
   return getResponse.Body.transformToString();
 };
 
-const _get_clip_details = async (s3, clipId) => {
+const _get_clip_details = async (s3, bucketName, clipId) => {
   const s3Obj = {
-    Bucket: "hold-my-clips",
+    Bucket: bucketName,
     Key: `clips/${clipId}/${clipId}.json`,
   };
   const getCommand = new GetObjectCommand(s3Obj);

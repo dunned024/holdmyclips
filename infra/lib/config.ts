@@ -16,6 +16,12 @@ export interface ConfiguredStackProps extends StackProps {
     signOutPath: string;
     refreshAuthPath: string;
   };
+  // Optional migration settings for production user pool migration
+  migration?: {
+    enabled: boolean;
+    oldUserPoolId: string;
+    oldClientId: string;
+  };
 }
 
 export function loadConfig(
@@ -40,5 +46,6 @@ export function loadConfig(
     certArn: appConfig.certArn,
     hostedZoneId: appConfig.hostedZoneId,
     authPaths: appConfig.authPaths,
+    migration: appConfig.migration,
   };
 }

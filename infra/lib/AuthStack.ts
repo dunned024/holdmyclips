@@ -60,7 +60,7 @@ export class AuthStack extends Stack {
   constructor(scope: Construct, id: string, props: AuthStackProps) {
     super(scope, id, props);
 
-    this.userPool = new UserPool(this, "UserPool", {
+    this.userPool = new UserPool(this, "UserPoolV2", {
       autoVerify: { email: true },
       userPoolName: `hold-my-clips-user-pool-${props.environment}`,
       selfSignUpEnabled: true,
@@ -135,31 +135,23 @@ export class AuthStack extends Stack {
 
     const authDomainName = `oauth.${props.fqdn}`;
 
-    // "You must create an A record for the parent domain in your DNS
-    // configuration" before creating an A Record for a custom domain.
-    // For dev (or first-time deployments), create a dummy A record that
-    // will later be replaced by the StaticSiteStack's CloudFront distribution.
-    // See: https://repost.aws/knowledge-center/cognito-custom-domain-errors
-    // let dummyARecord: ARecord | undefined;
-    // dummyARecord = new ARecord(this, "DummyParentARecord", {
-    //   recordName: props.fqdn,
-    //   // Use a dummy IP address (this will be replaced by StaticSiteStack)
-    //   target: RecordTarget.fromIpAddresses("192.0.2.1"), // RFC 5737 TEST-NET-1 address
-    //   zone: props.hostedDomain.hostedZone,
-    //   comment: `Temporary A record for ${props.environment} - will be replaced by StaticSiteStack`,
-    //   ttl: Duration.seconds(60),
-    // });
+    // Use a different domain for migration to avoid conflict with old pool
+    const migrationSuffix = props.environment === "prod" ? "-v2" : "";
+    const domainName =
+      props.environment === "prod"
+        ? `oauth${migrationSuffix}.${props.fqdn}`
+        : authDomainName;
 
     const domain = this.userPool.addDomain("Domain", {
       customDomain: {
-        domainName: authDomainName,
+        domainName: domainName,
         certificate: props.hostedDomain.cert,
       },
     });
 
     // This A record depends on the parent domain A record existing
     const authARecord = new ARecord(this, "AuthDnsRecord", {
-      recordName: authDomainName,
+      recordName: domainName,
       target: RecordTarget.fromAlias(new UserPoolDomainTarget(domain)),
       zone: props.hostedDomain.hostedZone,
     });

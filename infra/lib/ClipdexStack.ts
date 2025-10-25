@@ -1,5 +1,5 @@
 import path from "path";
-import { CfnOutput, Duration, Stack } from "aws-cdk-lib";
+import { CfnOutput, Duration, RemovalPolicy, Stack } from "aws-cdk-lib";
 import {
   AccessLogFormat,
   AwsIntegration,
@@ -38,6 +38,12 @@ export class ClipdexStack extends Stack {
     // Create DynamoDB table to act as metadata index
     const clipdexTable = new Table(this, "ClipdexTable", {
       partitionKey: { name: "id", type: AttributeType.STRING },
+      // Prevent accidental deletion in production
+      removalPolicy:
+        props.environment === "prod"
+          ? RemovalPolicy.RETAIN
+          : RemovalPolicy.DESTROY,
+      deletionProtection: props.environment === "prod",
     });
 
     // Create REST API Gateway for querying table & uploading things
