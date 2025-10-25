@@ -1,13 +1,13 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
 import { useState } from "react";
-import { useAuth } from "react-oidc-context";
 import type { ClipUploadData, TrimDirectives } from "src/types";
 import { FileSelector } from "src/upload/FileSelector";
 import { Previewer } from "src/upload/Previewer";
 import { UploadProgress } from "src/upload/UploadProgress";
 import "src/upload/Uploader.css";
 import { API_ENDPOINT } from "src/config";
+import { useAuthContext } from "src/context/AuthContext";
 
 enum Pages {
   FileSelector = 0,
@@ -16,7 +16,7 @@ enum Pages {
 }
 
 export function Uploader() {
-  const auth = useAuth();
+  const { isAuthenticated, accessToken } = useAuthContext();
   const [activePage, setActivePage] = useState<Pages>(Pages.FileSelector);
   const [clipId, setClipId] = useState("");
   const [isFinished, setIsFinished] = useState(false);
@@ -40,14 +40,12 @@ export function Uploader() {
     }
 
     // Check if user is authenticated
-    if (!auth.isAuthenticated || !auth.user?.access_token) {
+    if (!isAuthenticated || !accessToken) {
       console.error("User not authenticated");
       alert("You must be signed in to upload clips");
       return;
     }
 
-    // Get the access token
-    const accessToken = auth.user.access_token;
     const authHeader = { Authorization: `Bearer ${accessToken}` };
 
     try {

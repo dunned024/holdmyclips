@@ -14,7 +14,6 @@ import {
 } from "src/upload/components/Trimmer";
 import { FormAccordian } from "src/upload/components/UploadForm";
 import "src/upload/Previewer.css";
-import { useAuthContext } from "src/context/AuthContext";
 
 export function Previewer(props: {
   source: File;
@@ -35,8 +34,6 @@ export function Previewer(props: {
   const [trimEndError, setTrimEndError] = useState("");
 
   const minDistance = 5000;
-
-  const { username } = useAuthContext();
 
   const handleUpload = (
     clipForm: ClipUploadData,
@@ -160,7 +157,6 @@ export function Previewer(props: {
         id="clip-details-form"
         source={props.source}
         uploadClip={handleUpload}
-        username={username}
         clipDuration={clipDuration}
         playerRef={playerRef}
         TrimComponent={trimSetter}

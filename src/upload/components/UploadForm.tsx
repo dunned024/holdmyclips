@@ -20,13 +20,13 @@ import { randomId } from "src/services/clipIdentifiers";
 import type { ClipUploadData } from "src/types";
 import { ThumbnailSetter } from "src/upload/components/Thumbnail";
 import "src/upload/components/UploadForm.css";
+import { useAuthContext } from "src/context/AuthContext";
 
 interface FormAccordianProps {
   id?: string;
   source: File;
   uploadClip: (formData: ClipUploadData, thumbnailUrl: string | null) => void;
   clipDuration: number;
-  username: string | undefined;
   playerRef: MutableRefObject<ReactPlayer | null>;
   TrimComponent: ReactElement;
 }
@@ -42,9 +42,7 @@ const StyledAccordion = styled((props: AccordionProps) => (
 }));
 
 export function FormAccordian(props: FormAccordianProps) {
-  // const auth = useAuth();
-  // const username = auth.user?.access_token?.username as string | undefined;
-  // console.log({ username, accessToken: auth.user?.access_token });
+  const { username } = useAuthContext();
   const [expanded, setExpanded] = useState<string | false>("panel1");
   const duration = `${Math.ceil(props.clipDuration).toString()}s`;
 
@@ -79,7 +77,7 @@ export function FormAccordian(props: FormAccordianProps) {
       return;
     }
 
-    if (!props.username) {
+    if (!username) {
       console.log("error: are you logged in??");
       return;
     }
@@ -88,7 +86,7 @@ export function FormAccordian(props: FormAccordianProps) {
       id: randomId(),
       title,
       duration: props.clipDuration.toString(),
-      uploader: props.username,
+      uploader: username,
       uploadedOn: Date.now(),
       description,
       fileExtension: props.source.name.split(".").pop() as
@@ -147,7 +145,7 @@ export function FormAccordian(props: FormAccordianProps) {
                   type="text"
                   disabled
                   InputLabelProps={{ shrink: true }}
-                  defaultValue={props.username || ""}
+                  defaultValue={username ?? ""}
                 />
               </Grid>
               <Grid xs={12} className="field">
