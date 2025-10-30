@@ -6,10 +6,11 @@ import {
   LambdaIntegration,
   type LambdaRestApi,
   LogGroupLogDestination,
+  MethodLoggingLevel,
   PassthroughBehavior,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
-import { AttributeType, Table } from "aws-cdk-lib/aws-dynamodb";
+import { AttributeType, ProjectionType, Table } from "aws-cdk-lib/aws-dynamodb";
 import {
   ManagedPolicy,
   PolicyDocument,
@@ -46,11 +47,23 @@ export class ClipdexStack extends Stack {
       deletionProtection: props.environment === "prod",
     });
 
+    // Add GSI for querying all clips sorted by upload date
+    clipdexTable.addGlobalSecondaryIndex({
+      indexName: "AllClipsByUploadDate",
+      partitionKey: { name: "itemType", type: AttributeType.STRING },
+      sortKey: { name: "uploadedOn", type: AttributeType.NUMBER },
+      projectionType: ProjectionType.ALL,
+    });
+
     // Create REST API Gateway for querying table & uploading things
     const logGroup = new LogGroup(
       this,
       `HMCClipdexAPILogs${toCamelCase(props.environment)}`,
+      {
+        logGroupName: `/aws/apigateway/HMCClipdexAPI-${props.environment}-access-logs`,
+      },
     );
+
     this.apiGateway = new RestApi(
       this,
       `HMCClipdexAPI${toCamelCase(props.environment)}`,
@@ -81,6 +94,8 @@ export class ClipdexStack extends Stack {
             status: true,
             user: true,
           }),
+          loggingLevel: MethodLoggingLevel.INFO,
+          dataTraceEnabled: true,
         },
       },
     );
@@ -97,6 +112,11 @@ export class ClipdexStack extends Stack {
       "GET",
       getAllClipsIntegration(readTableRole, clipdexTable.tableName),
       {
+        requestParameters: {
+          "method.request.querystring.order": false,
+          "method.request.querystring.limit": false,
+          "method.request.querystring.nextToken": false,
+        },
         methodResponses: [{ statusCode: "200" }],
       },
     );
@@ -199,6 +219,10 @@ export class ClipdexStack extends Stack {
     clipCommentsResource.addMethod("DELETE", commentsIntegration); // DELETE /clipcomments
 
     new CfnOutput(this, "ClipdexTableName", { value: clipdexTable.tableName });
+    new CfnOutput(this, "ApiGatewayUrl", {
+      value: this.apiGateway.url,
+      description: "API Gateway endpoint URL",
+    });
   }
 }
 
@@ -251,39 +275,48 @@ function getLambdaRole(
 }
 
 function getAllClipsIntegration(role: Role, tableName: string) {
-  // GET Integration with DynamoDb for all clips
+  // GET Integration with DynamoDb for all clips using Query on GSI
   return new AwsIntegration({
     service: "dynamodb",
-    action: "Scan",
+    action: "Query",
     options: {
       passthroughBehavior: PassthroughBehavior.WHEN_NO_TEMPLATES,
       credentialsRole: role,
       requestTemplates: {
-        "application/json": JSON.stringify({
-          TableName: tableName,
-        }),
+        "application/json": `{
+          "TableName": "${tableName}",
+          "IndexName": "AllClipsByUploadDate",
+          "KeyConditionExpression": "itemType = :itemType",
+          "ExpressionAttributeValues": {
+            ":itemType": {"S": "CLIP"}
+          },
+          "ScanIndexForward": #if($input.params('order') == 'asc')true#{else}false#end,
+          "Limit": #if($input.params('limit'))$input.params('limit')#{else}20#end
+          #if($input.params('nextToken') != ''),"ExclusiveStartKey": $util.parseJson($util.base64Decode($input.params('nextToken')))#end
+        }`,
       },
       integrationResponses: [
         {
           statusCode: "200",
           responseTemplates: {
-            "application/json": `
-              #set($inputRoot = $input.path('$'))
+            "application/json": `#set($inputRoot = $input.path('$'))
               {
                 "clips": [
-                    #foreach($elem in $inputRoot.Items) {
-                        "id": "$elem.id.S",
-                        "duration": "$elem.duration.N",
-                        "description": "$util.escapeJavaScript($elem.description.S).replaceAll("\\\\'","'")",
-                        "uploader": "$elem.uploader.S",
-                        "uploadedOn": "$elem.uploadedOn.N",
-                        "title": "$util.escapeJavaScript($elem.title.S).replaceAll("\\\\'","'")"#if($elem.fileExtension),
-                        "fileExtension": "$elem.fileExtension.S"#end
-                      }#if($foreach.hasNext),#end
-                    #end
-                  ]
-              }
-            `,
+              #foreach($item in $inputRoot.Items)
+                  {
+                    "id": "$util.escapeJavaScript($item.id.S)",
+                    "title": "$util.escapeJavaScript($item.title.S).replaceAll("\\\\'", "'")",
+                    "uploader": "$util.escapeJavaScript($item.uploader.S)",
+                    "uploadedOn": "$item.uploadedOn.N",
+                    "duration": "$item.duration.N",
+                    "description": "$util.escapeJavaScript($item.description.S).replaceAll("\\\\'", "'")"#if($item.fileExtension),
+                    "fileExtension": "$item.fileExtension.S"#end
+                  }#if($foreach.hasNext),#end
+              #end
+                ],
+                "nextToken": #if($inputRoot.LastEvaluatedKey)"$util.base64Encode($input.json('$.LastEvaluatedKey'))"#else null#end,
+                "hasMore": #if($inputRoot.LastEvaluatedKey)true#else false#end
+              }`,
           },
         },
       ],

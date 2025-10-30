@@ -1,31 +1,59 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getClips } from "src/services/clips";
+import { getClipsPaginated } from "src/services/clips";
 import { getTimeSinceString, secondsToMMSS } from "src/services/time";
-import type { Clip, ClipDex } from "src/types";
+import type { Clip } from "src/types";
 import "src/Home.css";
 import { Stack } from "@mui/material";
 import { useAuth } from "react-oidc-context";
-import { SORT_KEY_MAP, SortSelect } from "src/SortSelect";
+import { type SORT_KEY_MAP, SortSelect } from "src/SortSelect";
 import { API_ENDPOINT } from "src/config";
 
 export function Home() {
   const [sortKey, setSortKey] = useState<keyof typeof SORT_KEY_MAP>("Newest");
-  const sortFunction = SORT_KEY_MAP[sortKey];
 
   const auth = useAuth();
-  const [clipDex, setClipDex] = useState<ClipDex>({});
+  const [clips, setClips] = useState<Clip[]>([]);
+  const [nextToken, setNextToken] = useState<string | undefined>();
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Load clips on mount and when sort changes
   useEffect(() => {
-    async function populateClipDex() {
-      const clipList = await getClips();
-      setClipDex(clipList);
+    async function loadClips() {
+      setIsLoading(true);
+      try {
+        // Server-side sorting for upload date (uses GSI)
+        const order =
+          sortKey === "Newest" ? "desc" : sortKey === "Oldest" ? "asc" : "desc";
+        const response = await getClipsPaginated(order, 20);
+        setClips(response.clips);
+        setNextToken(response.nextToken);
+        setHasMore(response.hasMore);
+      } finally {
+        setIsLoading(false);
+      }
     }
 
-    if (!clipDex.length) {
-      populateClipDex();
+    loadClips();
+  }, [sortKey]);
+
+  // Load more clips (pagination)
+  const loadMore = async () => {
+    if (!hasMore || isLoading || !nextToken) return;
+
+    setIsLoading(true);
+    try {
+      const order =
+        sortKey === "Newest" ? "desc" : sortKey === "Oldest" ? "asc" : "desc";
+      const response = await getClipsPaginated(order, 20, nextToken);
+      setClips([...clips, ...response.clips]);
+      setNextToken(response.nextToken);
+      setHasMore(response.hasMore);
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  };
 
   return (
     <div id="home">
@@ -45,12 +73,17 @@ export function Home() {
         <Stack className="control-container" />
       </Stack>
       <div className="clip-rows">
-        {Object.entries(clipDex)
-          .sort(sortFunction)
-          .map(([clipId, clip]) => (
-            <ClipCard key={clipId} clip={clip} />
-          ))}
+        {clips.map((clip) => (
+          <ClipCard key={clip.id} clip={clip} />
+        ))}
       </div>
+      {hasMore && (
+        <div style={{ textAlign: "center", padding: "20px" }}>
+          <button type="button" onClick={loadMore} disabled={isLoading}>
+            {isLoading ? "Loading..." : "Load More"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

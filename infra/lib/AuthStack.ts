@@ -60,7 +60,9 @@ export class AuthStack extends Stack {
   constructor(scope: Construct, id: string, props: AuthStackProps) {
     super(scope, id, props);
 
-    this.userPool = new UserPool(this, "UserPoolV2", {
+    // This is UserPoolV2 in prod, but UserPool in dev :(
+    const userPoolId = props.environment === "prod" ? "UserPoolV2" : "UserPool";
+    this.userPool = new UserPool(this, userPoolId, {
       autoVerify: { email: true },
       userPoolName: `hold-my-clips-user-pool-${props.environment}`,
       selfSignUpEnabled: true,

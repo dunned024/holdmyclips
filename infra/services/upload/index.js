@@ -151,6 +151,7 @@ const storeIndexRecord = async (id, parsedData) => {
   const sanitizedTitle = parsedData.title.replace(/"/g, '\\"');
 
   indexItem.id = { S: id };
+  indexItem.itemType = { S: "CLIP" }; // Enables GSI queries (efficient querying/sorting from DynamoDB)
   indexItem.title = { S: sanitizedTitle };
   indexItem.uploader = { S: parsedData.uploader };
   indexItem.uploadedOn = { N: String(parsedData.uploadedOn) };

@@ -1,6 +1,12 @@
 import { API_ENDPOINT } from "src/config";
 import type { Clip, ClipDex } from "src/types";
 
+export interface PaginatedClipsResponse {
+  clips: Clip[];
+  nextToken?: string;
+  hasMore: boolean;
+}
+
 export async function getClips(): Promise<ClipDex> {
   const res = await fetch(`${API_ENDPOINT}/clips`);
   const data = await res.json();
@@ -14,10 +20,35 @@ export async function getClips(): Promise<ClipDex> {
   return clipList;
 }
 
+export async function getClipsPaginated(
+  order: "asc" | "desc" = "desc",
+  limit = 20,
+  nextToken?: string,
+): Promise<PaginatedClipsResponse> {
+  const params = new URLSearchParams({
+    order,
+    limit: limit.toString(),
+  });
+
+  if (nextToken) {
+    params.append("nextToken", nextToken);
+  }
+
+  const res = await fetch(`${API_ENDPOINT}/clips?${params.toString()}`);
+  const data = await res.json();
+
+  return {
+    clips: data.clips.map(parseClip),
+    nextToken: data.nextToken,
+    hasMore: data.hasMore,
+  };
+}
+
 export async function getClipMetadata(id: string): Promise<Clip> {
   // TODO: Get this by fetching the ClipDex (maybe? still true?)
   //  Note: can't persist this info from when it's first fetched
   //  https://stackoverflow.com/a/53455443
+  // This doesn't actually hit the API gateway -- it pulls from the S3 object
   const res = await fetch(`${API_ENDPOINT}/clips/${id}/${id}.json`);
   const data = await res.json();
 

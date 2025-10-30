@@ -17,10 +17,10 @@ export const SORT_KEY_MAP = {
 function sortBy(
   field: keyof Clip,
   reverse: boolean,
-): (a: [string, Clip], b: [string, Clip]) => number {
+): (a: Clip, b: Clip) => number {
   return (a, b) => {
-    const vA = a[1][field]!;
-    const vB = b[1][field]!;
+    const vA = a[field] ?? 0;
+    const vB = b[field] ?? 0;
     const ord = reverse ? -1 : 1;
     return vA < vB ? -1 * ord : vA > vB ? 1 * ord : 0;
   };
