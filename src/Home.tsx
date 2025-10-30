@@ -23,10 +23,25 @@ export function Home() {
     async function loadClips() {
       setIsLoading(true);
       try {
-        // Server-side sorting for upload date (uses GSI)
-        const order =
-          sortKey === "Newest" ? "desc" : sortKey === "Oldest" ? "asc" : "desc";
-        const response = await getClipsPaginated(order, 20);
+        // Map sortKey to index name and order
+        let sortIndex = "UploadDate";
+        let order: "asc" | "desc" = "desc";
+
+        if (sortKey === "Newest") {
+          sortIndex = "UploadDate";
+          order = "desc";
+        } else if (sortKey === "Oldest") {
+          sortIndex = "UploadDate";
+          order = "asc";
+        } else if (sortKey === "Title (A-Z)") {
+          sortIndex = "Title";
+          order = "asc";
+        } else if (sortKey === "Title (Z-A)") {
+          sortIndex = "Title";
+          order = "desc";
+        }
+
+        const response = await getClipsPaginated(sortIndex, order, 20);
         setClips(response.clips);
         setNextToken(response.nextToken);
         setHasMore(response.hasMore);
@@ -44,9 +59,25 @@ export function Home() {
 
     setIsLoading(true);
     try {
-      const order =
-        sortKey === "Newest" ? "desc" : sortKey === "Oldest" ? "asc" : "desc";
-      const response = await getClipsPaginated(order, 20, nextToken);
+      // Map sortKey to index name and order
+      let sortIndex = "UploadDate";
+      let order: "asc" | "desc" = "desc";
+
+      if (sortKey === "Newest") {
+        sortIndex = "UploadDate";
+        order = "desc";
+      } else if (sortKey === "Oldest") {
+        sortIndex = "UploadDate";
+        order = "asc";
+      } else if (sortKey === "Title (A-Z)") {
+        sortIndex = "Title";
+        order = "asc";
+      } else if (sortKey === "Title (Z-A)") {
+        sortIndex = "Title";
+        order = "desc";
+      }
+
+      const response = await getClipsPaginated(sortIndex, order, 20, nextToken);
       setClips([...clips, ...response.clips]);
       setNextToken(response.nextToken);
       setHasMore(response.hasMore);

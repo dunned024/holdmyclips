@@ -21,11 +21,13 @@ export async function getClips(): Promise<ClipDex> {
 }
 
 export async function getClipsPaginated(
+  sortIndex: string,
   order: "asc" | "desc" = "desc",
   limit = 20,
   nextToken?: string,
 ): Promise<PaginatedClipsResponse> {
   const params = new URLSearchParams({
+    sortIndex,
     order,
     limit: limit.toString(),
   });

@@ -55,6 +55,14 @@ export class ClipdexStack extends Stack {
       projectionType: ProjectionType.ALL,
     });
 
+    // Add GSI for querying all clips sorted by title
+    clipdexTable.addGlobalSecondaryIndex({
+      indexName: "AllClipsByTitle",
+      partitionKey: { name: "itemType", type: AttributeType.STRING },
+      sortKey: { name: "title", type: AttributeType.STRING },
+      projectionType: ProjectionType.ALL,
+    });
+
     // Create REST API Gateway for querying table & uploading things
     const logGroup = new LogGroup(
       this,
@@ -113,6 +121,7 @@ export class ClipdexStack extends Stack {
       getAllClipsIntegration(readTableRole, clipdexTable.tableName),
       {
         requestParameters: {
+          "method.request.querystring.sortIndex": false,
           "method.request.querystring.order": false,
           "method.request.querystring.limit": false,
           "method.request.querystring.nextToken": false,
@@ -283,16 +292,24 @@ function getAllClipsIntegration(role: Role, tableName: string) {
       passthroughBehavior: PassthroughBehavior.WHEN_NO_TEMPLATES,
       credentialsRole: role,
       requestTemplates: {
-        "application/json": `{
+        "application/json": `
+          #set($sortIndex = $input.params('sortIndex'))
+          #set($validIndices = ["UploadDate", "Title"])
+          #if($validIndices.contains($sortIndex))
+            #set($indexName = "AllClipsBy$sortIndex")
+          #else
+            #set($indexName = "AllClipsByUploadDate")
+          #end
+          {
           "TableName": "${tableName}",
-          "IndexName": "AllClipsByUploadDate",
+          "IndexName": "$indexName",
           "KeyConditionExpression": "itemType = :itemType",
           "ExpressionAttributeValues": {
             ":itemType": {"S": "CLIP"}
           },
           "ScanIndexForward": #if($input.params('order') == 'asc')true#{else}false#end,
           "Limit": #if($input.params('limit'))$input.params('limit')#{else}20#end
-          #if($input.params('nextToken') != ''),"ExclusiveStartKey": $util.parseJson($util.base64Decode($input.params('nextToken')))#end
+          #if($input.params('nextToken') != ''),"ExclusiveStartKey": $util.base64Decode($input.params('nextToken'))#end
         }`,
       },
       integrationResponses: [
