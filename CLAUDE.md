@@ -14,7 +14,6 @@ holdmyclips/
 │   └── services/          # Lambda function implementations
 ├── public/                # Static assets
 ├── build/                 # Production build output
-├── server/                # Local dev mock API server
 └── utils/                 # Deployment and utility scripts
 ```
 
@@ -121,8 +120,8 @@ src/
 
 ### Local Development
 - Frontend runs on port 3000 via Vite dev server
-- `docker-compose up` starts json-server for mock API
-- Clips/videos are still fetched from actual S3 bucket in dev mode
+- Local development points to dev or prod cloud services (API Gateway, S3, Cognito)
+- Configure environment using `.env.local` file with `VITE_*` variables
 - Environment-specific config in `src/config.ts` uses Vite env vars (`VITE_*`)
 
 ## Instructions for Updating This File
