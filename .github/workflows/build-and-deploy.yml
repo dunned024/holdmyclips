@@ -13,7 +13,7 @@ env:
 
 jobs:
   deploy:
-    name: Deploy to ${{ github.event_name == 'release' && 'PROD' || 'DEV' }}
+    name: Deploy to ${{ github.event_name == 'release' && 'Prod' || 'Dev' }}
     runs-on: ubuntu-latest
     
     permissions:
@@ -104,16 +104,16 @@ jobs:
       - name: Output deployment info
         run: |
           if [[ "${{ github.event_name }}" == "release" ]]; then
-            echo "### PROD Deployment Successful! 🎉" >> $GITHUB_STEP_SUMMARY
+            echo "### Prod Deployment Successful! 🎉" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- **Environment**: PROD" >> $GITHUB_STEP_SUMMARY
+            echo "- **Environment**: Prod" >> $GITHUB_STEP_SUMMARY
             echo "- **URL**: ${{ env.URL }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Release**: ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Release Name**: ${{ github.event.release.name }}" >> $GITHUB_STEP_SUMMARY
           else
-            echo "### DEV Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
+            echo "### Dev Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- **Environment**: DEV" >> $GITHUB_STEP_SUMMARY
+            echo "- **Environment**: Dev" >> $GITHUB_STEP_SUMMARY
             echo "- **URL**: ${{ env.URL }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
