@@ -1,17 +1,17 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const {
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import {
+  DeleteCommand,
   DynamoDBDocumentClient,
   GetCommand,
   PutCommand,
-  DeleteCommand,
   UpdateCommand,
-} = require("@aws-sdk/lib-dynamodb");
-const { verifyToken } = require("/opt/nodejs/cognitoAuth.js");
+} from "@aws-sdk/lib-dynamodb";
+import { verifyToken } from "/opt/nodejs/cognitoAuth.js";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   console.log("Event:", JSON.stringify(event, null, 2));
 
   // Handle CORS preflight

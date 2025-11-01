@@ -65,7 +65,11 @@ The infrastructure is defined in TypeScript using AWS CDK and consists of four m
 - Stack naming uses camelCase environment suffix (e.g., `Dev`, `Prod`)
 - Production stacks have deletion protection enabled
 - All stacks are deployed to `us-east-1` (required for CloudFront/Lambda@Edge)
-- **Important**: `infra/` uses CommonJS (NOT ES modules) per user preference
+- **Important**: `infra/` CDK code uses CommonJS (NOT ES modules) per user preference
+- **Lambda Functions**: ALWAYS use ES modules (`"type": "module"` in package.json)
+  - Use `import` syntax instead of `require()`
+  - Export handler with `export const handler = async (event) => {...}`
+  - This applies to all Lambda functions in `infra/services/`
 
 ## Deployment (GitHub Actions)
 
