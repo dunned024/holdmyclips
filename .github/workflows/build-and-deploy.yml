@@ -173,8 +173,26 @@ jobs:
             --target ${{ github.sha }} \
             | sed 's/releases\/tag/releases\/edit/')
           
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📦 **Draft Pre-release Created**: $TIMESTAMP" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "To deploy to Prod, [publish this release]($RELEASE_URL)" >> $GITHUB_STEP_SUMMARY
+          # Attach build artifact if SPA was rebuilt
+          if [[ "${{ needs.check-changes.outputs.spa }}" == "true" ]]; then
+            echo "Creating build archive..."
+            tar -czf build.tar.gz -C build .
+            
+            echo "Uploading build artifact to release..."
+            gh release upload "$TIMESTAMP" build.tar.gz
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📦 **Draft Pre-release Created**: $TIMESTAMP" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Build artifact**: Attached (build.tar.gz)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "To deploy to Prod, [publish this release]($RELEASE_URL)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "📦 **Draft Pre-release Created**: $TIMESTAMP" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Build artifact**: Not attached (SPA was not rebuilt)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "To deploy to Prod, [publish this release]($RELEASE_URL)" >> $GITHUB_STEP_SUMMARY
+          fi
 
