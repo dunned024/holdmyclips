@@ -1,3 +1,11 @@
+import {
+  CloudFormationClient,
+  DescribeStacksCommand,
+} from "@aws-sdk/client-cloudformation";
+import {
+  CloudFrontClient,
+  CreateInvalidationCommand,
+} from "@aws-sdk/client-cloudfront";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DeleteCommand,
@@ -10,6 +18,8 @@ import { verifyToken } from "/opt/nodejs/cognitoAuth.js";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
+const cloudFrontClient = new CloudFrontClient({});
+const cloudFormationClient = new CloudFormationClient({});
 
 export const handler = async (event) => {
   console.log("Event:", JSON.stringify(event, null, 2));
@@ -20,7 +30,7 @@ export const handler = async (event) => {
       statusCode: 200,
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, DELETE, OPTIONS",
+        "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
         "Access-Control-Max-Age": "86400",
       },
@@ -103,7 +113,10 @@ export const handler = async (event) => {
   }
 
   try {
-    if (event.httpMethod === "POST") {
+    if (event.httpMethod === "GET") {
+      // Check if user has liked this clip
+      return await checkLike(userId, clipId, userLikesTableName, docClient);
+    } else if (event.httpMethod === "POST") {
       // Add like
       return await addLike(
         userId,
@@ -146,6 +159,84 @@ export const handler = async (event) => {
     };
   }
 };
+
+async function getStackOutput(stackName, outputKey) {
+  const command = new DescribeStacksCommand({ StackName: stackName });
+  const data = await cloudFormationClient.send(command);
+  const stackOutputs = data.Stacks[0].Outputs;
+  const output = stackOutputs.find((o) => o.OutputKey === outputKey);
+  return output?.OutputValue;
+}
+
+async function invalidateCloudFrontCache(clipId) {
+  try {
+    // Get environment-specific stack name
+    const environment = process.env.ENVIRONMENT || "Prod";
+    const stackName = `HMCStaticSite${environment}`;
+    const distributionId = await getStackOutput(
+      stackName,
+      "StaticSiteDistributionId",
+    );
+
+    if (!distributionId) {
+      console.warn(
+        "Could not retrieve distribution ID, skipping CloudFront cache invalidation",
+      );
+      return;
+    }
+
+    console.log({ distributionId });
+
+    const callerReference = `like-${clipId}-${Date.now()}`;
+
+    const invalidationParams = {
+      DistributionId: distributionId,
+      InvalidationBatch: {
+        CallerReference: callerReference,
+        Paths: {
+          Quantity: 1,
+          Items: [`/clip/${clipId}`],
+        },
+      },
+    };
+
+    const command = new CreateInvalidationCommand(invalidationParams);
+    const result = await cloudFrontClient.send(command);
+    console.log(
+      `CloudFront invalidation created for clip ${clipId}:`,
+      result.Invalidation.Id,
+    );
+  } catch (error) {
+    console.error(
+      `Failed to create CloudFront invalidation for clip ${clipId}:`,
+      error,
+    );
+    // Don't throw - cache invalidation failure shouldn't fail the whole request
+  }
+}
+
+async function checkLike(userId, clipId, userLikesTableName, docClient) {
+  const checkCommand = new GetCommand({
+    TableName: userLikesTableName,
+    Key: {
+      userId: userId,
+      clipId: clipId,
+    },
+  });
+
+  const result = await docClient.send(checkCommand);
+
+  return {
+    statusCode: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
+    body: JSON.stringify({
+      liked: !!result.Item,
+    }),
+  };
+}
 
 async function addLike(
   userId,
@@ -210,6 +301,9 @@ async function addLike(
   });
 
   const response = await docClient.send(updateCommand);
+
+  // Invalidate CloudFront cache for this clip
+  await invalidateCloudFrontCache(clipId);
 
   return {
     statusCode: 200,
@@ -285,6 +379,9 @@ async function removeLike(
   });
 
   const response = await docClient.send(updateCommand);
+
+  // Invalidate CloudFront cache for this clip
+  await invalidateCloudFrontCache(clipId);
 
   return {
     statusCode: 200,

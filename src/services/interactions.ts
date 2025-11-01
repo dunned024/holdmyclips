@@ -104,14 +104,31 @@ export async function unlikeClip(
 
 /**
  * Check if the current user has liked a specific clip
- * This is a client-side helper that will need to track state
+ * Requires authentication
  */
-// export async function checkIfLiked(
-//   clipId: string,
-//   accessToken: string,
-// ): Promise<boolean> {
-//   // This would ideally be an API call to check the UserLikesTable
-//   // For now, we'll need to track this client-side or add a new endpoint
-//   // Returning false as default for now
-//   return false;
-// }
+export async function checkIfLiked(
+  clipId: string,
+  accessToken: string,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_ENDPOINT}/clip/${clipId}/like`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      console.error("Failed to check if liked:", await res.text());
+      return false;
+    }
+
+    const data = await res.json();
+    return data.liked || false;
+  } catch (error) {
+    console.error("Error checking if liked:", error);
+    return false;
+  }
+}

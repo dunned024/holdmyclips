@@ -279,15 +279,34 @@ export class ClipdexStack extends Stack {
           CLIENT_ID: props.cognitoUserPoolClientId,
           CLIPS_TABLE_NAME: clipdexTable.tableName,
           USER_LIKES_TABLE_NAME: userLikesTable.tableName,
+          ENVIRONMENT: toCamelCase(props.environment),
         },
       },
     );
     clipdexTable.grantReadWriteData(likesLambda);
     userLikesTable.grantReadWriteData(likesLambda);
+
+    // Grant Lambda permission to describe CloudFormation stacks and create CloudFront invalidations
+    likesLambda.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["cloudformation:DescribeStacks"],
+        resources: [
+          `arn:aws:cloudformation:${this.region}:${this.account}:stack/HMCStaticSite${toCamelCase(props.environment)}/*`,
+        ],
+      }),
+    );
+    likesLambda.addToRolePolicy(
+      new PolicyStatement({
+        actions: ["cloudfront:CreateInvalidation"],
+        resources: ["*"], // CloudFront invalidations require wildcard or specific distribution ARN
+      }),
+    );
+
     const likesIntegration = new LambdaIntegration(likesLambda);
 
     // Create /clip/{id}/like endpoint
     const likeResource = singleClipResource.addResource("like");
+    likeResource.addMethod("GET", likesIntegration); // GET /clip/{id}/like
     likeResource.addMethod("POST", likesIntegration); // POST /clip/{id}/like
     likeResource.addMethod("DELETE", likesIntegration); // DELETE /clip/{id}/like
 
