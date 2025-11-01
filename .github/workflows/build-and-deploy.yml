@@ -18,7 +18,7 @@ jobs:
     
     permissions:
       id-token: write  # Required for OIDC
-      contents: read
+      contents: write  # Required to create releases
     
     steps:
       - name: Checkout code
@@ -118,4 +118,25 @@ jobs:
             echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           fi
+      
+      - name: Create draft pre-release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Generate timestamp-based version tag
+          TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
+          TAG="v${TIMESTAMP}"
+
+          # Create draft pre-release
+          gh release create "$TAG" \
+            --title "$TIMESTAMP" \
+            --draft \
+            --prerelease \
+            --target ${{ github.sha }}
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 **Draft Pre-release Created**: [$TAG](https://github.com/${{ github.repository }}/releases/tag/$TAG)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To deploy to PROD, publish this release." >> $GITHUB_STEP_SUMMARY
 
