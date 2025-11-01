@@ -12,8 +12,33 @@ env:
   AWS_REGION: 'us-east-1'
 
 jobs:
+  check-changes:
+    name: Check what changed
+    runs-on: ubuntu-latest
+    outputs:
+      spa: ${{ steps.filter.outputs.spa }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            spa:
+              - 'src/**'
+              - 'public/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'tsconfig.json'
+              - 'vite.config.ts'
+              - 'index.html'
+              - '.env*'
+  
   deploy:
     name: Deploy to ${{ github.event_name == 'release' && 'Prod' || 'Dev' }}
+    needs: check-changes
     runs-on: ubuntu-latest
     
     permissions:
@@ -50,9 +75,11 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
+        if: needs.check-changes.outputs.spa == 'true'
         run: npm ci
       
       - name: Build application
+        if: needs.check-changes.outputs.spa == 'true'
         run: npm run build:${{ env.BUILD_MODE }}
       
       - name: Configure AWS credentials
@@ -78,6 +105,7 @@ jobs:
             --outputs-file cdk-outputs.json
       
       - name: Deploy application
+        if: needs.check-changes.outputs.spa == 'true'
         run: |
           echo "Deleting old deployment..."
           aws s3 rm s3://${{ env.BUCKET_NAME }}/static/css/ --recursive
@@ -110,6 +138,11 @@ jobs:
             echo "- **URL**: ${{ env.URL }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Release**: ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Release Name**: ${{ github.event.release.name }}" >> $GITHUB_STEP_SUMMARY
+            if [[ "${{ needs.check-changes.outputs.spa }}" == "true" ]]; then
+              echo "- **SPA**: Rebuilt and deployed ✅" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- **SPA**: No changes, skipped ⏭️" >> $GITHUB_STEP_SUMMARY
+            fi
           else
             echo "### Dev Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
@@ -117,6 +150,11 @@ jobs:
             echo "- **URL**: ${{ env.URL }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+            if [[ "${{ needs.check-changes.outputs.spa }}" == "true" ]]; then
+              echo "- **SPA**: Rebuilt and deployed ✅" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "- **SPA**: No changes, skipped ⏭️" >> $GITHUB_STEP_SUMMARY
+            fi
           fi
       
       - name: Create draft pre-release
@@ -125,7 +163,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Generate timestamp-based version tag
-          TIMESTAMP=$(date -u +"%Y%m%d-%H%M%S")
+          TIMESTAMP=$(date +'%Y-%m-%dT%H%M')
+
           TAG="v${TIMESTAMP}"
 
           # Create draft pre-release
