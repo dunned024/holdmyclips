@@ -153,7 +153,7 @@ jobs:
             if [[ "${{ needs.check-changes.outputs.spa }}" == "true" ]]; then
               echo "- **SPA**: Rebuilt and deployed ✅" >> $GITHUB_STEP_SUMMARY
             else
-              echo "- **SPA**: No changes, skipped ⏭️" >> $GITHUB_STEP_SUMMARY
+              echo "- **SPA**: No changes, skipped deploy ⏭️" >> $GITHUB_STEP_SUMMARY
             fi
           fi
       
@@ -165,17 +165,16 @@ jobs:
           # Generate timestamp-based version tag
           TIMESTAMP=$(date +'%Y-%m-%dT%H%M')
 
-          TAG="v${TIMESTAMP}"
-
-          # Create draft pre-release
-          gh release create "$TAG" \
+          # Create draft pre-release and capture the URL
+          RELEASE_URL=$(gh release create "$TIMESTAMP" \
             --title "$TIMESTAMP" \
             --draft \
             --prerelease \
-            --target ${{ github.sha }}
+            --target ${{ github.sha }} \
+            | sed 's/releases\/tag/releases\/edit/')
           
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📦 **Draft Pre-release Created**: [$TAG](https://github.com/${{ github.repository }}/releases/tag/$TAG)" >> $GITHUB_STEP_SUMMARY
+          echo "📦 **Draft Pre-release Created**: $TIMESTAMP" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "To deploy to PROD, publish this release." >> $GITHUB_STEP_SUMMARY
+          echo "To deploy to Prod, [publish this release]($RELEASE_URL)" >> $GITHUB_STEP_SUMMARY
 
