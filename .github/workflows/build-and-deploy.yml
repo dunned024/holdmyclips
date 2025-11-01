@@ -1,4 +1,6 @@
-name: Deploy
+name: Build & Deploy
+
+run-name: ${{ github.event_name == 'release' && 'prod' || 'dev' }} - ${{ github.event_name == 'release' && github.event.release.tag_name || github.event.head_commit.message }}
 
 on:
   push:
