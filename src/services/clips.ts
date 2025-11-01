@@ -63,7 +63,7 @@ export function parseClip(rawClip: Record<string, string>): Clip {
     description: rawClip.description,
     duration: Number.parseInt(rawClip.duration),
     uploadedOn: Number.parseInt(rawClip.uploadedOn),
-    // views: parseInt(rawClip.views),
-    // comments: JSON.parse(rawClip.comments)
+    views: Number.parseInt(rawClip.views) || 0,
+    likes: Number.parseInt(rawClip.likes) || 0,
   };
 }

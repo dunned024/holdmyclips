@@ -82,10 +82,22 @@ export const handler = async (event, context, callback) => {
 
   console.log("Authenticated user:", verification.username);
 
-  const parsedData = JSON.parse(event.body);
-  console.log({ parsedData });
+  // Extract clip ID from path parameters
+  const clipId = event.pathParameters?.id;
+  if (!clipId) {
+    return {
+      statusCode: 400,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+      },
+      body: JSON.stringify({ error: "Missing clip ID" }),
+    };
+  }
 
-  const clipId = parsedData["clipId"];
+  const parsedData = JSON.parse(event.body || "{}");
+  console.log({ clipId, parsedData });
+
   const s3 = new S3Client({});
 
   // Download clip comments file if it exists

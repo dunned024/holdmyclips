@@ -93,7 +93,8 @@ export function FormAccordian(props: FormAccordianProps) {
         | "mp4"
         | "mov"
         | "webm",
-      // views: 0,
+      views: 0,
+      likes: 0,
       // comments: '[]'
     };
 

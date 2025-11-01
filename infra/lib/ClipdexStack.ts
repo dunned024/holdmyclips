@@ -63,6 +63,25 @@ export class ClipdexStack extends Stack {
       projectionType: ProjectionType.ALL,
     });
 
+    // Add GSI for querying all clips sorted by views
+    clipdexTable.addGlobalSecondaryIndex({
+      indexName: "AllClipsByViews",
+      partitionKey: { name: "itemType", type: AttributeType.STRING },
+      sortKey: { name: "views", type: AttributeType.NUMBER },
+      projectionType: ProjectionType.ALL,
+    });
+
+    // Create table to track user likes (for preventing duplicate likes)
+    const userLikesTable = new Table(this, "UserLikesTable", {
+      partitionKey: { name: "userId", type: AttributeType.STRING },
+      sortKey: { name: "clipId", type: AttributeType.STRING },
+      removalPolicy:
+        props.environment === "prod"
+          ? RemovalPolicy.RETAIN
+          : RemovalPolicy.DESTROY,
+      deletionProtection: props.environment === "prod",
+    });
+
     // Create REST API Gateway for querying table & uploading things
     const logGroup = new LogGroup(
       this,
@@ -79,14 +98,8 @@ export class ClipdexStack extends Stack {
         cloudWatchRole: true,
         defaultCorsPreflightOptions: {
           allowOrigins: ["*"],
-          allowMethods: ["GET", "PUT", "POST", "DELETE", "OPTIONS"],
-          allowHeaders: [
-            "Content-Type",
-            "Authorization",
-            "X-Amz-Date",
-            "X-Api-Key",
-            "X-Amz-Security-Token",
-          ],
+          allowMethods: ["*"],
+          allowHeaders: ["*"],
           allowCredentials: false,
         },
         deployOptions: {
@@ -116,6 +129,7 @@ export class ClipdexStack extends Stack {
 
     // Create 'clips' resource for querying clip metadata
     const clipsResource = this.apiGateway.root.addResource("clips");
+
     clipsResource.addMethod(
       "GET",
       getAllClipsIntegration(readTableRole, clipdexTable.tableName),
@@ -175,6 +189,33 @@ export class ClipdexStack extends Stack {
 
     clipdexTable.grantReadWriteData(uploadLambda);
 
+    // Add Lambda integration for managing comments
+    const commentsLambda = new Function(
+      this,
+      `CommentsFunction${toCamelCase(props.environment)}`,
+      {
+        runtime: Runtime.NODEJS_18_X,
+        handler: "index.handler",
+        code: Code.fromAsset(path.join(__dirname, "../services/comments/")),
+        role: lambdaRole,
+        timeout: Duration.minutes(2),
+        layers: [sharedLayer],
+        environment: {
+          USER_POOL_ID: props.cognitoUserPoolId,
+          COGNITO_REGION: "us-east-1",
+          CLIENT_ID: props.cognitoUserPoolClientId,
+          BUCKET_NAME: props.bucketName,
+          ENVIRONMENT: toCamelCase(props.environment),
+        },
+      },
+    );
+    const commentsIntegration = new LambdaIntegration(commentsLambda);
+
+    // Create /clip/{id}/comment endpoint
+    const commentResource = singleClipResource.addResource("comment");
+    commentResource.addMethod("POST", commentsIntegration); // POST /clip/{id}/comment
+    commentResource.addMethod("DELETE", commentsIntegration); // DELETE /clip/{id}/comment
+
     // Add Lambda integration for generating presigned URLs
     const presignLambda = new Function(
       this,
@@ -201,31 +242,54 @@ export class ClipdexStack extends Stack {
     const presignResource = this.apiGateway.root.addResource("presign");
     presignResource.addMethod("POST", presignIntegration); // POST /presign
 
-    // Add Lambda integration for managing comments
-    const clipCommentsResource =
-      this.apiGateway.root.addResource("clipcomments");
-    const commentsLambda = new Function(
+    // Add Lambda integration for tracking views
+    const viewsLambda = new Function(
       this,
-      `CommentsFunction${toCamelCase(props.environment)}`,
+      `ViewsFunction${toCamelCase(props.environment)}`,
       {
         runtime: Runtime.NODEJS_18_X,
         handler: "index.handler",
-        code: Code.fromAsset(path.join(__dirname, "../services/comments/")),
-        role: lambdaRole,
-        timeout: Duration.minutes(2),
+        code: Code.fromAsset(path.join(__dirname, "../services/views/")),
+        timeout: Duration.seconds(10),
+        environment: {
+          TABLE_NAME: clipdexTable.tableName,
+        },
+      },
+    );
+    clipdexTable.grantReadWriteData(viewsLambda);
+    const viewsIntegration = new LambdaIntegration(viewsLambda);
+
+    // Create /clip/{id}/view endpoint
+    const viewResource = singleClipResource.addResource("view");
+    viewResource.addMethod("POST", viewsIntegration); // POST /clip/{id}/view
+
+    // Add Lambda integration for managing likes
+    const likesLambda = new Function(
+      this,
+      `LikesFunction${toCamelCase(props.environment)}`,
+      {
+        runtime: Runtime.NODEJS_18_X,
+        handler: "index.handler",
+        code: Code.fromAsset(path.join(__dirname, "../services/likes/")),
+        timeout: Duration.seconds(10),
         layers: [sharedLayer],
         environment: {
           USER_POOL_ID: props.cognitoUserPoolId,
           COGNITO_REGION: "us-east-1",
           CLIENT_ID: props.cognitoUserPoolClientId,
-          BUCKET_NAME: props.bucketName,
-          ENVIRONMENT: toCamelCase(props.environment),
+          CLIPS_TABLE_NAME: clipdexTable.tableName,
+          USER_LIKES_TABLE_NAME: userLikesTable.tableName,
         },
       },
     );
-    const commentsIntegration = new LambdaIntegration(commentsLambda);
-    clipCommentsResource.addMethod("POST", commentsIntegration); // POST /clipcomments
-    clipCommentsResource.addMethod("DELETE", commentsIntegration); // DELETE /clipcomments
+    clipdexTable.grantReadWriteData(likesLambda);
+    userLikesTable.grantReadWriteData(likesLambda);
+    const likesIntegration = new LambdaIntegration(likesLambda);
+
+    // Create /clip/{id}/like endpoint
+    const likeResource = singleClipResource.addResource("like");
+    likeResource.addMethod("POST", likesIntegration); // POST /clip/{id}/like
+    likeResource.addMethod("DELETE", likesIntegration); // DELETE /clip/{id}/like
 
     new CfnOutput(this, "ClipdexTableName", { value: clipdexTable.tableName });
     new CfnOutput(this, "ApiGatewayUrl", {
@@ -326,7 +390,9 @@ function getAllClipsIntegration(role: Role, tableName: string) {
                     "uploader": "$util.escapeJavaScript($item.uploader.S)",
                     "uploadedOn": "$item.uploadedOn.N",
                     "duration": "$item.duration.N",
-                    "description": "$util.escapeJavaScript($item.description.S).replaceAll("\\\\'", "'")"#if($item.fileExtension),
+                    "description": "$util.escapeJavaScript($item.description.S).replaceAll("\\\\'", "'")",
+                    "views": #if($item.views)"$item.views.N"#else"0"#end,
+                    "likes": #if($item.likes)"$item.likes.N"#else"0"#end#if($item.fileExtension),
                     "fileExtension": "$item.fileExtension.S"#end
                   }#if($foreach.hasNext),#end
               #end
@@ -370,7 +436,9 @@ function getSingleClipIntegration(role: Role, tableName: string) {
               "description": "$util.escapeJavaScript($input.path('$.Item.description.S')).replaceAll("\\\\'","'")",
               "uploader": "$input.path('$.Item.uploader.S')",
               "uploadedOn": "$input.path('$.Item.uploadedOn.N')",
-              "title": "$util.escapeJavaScript($input.path('$.Item.title.S')).replaceAll("\\\\'","'")"#if($input.path('$.Item.fileExtension')),
+              "title": "$util.escapeJavaScript($input.path('$.Item.title.S')).replaceAll("\\\\'","'")",
+              "views": #if($input.path('$.Item.views'))"$input.path('$.Item.views.N')"#else"0"#end,
+              "likes": #if($input.path('$.Item.likes'))"$input.path('$.Item.likes.N')"#else"0"#end#if($input.path('$.Item.fileExtension')),
               "fileExtension": "$input.path('$.Item.fileExtension.S')"#end
             }
           `,

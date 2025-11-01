@@ -10,7 +10,8 @@ export interface Clip {
   description: string;
   duration: number;
   fileExtension?: "mp4" | "mov" | "webm";
-  views?: number;
+  views: number;
+  likes: number;
   comments?: Comment[];
 }
 
@@ -30,7 +31,8 @@ export interface ClipUploadData {
   uploadedOn: number;
   fileExtension: "mp4" | "mov" | "webm";
   description?: string;
-  views?: number;
+  views: number;
+  likes: number;
   comments?: string;
 }
 

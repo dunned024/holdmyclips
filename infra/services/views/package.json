@@ -1,0 +1,12 @@
+{
+  "name": "views-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function to track clip views",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.598.0",
+    "@aws-sdk/lib-dynamodb": "^3.598.0"
+  }
+}
+
+

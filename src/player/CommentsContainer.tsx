@@ -6,6 +6,7 @@ import { FaPlusCircle } from "react-icons/fa";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { FaGear } from "react-icons/fa6";
 import { MdOutlineClose } from "react-icons/md";
+import { useAuth } from "react-oidc-context";
 import { palette } from "../assets/themes/theme";
 import * as CommentService from "../services/comments";
 import { readableTimestamp } from "../services/time";
@@ -17,6 +18,7 @@ interface CommentsContainerProps {
 
 export function CommentsContainer(props: CommentsContainerProps) {
   const { clipId, username } = props;
+  const auth = useAuth();
 
   const [comments, setComments] = useState<Comment[]>([]);
   useEffect(() => {
@@ -29,7 +31,7 @@ export function CommentsContainer(props: CommentsContainerProps) {
   }, [clipId]);
 
   async function postComment(commentText: string) {
-    if (username && clipId) {
+    if (username && clipId && auth.user?.access_token) {
       const timestamp = Date.now();
       // send comment via comments service
       CommentService.sendComment({
@@ -37,6 +39,7 @@ export function CommentsContainer(props: CommentsContainerProps) {
         author: username,
         commentText,
         postedAt: timestamp,
+        accessToken: auth.user.access_token,
       });
 
       let newId = 1;
@@ -57,12 +60,13 @@ export function CommentsContainer(props: CommentsContainerProps) {
   }
 
   async function deleteComment(commentId: number) {
-    if (username && clipId) {
+    if (username && clipId && auth.user?.access_token) {
       // delete comment via comments service
       CommentService.deleteComment({
         clipId,
         author: username,
         commentId,
+        accessToken: auth.user.access_token,
       });
 
       setComments([

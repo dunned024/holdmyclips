@@ -71,6 +71,7 @@ export class StaticSiteStack extends Stack {
         HttpMethods.HEAD,
         HttpMethods.POST,
         HttpMethods.PUT,
+        HttpMethods.DELETE,
       ],
       allowedOrigins: ["*"],
       allowedHeaders: ["*"],
@@ -99,7 +100,14 @@ export class StaticSiteStack extends Stack {
         comment: `Policy to allow CORS and CSP for media streaming (${props.environment})`,
         corsBehavior: {
           accessControlAllowCredentials: false,
-          accessControlAllowMethods: ["GET", "HEAD", "POST", "PUT"],
+          accessControlAllowMethods: [
+            "GET",
+            "HEAD",
+            "POST",
+            "PUT",
+            "DELETE",
+            "OPTIONS",
+          ],
           accessControlAllowHeaders: ["*"],
           accessControlAllowOrigins: ["*"],
           originOverride: true,
@@ -147,7 +155,14 @@ export class StaticSiteStack extends Stack {
       viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
     };
 
-    const apiBehavior: AddBehaviorOptions = {
+    // const auth = props.cloudFrontAuth;
+    // const authLambdas = this.getAuthLambdaFnVersions(props.environment);
+    const apiOrigin = new RestApiOrigin(props.apiGateway, {
+      originPath: "/prod",
+    }); // originPath points to the Stage
+
+    const apiBehavior: BehaviorOptions = {
+      origin: apiOrigin,
       allowedMethods: AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
       cachedMethods: CachedMethods.CACHE_GET_HEAD_OPTIONS,
       cachePolicy: new CachePolicy(this, "ApiCachePolicy", {
@@ -157,6 +172,33 @@ export class StaticSiteStack extends Stack {
         defaultTtl: Duration.minutes(5),
         maxTtl: Duration.minutes(10),
         minTtl: Duration.seconds(0),
+      }),
+      originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+      responseHeadersPolicy,
+      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    };
+
+    const uploadBehavior: BehaviorOptions = {
+      origin: apiOrigin,
+      allowedMethods: AllowedMethods.ALLOW_ALL,
+      cachePolicy: new CachePolicy(this, "UploadCachePolicy", {
+        maxTtl: Duration.seconds(0),
+        minTtl: Duration.seconds(0),
+        defaultTtl: Duration.seconds(0),
+      }),
+      originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    };
+
+    // Behavior for interaction endpoints (views, likes, comments) - no caching, all methods
+    // Note: No responseHeadersPolicy here - let API Gateway handle CORS directly
+    const interactionBehavior: BehaviorOptions = {
+      origin: apiOrigin,
+      allowedMethods: AllowedMethods.ALLOW_ALL,
+      cachePolicy: new CachePolicy(this, "InteractionCachePolicy", {
+        maxTtl: Duration.seconds(0),
+        minTtl: Duration.seconds(0),
+        defaultTtl: Duration.seconds(0),
       }),
       originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
       responseHeadersPolicy,
@@ -174,29 +216,25 @@ export class StaticSiteStack extends Stack {
       objectOwnership: ObjectOwnership.OBJECT_WRITER,
     });
 
-    // const auth = props.cloudFrontAuth;
-    // const authLambdas = this.getAuthLambdaFnVersions(props.environment);
-    const apiOrigin = new RestApiOrigin(props.apiGateway, {
-      originPath: "/prod",
-    }); // originPath points to the Stage
-
-    const uploadBehavior: BehaviorOptions = {
-      origin: apiOrigin,
-      allowedMethods: AllowedMethods.ALLOW_ALL,
-      cachePolicy: new CachePolicy(this, "UploadCachePolicy", {
-        maxTtl: Duration.seconds(0),
-        minTtl: Duration.seconds(0),
-      }),
-      originRequestPolicy: OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
-      viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-    };
+    // TODO: The allowCredentials: false property in the response headers policy was preventing
+    // the comment/like routes from working (CORS error).
+    // Let's figure out more appropriate CORS rules for each route.
+    // Note that the entire API has CORS rules set up in the ClipdexStack (when the API Gateway is created),
+    // but the ResponseHeadersPolicy defined in this stack explicitly overrides those rules (originOverride: true).
+    // Tighten the reigns on what methods & origins are allowed (prod/dev site, localhost) for each route
 
     const distribution = new Distribution(this, "Distribution", {
       additionalBehaviors: {
-        clipdata: uploadBehavior,
-        clipcomments: uploadBehavior,
-        presign: uploadBehavior,
+        // CloudFront evaluates behaviors in order, and more-specific patterns
+        // must come before less-specific patterns
+        "clip/*/view": interactionBehavior,
+        "clip/*/like": uploadBehavior,
+        "clip/*/comment": uploadBehavior,
         "player/*": linkPreviewBehavior, // Adds Edge Lambda for link previews for player/* URIs
+        clipdata: uploadBehavior,
+        presign: uploadBehavior,
+        clips: apiBehavior,
+        "clip/*": apiBehavior,
       },
       certificate: props.hostedDomain.cert,
       defaultBehavior: defaultBehavior,
@@ -206,10 +244,6 @@ export class StaticSiteStack extends Stack {
       logBucket: logBucket,
       priceClass: PriceClass.PRICE_CLASS_100,
     });
-
-    // This path is responsible for returning data from the clipdex
-    distribution.addBehavior("clips", apiOrigin, apiBehavior); // pathPattern matches API endpoint
-    distribution.addBehavior("clip/*", apiOrigin, apiBehavior); // pathPattern matches API endpoint
 
     new ARecord(this, "DnsRecord", {
       recordName: props.fqdn,

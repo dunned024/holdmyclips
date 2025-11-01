@@ -24,9 +24,11 @@ interface VideoComponentProps {
   loadClipDuration: (d: number) => void;
   trimProps?: TrimProps;
   playerRef?: RefObject<ReactPlayer>;
+  onFirstPlay?: () => void;
 }
 
 export function VideoComponent(props: VideoComponentProps) {
+  const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSeek, setCurrentSeek] = useState(0);
   const nullPlayerRef = useRef<ReactPlayer>(null);
@@ -83,6 +85,12 @@ export function VideoComponent(props: VideoComponentProps) {
       playerRef.current?.seekTo(startTime / 1000, "seconds");
       setCurrentSeek(startTime);
     }
+
+    if (!hasPlayedOnce) {
+      props.onFirstPlay?.();
+      setHasPlayedOnce(true);
+    }
+
     setIsPlaying(!isPlaying);
   };
 

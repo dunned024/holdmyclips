@@ -157,6 +157,8 @@ const storeIndexRecord = async (id, parsedData) => {
   indexItem.uploadedOn = { N: String(parsedData.uploadedOn) };
   indexItem.duration = { N: String(parsedData.duration) };
   indexItem.fileExtension = { S: parsedData.fileExtension || "mp4" };
+  indexItem.views = { N: "0" };
+  indexItem.likes = { N: "0" };
 
   // Only add description if it exists and is not empty
   if (parsedData.description && parsedData.description.trim() !== "") {

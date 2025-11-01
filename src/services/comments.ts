@@ -17,16 +17,16 @@ export async function sendComment(props: {
   author: string;
   commentText: string;
   postedAt: number;
+  accessToken: string;
 }) {
-  const res = await fetch(`${API_ENDPOINT}/clipcomments`, {
+  const res = await fetch(`${API_ENDPOINT}/clip/${props.clipId}/comment`, {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${props.accessToken}`,
     },
     method: "POST",
     body: JSON.stringify({
-      clipId: props.clipId,
-      author: props.author,
       commentText: props.commentText,
       postedAt: props.postedAt,
     }),
@@ -38,16 +38,16 @@ export async function deleteComment(props: {
   clipId: string;
   author: string;
   commentId: number;
+  accessToken: string;
 }) {
-  const res = await fetch(`${API_ENDPOINT}/clipcomments`, {
+  const res = await fetch(`${API_ENDPOINT}/clip/${props.clipId}/comment`, {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
+      Authorization: `Bearer ${props.accessToken}`,
     },
     method: "DELETE",
     body: JSON.stringify({
-      clipId: props.clipId,
-      author: props.author,
       commentId: props.commentId,
     }),
   });

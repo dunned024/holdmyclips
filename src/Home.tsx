@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getClipsPaginated } from "src/services/clips";
 import { getTimeSinceString, secondsToMMSS } from "src/services/time";
 import type { Clip } from "src/types";
@@ -12,6 +12,7 @@ import { API_ENDPOINT } from "src/config";
 export function Home() {
   const [sortKey, setSortKey] = useState<keyof typeof SORT_KEY_MAP>("Newest");
 
+  const navigate = useNavigate();
   const auth = useAuth();
   const [clips, setClips] = useState<Clip[]>([]);
   const [nextToken, setNextToken] = useState<string | undefined>();
@@ -94,7 +95,9 @@ export function Home() {
         </Stack>
         <Stack className="control-container">
           {auth.isAuthenticated ? (
-            <button type="button">Upload clip</button>
+            <button type="button" onClick={() => navigate("/upload")}>
+              Upload clip
+            </button>
           ) : (
             <button type="button" onClick={() => auth.signinRedirect()}>
               Sign in
@@ -156,6 +159,10 @@ function ClipCard(props: { clip: Clip }) {
           {showDetails && (
             <div className="clip-card-body">
               <div className="clip-title">{clip.title}</div>
+              <div className="clip-stats">
+                {clip.views.toLocaleString()} views •{" "}
+                {clip.likes.toLocaleString()} likes
+              </div>
             </div>
           )}
         </div>
