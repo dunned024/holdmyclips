@@ -21,7 +21,7 @@
 		"@types/cookie": "^0.5.1",
 		"@types/jest": "^29.4.0",
 		"@types/node": "18.14.6",
-		"aws-cdk": "2.78.0",
+		"aws-cdk": "^2.1031.1",
 		"aws-sdk": "^2.1377.0",
 		"axios": "^1.4.0",
 		"esbuild": "^0.19.0",
