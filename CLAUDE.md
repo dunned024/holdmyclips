@@ -67,6 +67,20 @@ The infrastructure is defined in TypeScript using AWS CDK and consists of four m
 - All stacks are deployed to `us-east-1` (required for CloudFront/Lambda@Edge)
 - **Important**: `infra/` uses CommonJS (NOT ES modules) per user preference
 
+## Deployment (GitHub Actions)
+
+### Automated CI/CD Workflow
+- **File**: `.github/workflows/build-and-deploy.yml`
+- **Dev Deployments**: Triggered on push to `main` branch
+  - Conditionally rebuilds SPA only if source files changed (`src/`, `public/`, configs)
+  - Always deploys infrastructure (CDK handles change detection)
+  - Auto-creates draft pre-release with timestamp tag (e.g., `2025-11-01T1639`)
+- **Prod Deployments**: Triggered when a release is published
+  - Always rebuilds SPA and deploys infrastructure
+  - Publish a draft pre-release to promote DEV code to PROD
+- **Authentication**: Uses AWS OIDC (no long-lived access keys)
+- **Required Secrets**: `AWS_ROLE_ARN_DEV`, `AWS_ROLE_ARN_PROD`
+
 ## Frontend
 
 ### Technology Stack
