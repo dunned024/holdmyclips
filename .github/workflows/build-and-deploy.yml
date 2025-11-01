@@ -1,0 +1,121 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+
+env:
+  NODE_VERSION: '24'
+  AWS_REGION: 'us-east-1'
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event_name == 'release' && 'PROD' || 'DEV' }}
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write  # Required for OIDC
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set environment variables
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "ENVIRONMENT=prod" >> $GITHUB_ENV
+            echo "BUILD_MODE=prod" >> $GITHUB_ENV
+            echo "BUCKET_NAME=hold-my-clips" >> $GITHUB_ENV
+            echo "DISTRIBUTION_ID=E7IFJJISZ0BM3" >> $GITHUB_ENV
+            echo "URL=https://clips.dunned024.com" >> $GITHUB_ENV
+            echo "AWS_ROLE_ARN=${{ secrets.AWS_ROLE_ARN_PROD }}" >> $GITHUB_ENV
+          else
+            echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+            echo "BUILD_MODE=dev" >> $GITHUB_ENV
+            echo "BUCKET_NAME=hold-my-clips-dev" >> $GITHUB_ENV
+            echo "DISTRIBUTION_ID=EQTDEZTES3QCU" >> $GITHUB_ENV
+            echo "URL=https://clips-dev.dunned024.com" >> $GITHUB_ENV
+            echo "AWS_ROLE_ARN=${{ secrets.AWS_ROLE_ARN_DEV }}" >> $GITHUB_ENV
+          fi
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build application
+        run: npm run build:${{ env.BUILD_MODE }}
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Install infra dependencies
+        working-directory: ./infra
+        run: npm ci
+      
+      - name: Build infrastructure
+        working-directory: ./infra
+        run: npm run build
+      
+      - name: Deploy infrastructure
+        working-directory: ./infra
+        run: |
+          npx cdk deploy --all \
+            --context environment=${{ env.ENVIRONMENT }} \
+            --require-approval never \
+            --outputs-file cdk-outputs.json
+      
+      - name: Deploy application
+        run: |
+          echo "Deleting old deployment..."
+          aws s3 rm s3://${{ env.BUCKET_NAME }}/static/css/ --recursive
+          aws s3 rm s3://${{ env.BUCKET_NAME }}/static/js/ --recursive
+          
+          echo "Uploading new deployment..."
+          aws s3 sync build/ s3://${{ env.BUCKET_NAME }}
+          
+          echo "Creating CloudFront invalidation..."
+          invalidation_id=$(aws cloudfront create-invalidation \
+            --distribution-id ${{ env.DISTRIBUTION_ID }} \
+            --paths "/*" \
+            --query "Invalidation.Id" \
+            --output text)
+          
+          echo "Invalidation created: ${invalidation_id}"
+          echo "Waiting for invalidation to complete..."
+          aws cloudfront wait invalidation-completed \
+            --distribution-id ${{ env.DISTRIBUTION_ID }} \
+            --id ${invalidation_id}
+          
+          echo "Deployment to ${{ env.ENVIRONMENT }} complete!"
+      
+      - name: Output deployment info
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            echo "### PROD Deployment Successful! 🎉" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Environment**: PROD" >> $GITHUB_STEP_SUMMARY
+            echo "- **URL**: ${{ env.URL }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Release**: ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Release Name**: ${{ github.event.release.name }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### DEV Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "- **Environment**: DEV" >> $GITHUB_STEP_SUMMARY
+            echo "- **URL**: ${{ env.URL }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
