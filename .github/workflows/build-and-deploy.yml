@@ -16,6 +16,8 @@ env:
 jobs:
   check-changes:
     name: Check what changed
+    # Only check for changes on push to main (DEV), not on releases (PROD)
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       spa: ${{ steps.filter.outputs.spa }}
@@ -41,6 +43,7 @@ jobs:
   deploy:
     name: Deploy to ${{ github.event_name == 'release' && 'Prod' || 'Dev' }}
     needs: check-changes
+    if: always()  # Run even if check-changes is skipped
     runs-on: ubuntu-latest
     
     permissions:
@@ -77,11 +80,12 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        if: needs.check-changes.outputs.spa == 'true'
+        # For PROD (release), always build. For DEV (push), only if SPA changed
+        if: github.event_name == 'release' || needs.check-changes.outputs.spa == 'true'
         run: npm ci
       
       - name: Build application
-        if: needs.check-changes.outputs.spa == 'true'
+        if: github.event_name == 'release' || needs.check-changes.outputs.spa == 'true'
         run: npm run build:${{ env.BUILD_MODE }}
       
       - name: Configure AWS credentials
@@ -107,7 +111,7 @@ jobs:
             --outputs-file cdk-outputs.json
       
       - name: Deploy application
-        if: needs.check-changes.outputs.spa == 'true'
+        if: github.event_name == 'release' || needs.check-changes.outputs.spa == 'true'
         run: |
           echo "Deleting old deployment..."
           aws s3 rm s3://${{ env.BUCKET_NAME }}/static/css/ --recursive
@@ -140,11 +144,7 @@ jobs:
             echo "- **URL**: ${{ env.URL }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Release**: ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
             echo "- **Release Name**: ${{ github.event.release.name }}" >> $GITHUB_STEP_SUMMARY
-            if [[ "${{ needs.check-changes.outputs.spa }}" == "true" ]]; then
-              echo "- **SPA**: Rebuilt and deployed ✅" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "- **SPA**: No changes, skipped ⏭️" >> $GITHUB_STEP_SUMMARY
-            fi
+            echo "- **SPA**: Rebuilt and deployed ✅" >> $GITHUB_STEP_SUMMARY
           else
             echo "### Dev Deployment Successful! 🚀" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
