@@ -47,11 +47,9 @@ export async function getClipsPaginated(
 }
 
 export async function getClipMetadata(id: string): Promise<Clip> {
-  // TODO: Get this by fetching the ClipDex (maybe? still true?)
-  //  Note: can't persist this info from when it's first fetched
-  //  https://stackoverflow.com/a/53455443
-  // This doesn't actually hit the API gateway -- it pulls from the S3 object
-  const res = await fetch(`${API_ENDPOINT}/clips/${id}/${id}.json`);
+  // TODO: Maybe pull all Clip details when fetching the ClipDex?
+  // (then pass as context provider)
+  const res = await fetch(`${API_ENDPOINT}/clip/${id}`);
   const data = await res.json();
 
   return parseClip(data);
