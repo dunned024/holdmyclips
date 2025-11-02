@@ -1,6 +1,6 @@
 import { Stack } from "@mui/material";
 import { AiFillGithub } from "react-icons/ai";
-import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { Link, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { Home } from "src/Home";
 import { palette } from "src/assets/themes/theme";
 import { Player } from "src/player/Player";
@@ -51,9 +51,9 @@ const NavBar = () => {
         </a>
       </div>
       <div className="header-container" id="header-container-homelink">
-        <a className="link" href="/" rel="noreferrer">
+        <Link className="link" to="/">
           hold my clips
-        </a>
+        </Link>
       </div>
       <div className="header-container" id="header-container-user">
         {username ? (
