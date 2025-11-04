@@ -3,7 +3,7 @@ import { Ring } from "@uiball/loaders";
 import { useEffect, useRef } from "react";
 import { AiFillCheckSquare } from "react-icons/ai";
 import { Link } from "react-router-dom";
-import "src/upload/UploadProgress.css";
+import "src/pages/upload/components/UploadProgress.css";
 
 export function UploadProgress(props: {
   uploadProgressMsg: string | null;

@@ -1,11 +1,11 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
 import { useState } from "react";
+import { FileSelector } from "src/pages/upload/components/FileSelector";
+import { Previewer } from "src/pages/upload/components/Previewer";
+import { UploadProgress } from "src/pages/upload/components/UploadProgress";
 import type { ClipUploadData, TrimDirectives } from "src/types";
-import { FileSelector } from "src/upload/FileSelector";
-import { Previewer } from "src/upload/Previewer";
-import { UploadProgress } from "src/upload/UploadProgress";
-import "src/upload/Uploader.css";
+import "src/pages/upload/Uploader.css";
 import { API_ENDPOINT } from "src/config";
 import { useAuthContext } from "src/context/AuthContext";
 

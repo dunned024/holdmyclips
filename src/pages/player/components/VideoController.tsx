@@ -13,9 +13,9 @@ import type { OnProgressProps } from "react-player/base";
 import screenfull from "screenfull";
 import "react-image-crop/dist/ReactCrop.css";
 import { palette } from "src/assets/themes/theme";
+import type { TrimProps } from "src/pages/upload/components/Trimmer";
 import { formatTime } from "src/services/time";
-import type { TrimProps } from "src/upload/components/Trimmer";
-import "src/player/VideoController.css";
+import "src/pages/player/components/VideoController.css";
 
 interface VideoComponentProps {
   id?: string;

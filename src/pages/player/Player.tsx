@@ -2,17 +2,17 @@ import { Grid, IconButton, Stack, Tooltip } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { palette } from "src/assets/themes/theme";
-import { VideoComponent } from "src/player/VideoController";
+import { VideoComponent } from "src/pages/player/components/VideoController";
 import { getClipMetadata } from "src/services/clips";
 import { readableTimestamp, secondsToMMSS } from "src/services/time";
 import type { Clip } from "src/types";
-import "src/player/Player.css";
+import "src/pages/player/Player.css";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import { useAuth } from "react-oidc-context";
 import { API_ENDPOINT } from "src/config";
 import { useAuthContext } from "src/context/AuthContext";
-import { CommentsContainer } from "src/player/CommentsContainer";
+import { CommentsContainer } from "src/pages/player/components/CommentsContainer";
 import {
   checkIfLiked,
   incrementView,

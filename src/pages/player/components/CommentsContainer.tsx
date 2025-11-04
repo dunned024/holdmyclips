@@ -1,15 +1,15 @@
 import { type ChangeEvent, useEffect, useState } from "react";
-import type { Comment } from "../types";
-import "./CommentsContainer.css";
+import type { Comment } from "src/types";
+import "src/pages/player/components/CommentsContainer.css";
 import { Grid, Stack } from "@mui/material";
 import { FaPlusCircle } from "react-icons/fa";
 import { FaRegTrashAlt } from "react-icons/fa";
 import { FaGear } from "react-icons/fa6";
 import { MdOutlineClose } from "react-icons/md";
 import { useAuth } from "react-oidc-context";
-import { palette } from "../assets/themes/theme";
-import * as CommentService from "../services/comments";
-import { readableTimestamp } from "../services/time";
+import { palette } from "src/assets/themes/theme";
+import * as CommentService from "src/services/comments";
+import { readableTimestamp } from "src/services/time";
 
 interface CommentsContainerProps {
   clipId: string;

@@ -1,12 +1,12 @@
 import { Stack, ThemeProvider } from "@mui/material";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import "src/App.css";
-import { Home } from "src/Home";
 import { THEME, palette } from "src/assets/themes/theme";
+import { NavBar } from "src/components/NavBar";
 import { AuthProvider } from "src/context/AuthContext";
-import { Player } from "src/player/Player";
-import { Uploader } from "src/upload/Uploader";
-import { NavBar } from "./NavBar";
+import { Home } from "src/pages/home/Home";
+import { Player } from "src/pages/player/Player";
+import { Uploader } from "src/pages/upload/Uploader";
 
 const router = createBrowserRouter([
   {

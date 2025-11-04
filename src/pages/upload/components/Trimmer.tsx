@@ -5,7 +5,7 @@ import { styled } from "@mui/material/styles";
 import type { ChangeEvent, ReactElement } from "react";
 import "react-image-crop/dist/ReactCrop.css";
 import { palette } from "src/assets/themes/theme";
-import "src/upload/Previewer.css";
+import "src/pages/upload/components/Trimmer.css";
 
 export interface TrimProps {
   TrimSlider: ReactElement;

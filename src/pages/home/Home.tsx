@@ -3,11 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { getClipsPaginated } from "src/services/clips";
 import { getTimeSinceString, secondsToMMSS } from "src/services/time";
 import type { Clip } from "src/types";
-import "src/Home.css";
+import "src/pages/home/Home.css";
 import { Stack } from "@mui/material";
 import { useAuth } from "react-oidc-context";
-import { type SORT_KEY_MAP, SortSelect } from "src/SortSelect";
 import { API_ENDPOINT } from "src/config";
+import {
+  type SORT_KEY_MAP,
+  SortSelect,
+} from "src/pages/home/components/SortSelect";
 
 export function Home() {
   const [sortKey, setSortKey] = useState<keyof typeof SORT_KEY_MAP>("Newest");

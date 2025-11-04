@@ -16,10 +16,10 @@ import {
 import type ReactPlayer from "react-player";
 import "react-image-crop/dist/ReactCrop.css";
 import { palette } from "src/assets/themes/theme";
+import { ThumbnailSetter } from "src/pages/upload/components/Thumbnail";
 import { randomId } from "src/services/clipIdentifiers";
 import type { ClipUploadData } from "src/types";
-import { ThumbnailSetter } from "src/upload/components/Thumbnail";
-import "src/upload/components/UploadForm.css";
+import "src/pages/upload/components/UploadForm.css";
 import { useAuthContext } from "src/context/AuthContext";
 
 interface FormAccordianProps {

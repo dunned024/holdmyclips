@@ -9,10 +9,10 @@ import {
   useState,
 } from "react";
 import ReactCrop, { type Crop } from "react-image-crop";
-import type ReactPlayer from "react-player";
 import "react-image-crop/dist/ReactCrop.css";
+import type ReactPlayer from "react-player";
 import { palette } from "src/assets/themes/theme";
-import "src/upload/components/Thumbnail.css";
+import "src/pages/upload/components/Thumbnail.css";
 
 // const defaultThumbnailBlob = new Blob([ defaultThumbnail ], { type: 'image/jpg' });
 

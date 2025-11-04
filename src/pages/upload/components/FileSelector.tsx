@@ -1,5 +1,5 @@
 import { type ChangeEvent, type DragEvent, useRef, useState } from "react";
-import "src/upload/FileSelector.css";
+import "src/pages/upload/components/FileSelector.css";
 
 export function FileSelector(props: {
   setSource: (source: File) => void;

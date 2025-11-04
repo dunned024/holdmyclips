@@ -2,18 +2,18 @@ import Stack from "@mui/material/Stack";
 import { type ChangeEvent, useRef, useState } from "react";
 import type ReactPlayer from "react-player";
 import "react-image-crop/dist/ReactCrop.css";
-import { VideoComponent } from "src/player/VideoController";
-import { formatTime } from "src/services/time";
-import type { ClipUploadData, TrimDirectives } from "src/types";
+import { VideoComponent } from "src/pages/player/components/VideoController";
 import {
   type TrimProps,
   TrimSetter,
   type TrimSetterProps,
   TrimSlider,
   type TrimSliderProps,
-} from "src/upload/components/Trimmer";
-import { FormAccordian } from "src/upload/components/UploadForm";
-import "src/upload/Previewer.css";
+} from "src/pages/upload/components/Trimmer";
+import { FormAccordian } from "src/pages/upload/components/UploadForm";
+import { formatTime } from "src/services/time";
+import type { ClipUploadData, TrimDirectives } from "src/types";
+import "src/pages/upload/components/Previewer.css";
 
 export function Previewer(props: {
   source: File;

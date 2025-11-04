@@ -2,7 +2,7 @@ import { Stack } from "@mui/material";
 import { AiFillGithub } from "react-icons/ai";
 import { palette } from "src/assets/themes/theme";
 import { useAuthContext } from "src/context/AuthContext";
-import "src/NavBar.css";
+import "src/components/NavBar.css";
 
 export const NavBar = () => {
   const { username, signIn, signOut } = useAuthContext();
