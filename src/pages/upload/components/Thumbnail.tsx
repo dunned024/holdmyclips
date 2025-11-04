@@ -101,21 +101,21 @@ export function ThumbnailSetter(props: {
     // screen) to the "actual" dimensions of the croppings canvas (defined
     // in the element declaration below -- probably 1920 x 1080)
     const cropCanvasBoundRect = new Rect(
-      croppingCanvas.getBoundingClientRect(),
+      domRectToRect(croppingCanvas.getBoundingClientRect()),
     );
-    const cropCanvasRect = new Rect(croppingCanvas);
+    const cropCanvasRect = new Rect(getDimensions(croppingCanvas));
     const cropScaling = cropCanvasBoundRect.getScaleValues(cropCanvasRect);
 
     // That ratio is applied to the size of the crop box, as well as its
     // <x, y> coordinates to get the true image we want to transpose from
     // the cropping canvas
-    const cropRect = new Rect(crop, true);
+    const cropRect = new Rect(cropToRect(crop), true);
     const scaledCropRect = cropRect.scaleTo(cropScaling);
 
     // Once we have the true cropped image, we want to scale it down to the
     // thumbnailCanvas. Thankfully, this canvas has a fixed size, so we
     // don't need any more calculations
-    const thumbRect = new Rect(thumbnailCanvas);
+    const thumbRect = new Rect(getDimensions(thumbnailCanvas));
     thumbnailContext.drawImage(
       croppingCanvas,
       scaledCropRect.x,
@@ -146,17 +146,17 @@ export function ThumbnailSetter(props: {
 
     // Find "visual" to "actual" canvas scaling values
     const cropCanvasBoundRect = new Rect(
-      croppingCanvas.getBoundingClientRect(),
+      domRectToRect(croppingCanvas.getBoundingClientRect()),
     );
-    const cropCanvasRect = new Rect(croppingCanvas);
+    const cropCanvasRect = new Rect(getDimensions(croppingCanvas));
     const cropScaling = cropCanvasBoundRect.getScaleValues(cropCanvasRect);
 
     // Apply scaling values to cropped selection
-    const cropRect = new Rect(crop, true);
+    const cropRect = new Rect(cropToRect(crop), true);
     const scaledCropRect = cropRect.scaleTo(cropScaling);
 
     // Scale the scaled, cropped selection to the thumbnail canvas
-    const thumbRect = new Rect(thumbnailCanvas);
+    const thumbRect = new Rect(getDimensions(thumbnailCanvas));
     const destRect = scaledCropRect.fitTo(thumbRect);
 
     // Fill empty space with black and draw the final image on the thumbnail canvas
@@ -209,8 +209,8 @@ export function ThumbnailSetter(props: {
       croppingCanvas.height = 1080;
     }
 
-    const sourceRect = new Rect(sourceImage);
-    const canvasRect = new Rect(croppingCanvas);
+    const sourceRect = new Rect(getDimensions(sourceImage));
+    const canvasRect = new Rect(getDimensions(croppingCanvas));
     const destRect = sourceRect.fitTo(canvasRect);
 
     const context = croppingCanvas.getContext("2d");
@@ -244,8 +244,8 @@ export function ThumbnailSetter(props: {
         if (!context) {
           return;
         }
-        const videoRect = new Rect(img);
-        const canvasRect = new Rect(thumbnailCanvas);
+        const videoRect = new Rect(getDimensions(img));
+        const canvasRect = new Rect(getDimensions(thumbnailCanvas));
         const destRect = videoRect.scaleTo(canvasRect);
 
         context.drawImage(
@@ -414,21 +414,66 @@ export function ThumbnailSetter(props: {
   );
 }
 
+/**
+ * Extract dimensions from various element types
+ */
+function getDimensions(
+  element: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement,
+): { width: number; height: number } {
+  if (element instanceof HTMLVideoElement) {
+    return { width: element.videoWidth, height: element.videoHeight };
+  }
+  return { width: element.width, height: element.height };
+}
+
+/**
+ * Convert a DOMRect to a plain rect object
+ */
+function domRectToRect(domRect: DOMRect): {
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+} {
+  return {
+    width: domRect.width,
+    height: domRect.height,
+    x: domRect.x,
+    y: domRect.y,
+  };
+}
+
+/**
+ * Convert a Crop to a plain rect object
+ */
+function cropToRect(crop: Crop): {
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+} {
+  return {
+    width: crop.width,
+    height: crop.height,
+    x: crop.x,
+    y: crop.y,
+  };
+}
+
 class Rect {
   public readonly x: number;
   public readonly y: number;
   public readonly width: number;
   public readonly height: number;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(s: any, keepCoords = false) {
-    [this.width, this.height] =
-      s instanceof HTMLVideoElement
-        ? [s.videoWidth, s.videoHeight]
-        : [s.width, s.height];
-    [this.x, this.y] =
-      // eslint-disable-next-line no-prototype-builtins
-      keepCoords && s.hasOwnPropert("x") ? [s.x, s.y] : [0, 0];
+  constructor(
+    rect: { width: number; height: number; x?: number; y?: number },
+    keepCoords = false,
+  ) {
+    this.width = rect.width;
+    this.height = rect.height;
+    this.x = keepCoords && rect.x !== undefined ? rect.x : 0;
+    this.y = keepCoords && rect.y !== undefined ? rect.y : 0;
   }
 
   getScaleValues(
