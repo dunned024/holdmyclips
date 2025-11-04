@@ -20,7 +20,7 @@
 		"react-image-crop": "^10.1.5",
 		"react-oidc-context": "^3.3.0",
 		"react-player": "^2.12.0",
-		"react-router-dom": "^6.11.1",
+		"react-router-dom": "^7.0.2",
 		"screenfull": "^6.0.2",
 		"typescript": "^5.5.3",
 		"typescript-cookie": "^1.0.6"
