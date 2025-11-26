@@ -10,7 +10,12 @@ import {
   PassthroughBehavior,
   RestApi,
 } from "aws-cdk-lib/aws-apigateway";
-import { AttributeType, ProjectionType, Table } from "aws-cdk-lib/aws-dynamodb";
+import {
+  AttributeType,
+  BillingMode,
+  ProjectionType,
+  Table,
+} from "aws-cdk-lib/aws-dynamodb";
 import {
   ManagedPolicy,
   PolicyDocument,
@@ -39,6 +44,7 @@ export class ClipdexStack extends Stack {
     // Create DynamoDB table to act as metadata index
     const clipdexTable = new Table(this, "ClipdexTable", {
       partitionKey: { name: "id", type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
       // Prevent accidental deletion in production
       removalPolicy:
         props.environment === "prod"
@@ -75,6 +81,7 @@ export class ClipdexStack extends Stack {
     const userLikesTable = new Table(this, "UserLikesTable", {
       partitionKey: { name: "userId", type: AttributeType.STRING },
       sortKey: { name: "clipId", type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
       removalPolicy:
         props.environment === "prod"
           ? RemovalPolicy.RETAIN
