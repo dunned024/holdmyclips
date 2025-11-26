@@ -30,3 +30,9 @@ VITE_COGNITO_DOMAIN=your-cognito-domain
 VITE_COGNITO_REDIRECT_URI=http://localhost:3000/
 VITE_COGNITO_USER_POOL_ID=your-user-pool-id
 ```
+
+### Deployment flow
+
+Merge changes to main & push to deploy to dev.
+
+Create a release to deploy to prod.
