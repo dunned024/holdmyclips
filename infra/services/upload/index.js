@@ -1,5 +1,8 @@
 import { CloudFormation } from "@aws-sdk/client-cloudformation";
-import { CloudFront } from "@aws-sdk/client-cloudfront";
+import {
+  CloudFrontClient,
+  CreateInvalidationCommand,
+} from "@aws-sdk/client-cloudfront";
 import { DynamoDB } from "@aws-sdk/client-dynamodb";
 import { S3 } from "@aws-sdk/client-s3";
 import { verifyToken } from "/opt/nodejs/cognitoAuth.js";
@@ -101,7 +104,7 @@ export const handler = async (event) => {
       });
 
       await storeIndexRecord(id, parsedData);
-      await invalidateDistributionPath();
+      await invalidateDistributionPath(id);
 
       return {
         statusCode: 200,
@@ -189,35 +192,45 @@ const storeIndexRecord = async (id, parsedData) => {
   }
 };
 
-const invalidateDistributionPath = async () => {
-  // Get environment-specific stack name
-  const environment = process.env.ENVIRONMENT || "Prod";
-  const stackName = `HMCStaticSite${environment}`;
-  const distributionId = await _getStackOutput(
-    stackName,
-    "StaticSiteDistributionId",
-  );
-  console.log({ distributionId });
+const invalidateDistributionPath = async (clipId) => {
+  try {
+    // Get environment-specific stack name
+    const environment = process.env.ENVIRONMENT || "Prod";
+    const stackName = `HMCStaticSite${environment}`;
+    const distributionId = await _getStackOutput(
+      stackName,
+      "StaticSiteDistributionId",
+    );
+    console.log({ distributionId });
 
-  const callerReference = new Date().toISOString().replace(/\:|\-|\./g, "");
-  console.log({ callerReference });
+    const callerReference = `upload-${clipId}-${Date.now()}`;
+    console.log({ callerReference });
 
-  const invalidationParams = {
-    DistributionId: distributionId,
-    InvalidationBatch: {
-      Paths: {
-        Quantity: 2,
-        Items: ["/", "/clips"],
+    const invalidationParams = {
+      DistributionId: distributionId,
+      InvalidationBatch: {
+        CallerReference: callerReference,
+        Paths: {
+          Quantity: 3,
+          Items: ["/", "/clips", `/clip/${clipId}`],
+        },
       },
-      CallerReference: callerReference,
-    },
-  };
+    };
 
-  const cloudFront = new CloudFront();
-  cloudFront.createInvalidation(invalidationParams, (err, data) => {
-    if (err) console.log({ err, errStack: err.stack });
-    else console.log(data);
-  });
+    const cloudFrontClient = new CloudFrontClient({});
+    const command = new CreateInvalidationCommand(invalidationParams);
+    const result = await cloudFrontClient.send(command);
+    console.log(
+      `CloudFront invalidation created for clip ${clipId}:`,
+      result.Invalidation.Id,
+    );
+  } catch (error) {
+    console.error(
+      `Failed to create CloudFront invalidation for clip ${clipId}:`,
+      error,
+    );
+    // Don't throw - cache invalidation failure shouldn't fail the upload
+  }
 };
 
 const _getStackOutput = (stackName, outputKey) =>
